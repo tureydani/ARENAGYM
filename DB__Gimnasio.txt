@@ -1,0 +1,732 @@
+
+-- NUEVADB
+
+-- ==========================================================
+-- BASE DE DATOS: GIMNASIO CONTROL TOTAL
+-- ==========================================================
+
+-- =============================
+-- TABLA: Administrativos
+-- =============================
+CREATE TABLE administrativos (
+    id_admin SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    usuario VARCHAR(50) UNIQUE NOT NULL,
+    contraseña VARCHAR(255) NOT NULL, -- se recomienda encriptar
+    fecha_contratacion DATE NOT NULL DEFAULT CURRENT_DATE
+);
+
+-- =============================
+-- TABLA: Usuarios (Clientes)
+-- =============================
+CREATE TABLE usuarios (
+    id_usuario SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    fecha_nacimiento DATE,
+    telefono VARCHAR(20),
+    email VARCHAR(100) UNIQUE,
+    fecha_registro DATE NOT NULL DEFAULT CURRENT_DATE,
+    registrado_por INT NOT NULL,
+    CONSTRAINT fk_registrado_por FOREIGN KEY (registrado_por) REFERENCES administrativos(id_admin)
+);
+
+-- =============================
+-- TABLA: Membresías
+-- =============================
+CREATE TABLE membresias (
+    id_membresia SERIAL PRIMARY KEY,
+    tipo VARCHAR(50) NOT NULL,
+    duracion_dias INT NOT NULL,
+    precio DECIMAL(10,2) NOT NULL
+);
+
+-- =============================
+-- TABLA: Registro de Membresías
+-- =============================
+CREATE TABLE registro_membresias (
+    id_registro SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_membresia INT NOT NULL,
+    id_admin INT NOT NULL,
+    fecha_inicio DATE NOT NULL DEFAULT CURRENT_DATE,
+    fecha_fin DATE,
+    activo BOOLEAN DEFAULT TRUE,
+    CONSTRAINT fk_reg_usuario FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario),
+    CONSTRAINT fk_reg_membresia FOREIGN KEY (id_membresia) REFERENCES membresias(id_membresia),
+    CONSTRAINT fk_reg_admin FOREIGN KEY (id_admin) REFERENCES administrativos(id_admin)
+);
+
+-- Trigger para calcular fecha_fin automáticamente
+CREATE OR REPLACE FUNCTION calcular_fecha_fin()
+RETURNS TRIGGER AS $$
+BEGIN
+    SELECT NEW.fecha_inicio + (m.duracion_dias || ' days')::interval
+    INTO NEW.fecha_fin
+    FROM membresias m
+    WHERE m.id_membresia = NEW.id_membresia;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tg_calcular_fecha_fin
+BEFORE INSERT ON registro_membresias
+FOR EACH ROW
+EXECUTE FUNCTION calcular_fecha_fin();
+
+-- =============================
+-- TABLA: Cajas
+-- =============================
+CREATE TABLE cajas (
+    id_caja SERIAL PRIMARY KEY,
+    descripcion VARCHAR(100),
+    fecha_apertura DATE NOT NULL DEFAULT CURRENT_DATE,
+    saldo_inicial DECIMAL(10,2) DEFAULT 0,
+    saldo_actual DECIMAL(10,2) DEFAULT 0,
+    abierta BOOLEAN DEFAULT TRUE
+);
+
+-- =============================
+-- TABLA: Pagos (modificada con id_caja)
+-- =============================
+CREATE TABLE pagos (
+    id_pago SERIAL PRIMARY KEY,
+    id_registro INT NOT NULL,
+    id_admin INT NOT NULL,
+    id_caja INT NOT NULL DEFAULT 1 REFERENCES cajas(id_caja),
+    fecha_pago DATE NOT NULL DEFAULT CURRENT_DATE,
+    monto_pagado DECIMAL(10,2) NOT NULL,
+    estado_pago VARCHAR(20) CHECK (estado_pago IN ('Completo', 'Parcial', 'Pendiente')),
+    CONSTRAINT fk_pago_registro FOREIGN KEY (id_registro) REFERENCES registro_membresias(id_registro),
+    CONSTRAINT fk_pago_admin FOREIGN KEY (id_admin) REFERENCES administrativos(id_admin)
+);
+
+-- =============================
+-- TABLA: Productos
+-- =============================
+CREATE TABLE productos (
+    id_producto SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    precio DECIMAL(10,2) NOT NULL,
+    stock INT NOT NULL DEFAULT 0
+);
+
+-- =============================
+-- TABLA: Ventas
+-- =============================
+CREATE TABLE ventas (
+    id_venta SERIAL PRIMARY KEY,
+    id_usuario INT NOT NULL REFERENCES usuarios(id_usuario),
+    id_admin INT NOT NULL REFERENCES administrativos(id_admin),
+    id_caja INT NOT NULL REFERENCES cajas(id_caja),
+    fecha_venta DATE DEFAULT CURRENT_DATE,
+    total DECIMAL(10,2) NOT NULL
+);
+
+-- =============================
+-- TABLA: Detalle Ventas
+-- =============================
+CREATE TABLE detalle_ventas (
+    id_detalle SERIAL PRIMARY KEY,
+    id_venta INT NOT NULL REFERENCES ventas(id_venta),
+    id_producto INT NOT NULL REFERENCES productos(id_producto),
+    cantidad INT NOT NULL,
+    precio_unitario DECIMAL(10,2) NOT NULL,
+    subtotal DECIMAL(10,2) GENERATED ALWAYS AS (cantidad * precio_unitario) STORED
+);
+
+-- =============================
+-- TABLA: Movimientos de Caja
+-- =============================
+CREATE TABLE movimientos_caja (
+    id_movimiento SERIAL PRIMARY KEY,
+    id_caja INT NOT NULL REFERENCES cajas(id_caja),
+    id_admin INT NOT NULL REFERENCES administrativos(id_admin),
+    tipo_movimiento VARCHAR(20) CHECK (tipo_movimiento IN ('Ingreso', 'Egreso')) NOT NULL,
+    descripcion TEXT,
+    monto DECIMAL(10,2) NOT NULL,
+    fecha_movimiento DATE DEFAULT CURRENT_DATE,
+    origen VARCHAR(20) CHECK (origen IN ('Pago', 'Venta', 'Desembolso', 'Reembolso', 'Otro')),
+    id_referencia INT
+);
+
+-- ==========================================================
+-- TRIGGER: reflejar pagos en cajas
+-- ==========================================================
+CREATE OR REPLACE FUNCTION reflejar_pago_en_caja()
+RETURNS TRIGGER AS $$
+DECLARE
+    nombre_cliente TEXT;
+BEGIN
+    -- Obtener nombre completo del cliente
+    SELECT u.nombre || ' ' || u.apellido INTO nombre_cliente
+    FROM usuarios u
+    JOIN registro_membresias r ON r.id_usuario = u.id_usuario
+    WHERE r.id_registro = NEW.id_registro;
+
+    -- Actualizar el saldo de la caja
+    UPDATE cajas
+    SET saldo_actual = saldo_actual + NEW.monto_pagado
+    WHERE id_caja = NEW.id_caja;
+
+    -- Registrar el movimiento en la tabla de movimientos
+    INSERT INTO movimientos_caja (id_caja, id_admin, tipo_movimiento, descripcion, monto, origen, id_referencia)
+    VALUES (NEW.id_caja, NEW.id_admin, 'Ingreso', 'Pago de membresía de ' || nombre_cliente, NEW.monto_pagado, 'Pago', NEW.id_pago);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tg_reflejar_pago_en_caja
+AFTER INSERT ON pagos
+FOR EACH ROW
+EXECUTE FUNCTION reflejar_pago_en_caja();
+
+-- ==========================================================
+-- TRIGGER: reflejar ventas en cajas
+-- ==========================================================
+CREATE OR REPLACE FUNCTION reflejar_venta_en_caja()
+RETURNS TRIGGER AS $$
+DECLARE
+    nombre_cliente TEXT;
+BEGIN
+    -- Obtener nombre completo del cliente
+    SELECT u.nombre || ' ' || u.apellido INTO nombre_cliente
+    FROM usuarios u
+    WHERE u.id_usuario = NEW.id_usuario;
+
+    -- Actualizar el saldo de la caja
+    UPDATE cajas
+    SET saldo_actual = saldo_actual + NEW.total
+    WHERE id_caja = NEW.id_caja;
+
+    -- Registrar el movimiento en la tabla de movimientos
+    INSERT INTO movimientos_caja (id_caja, id_admin, tipo_movimiento, descripcion, monto, origen, id_referencia)
+    VALUES (NEW.id_caja, NEW.id_admin, 'Ingreso', 'Venta de productos a ' || nombre_cliente, NEW.total, 'Venta', NEW.id_venta);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tg_reflejar_venta_en_caja
+AFTER INSERT ON ventas
+FOR EACH ROW
+EXECUTE FUNCTION reflejar_venta_en_caja();
+
+-- ==========================================================
+-- DATOS DE PRUEBA
+-- ==========================================================
+
+-- 1. ADMINISTRATIVOS
+INSERT INTO administrativos (nombre, apellido, usuario, contraseña, fecha_contratacion) VALUES
+('Carlos', 'Gómez', 'cgomez', '1234', '2024-01-10'),
+('María', 'Fernández', 'mfernandez', 'abcd', '2024-03-05');
+
+-- 2. USUARIOS
+INSERT INTO usuarios (nombre, apellido, fecha_nacimiento, telefono, email, registrado_por) VALUES
+('Juan', 'Pérez', '1995-06-12', '78965412', 'juanperez@mail.com', 1),
+('Ana', 'López', '1990-03-22', '69874521', 'analopez@mail.com', 1),
+('Pedro', 'Martínez', '1987-11-02', '74589632', 'pedromtz@mail.com', 2);
+
+-- 3. MEMBRESÍAS
+INSERT INTO membresias (tipo, duracion_dias, precio) VALUES
+('Semanal', 7, 35.00),
+('Mensual', 30, 120.00),
+('Trimestral', 90, 300.00);
+
+-- 4. CAJAS
+INSERT INTO cajas (descripcion, saldo_inicial, saldo_actual, abierta) VALUES
+('Caja principal', 500.00, 500.00, TRUE);
+
+-- 5. REGISTRO DE MEMBRESÍAS
+INSERT INTO registro_membresias (id_usuario, id_membresia, id_admin, fecha_inicio, activo) VALUES
+(1, 2, 1, '2024-10-01', TRUE),
+(2, 1, 1, '2024-10-05', TRUE),
+(3, 3, 2, '2024-09-15', FALSE);
+
+-- 6. PAGOS (estos actualizarán la caja automáticamente por trigger)
+INSERT INTO pagos (id_registro, id_admin, id_caja, fecha_pago, monto_pagado, estado_pago) VALUES
+(1, 1, 1, '2024-10-01', 120.00, 'Completo'),
+(2, 1, 1, '2024-10-05', 15.00, 'Parcial'),
+(3, 2, 1, '2024-09-15', 300.00, 'Completo');
+
+-- 7. PRODUCTOS
+INSERT INTO productos (nombre, descripcion, precio, stock) VALUES
+('Proteína Whey', 'Suplemento proteico de 1kg', 150.00, 10),
+('Guantes de entrenamiento', 'Guantes antideslizantes talla M', 35.00, 25),
+('Toalla deportiva', 'Microfibra absorbente', 25.00, 40);
+
+-- 8. VENTAS
+INSERT INTO ventas (id_usuario, id_admin, id_caja, fecha_venta, total) VALUES
+(1, 1, 1, '2024-10-02', 185.00),
+(2, 2, 1, '2024-10-08', 25.00);
+
+-- 9. DETALLE VENTAS
+INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio_unitario) VALUES
+(1, 1, 1, 150.00),
+(1, 2, 1, 35.00),
+(2, 3, 1, 25.00);
+
+-- 10. MOVIMIENTOS DE CAJA (uno manual adicional)
+INSERT INTO movimientos_caja (id_caja, id_admin, tipo_movimiento, descripcion, monto, origen)
+VALUES
+(1, 2, 'Egreso', 'Desembolso fin de mes', 200.00, 'Desembolso');
+
+
+
+-- ==========================================================
+-- CONFIGURACIÓN COMPLETA DE SOFT DELETE PARA TODAS LAS TABLAS
+-- ==========================================================
+
+-- Agregar columna 'activo' a la tabla usuarios
+ALTER TABLE usuarios 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Agregar comentario para documentar el propósito
+COMMENT ON COLUMN usuarios.activo IS 'Campo para soft delete: TRUE = activo, FALSE = eliminado lógicamente';
+
+-- Agregar columna 'activo' a la tabla productos  
+ALTER TABLE productos 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Agregar comentario para documentar el propósito
+COMMENT ON COLUMN productos.activo IS 'Campo para soft delete: TRUE = activo, FALSE = eliminado lógicamente';
+
+-- Agregar columna 'activo' a la tabla membresías
+ALTER TABLE membresias 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE NOT NULL;
+
+-- Agregar columna 'activo' a la tabla administrativos
+ALTER TABLE administrativos 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE NOT NULL;
+
+-- Agregar columna 'activo' a la tabla pagos
+ALTER TABLE pagos 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE NOT NULL;
+
+-- Agregar columna 'activo' a la tabla ventas
+ALTER TABLE ventas 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE NOT NULL;
+
+-- Crear índices para optimizar consultas con filtro de activo
+CREATE INDEX IF NOT EXISTS idx_usuarios_activo ON usuarios(activo);
+CREATE INDEX IF NOT EXISTS idx_productos_activo ON productos(activo);
+CREATE INDEX IF NOT EXISTS idx_membresias_activo ON membresias(activo);
+CREATE INDEX IF NOT EXISTS idx_administrativos_activo ON administrativos(activo);
+CREATE INDEX IF NOT EXISTS idx_pagos_activo ON pagos(activo);
+CREATE INDEX IF NOT EXISTS idx_ventas_activo ON ventas(activo);
+
+-- Verificar que todas las filas existentes tengan activo = TRUE
+UPDATE usuarios SET activo = TRUE WHERE activo IS NULL;
+UPDATE productos SET activo = TRUE WHERE activo IS NULL;
+UPDATE membresias SET activo = TRUE WHERE activo IS NULL;
+UPDATE administrativos SET activo = TRUE WHERE activo IS NULL;
+UPDATE pagos SET activo = TRUE WHERE activo IS NULL;
+UPDATE ventas SET activo = TRUE WHERE activo IS NULL;
+
+
+
+
+-- Agregar la columna activo si no existe
+ALTER TABLE membresias 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true NOT NULL;
+
+-- Crear índice para mejorar performance en consultas con filtro activo
+CREATE INDEX IF NOT EXISTS idx_membresias_activo ON membresias(activo);
+
+-- Actualizar todas las membresías existentes como activas
+UPDATE membresias SET activo = true WHERE activo IS NULL;
+
+-- Verificar la estructura actualizada
+SELECT column_name, data_type, is_nullable, column_default 
+FROM information_schema.columns 
+WHERE table_name = 'membresias' 
+ORDER BY ordinal_position;
+
+-- Verificar que todas las membresías están marcadas como activas
+SELECT COUNT(*) as total_membresias, COUNT(*) FILTER (WHERE activo = true) as activas 
+FROM membresias;
+
+COMMIT;
+
+-- Script para aplicar soft delete a la tabla administrativos
+-- Ejecutar este script en PostgreSQL para completar la implementación
+
+-- Agregar la columna activo si no existe
+ALTER TABLE administrativos 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true NOT NULL;
+
+-- Crear índice para mejorar performance en consultas con filtro activo
+CREATE INDEX IF NOT EXISTS idx_administrativos_activo ON administrativos(activo);
+
+-- Actualizar todos los administrativos existentes como activos
+UPDATE administrativos SET activo = true WHERE activo IS NULL;
+
+-- Verificar la estructura actualizada
+SELECT column_name, data_type, is_nullable, column_default 
+FROM information_schema.columns 
+WHERE table_name = 'administrativos' 
+ORDER BY ordinal_position;
+
+-- Verificar que todos los administrativos están marcados como activos
+SELECT COUNT(*) as total_administrativos, COUNT(*) FILTER (WHERE activo = true) as activos 
+FROM administrativos;
+
+COMMIT;
+
+-- ==========================================================
+-- SCRIPT PARA AGREGAR SOFT DELETE A TABLA PAGOS
+-- ==========================================================
+
+-- Agregar la columna activo si no existe
+ALTER TABLE pagos 
+ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true NOT NULL;
+
+-- Crear índice para mejorar performance en consultas con filtro activo
+CREATE INDEX IF NOT EXISTS idx_pagos_activo ON pagos(activo);
+
+-- Actualizar todos los pagos existentes como activos
+UPDATE pagos SET activo = true WHERE activo IS NULL;
+
+-- Verificar la estructura actualizada de pagos
+SELECT 'pagos' as tabla, column_name, data_type, is_nullable, column_default 
+FROM information_schema.columns 
+WHERE table_name = 'pagos' AND column_name = 'activo';
+
+-- Verificar que todos los pagos están marcados como activos
+SELECT COUNT(*) as total_pagos, COUNT(*) FILTER (WHERE activo = true) as activos 
+FROM pagos;
+
+-- ==========================================================
+-- SCRIPT PARA ACTUALIZAR PRECIOS A BOLIVIANOS
+-- ==========================================================
+-- Ejecutar este script si ya tienes datos en tu base de datos
+-- para convertir los precios a bolivianos
+
+-- 1. Actualizar precios de membresías
+UPDATE membresias SET precio = 35.00 WHERE tipo = 'Semanal';
+UPDATE membresias SET precio = 120.00 WHERE tipo = 'Mensual';
+UPDATE membresias SET precio = 300.00 WHERE tipo = 'Trimestral';
+
+-- 2. Actualizar precios de productos
+UPDATE productos SET precio = 150.00 WHERE nombre = 'Proteína Whey';
+UPDATE productos SET precio = 35.00 WHERE nombre = 'Guantes de entrenamiento';
+UPDATE productos SET precio = 25.00 WHERE nombre = 'Toalla deportiva';
+
+-- 3. Recalcular totales de ventas basado en nuevos precios de productos
+-- Venta 1: Proteína Whey (150) + Guantes (35) = 185
+UPDATE ventas SET total = 185.00 WHERE id_venta = 1;
+
+-- Venta 2: Toalla deportiva (25) = 25
+UPDATE ventas SET total = 25.00 WHERE id_venta = 2;
+
+-- 4. Actualizar detalles de ventas con nuevos precios
+UPDATE detalle_ventas SET precio_unitario = 150.00 WHERE id_producto = 1; -- Proteína Whey
+UPDATE detalle_ventas SET precio_unitario = 35.00 WHERE id_producto = 2;  -- Guantes
+UPDATE detalle_ventas SET precio_unitario = 25.00 WHERE id_producto = 3;  -- Toalla
+
+-- 5. Actualizar algunos pagos para que sean consistentes con los nuevos precios
+UPDATE pagos SET monto_pagado = 120.00 WHERE id_pago = 1; -- Pago completo mensual
+UPDATE pagos SET monto_pagado = 15.00 WHERE id_pago = 2;  -- Pago parcial semanal
+UPDATE pagos SET monto_pagado = 300.00 WHERE id_pago = 3; -- Pago completo trimestral
+
+-- 6. Actualizar saldos de caja (recalcular basado en nuevos montos)
+UPDATE cajas SET saldo_actual = saldo_inicial + 
+  (SELECT COALESCE(SUM(CASE WHEN tipo_movimiento = 'Ingreso' THEN monto ELSE -monto END), 0) 
+   FROM movimientos_caja WHERE id_caja = cajas.id_caja);
+
+-- 7. Verificación final - mostrar resumen de precios
+SELECT 'Membresías' as tabla, tipo as item, precio FROM membresias
+UNION ALL
+SELECT 'Productos' as tabla, nombre as item, precio FROM productos
+ORDER BY tabla, item;
+
+-- 8. Verificar totales de ventas
+SELECT v.id_venta, v.total as total_venta, 
+       SUM(d.cantidad * d.precio_unitario) as total_calculado
+FROM ventas v
+LEFT JOIN detalle_ventas d ON v.id_venta = d.id_venta
+GROUP BY v.id_venta, v.total;
+
+-- ==========================================================
+-- DATOS DE PRUEBA ADICIONALES
+-- ==========================================================
+
+-- Insertar productos de ejemplo adicionales
+INSERT INTO productos (nombre, descripcion, precio, stock, activo) VALUES
+('Proteína Whey Gold', 'Suplemento proteico premium de 2kg sabor chocolate', 280.50, 15, TRUE),
+('Creatina Monohidrato', 'Creatina pura 300g para aumento de fuerza', 120.00, 25, TRUE),
+('BCAA Aminoácidos', 'Aminoácidos ramificados sabor frutas tropicales', 95.75, 18, TRUE),
+('Shaker Deportivo', 'Botella mezcladora con compartimentos 600ml', 35.00, 50, TRUE),
+('Guantes Profesionales', 'Guantes de entrenamiento con agarre antideslizante', 45.99, 30, TRUE),
+('Toalla Microfibra XL', 'Toalla absorbente 80x40cm color azul', 25.50, 40, TRUE),
+('Banda Elástica Set', 'Set de 3 bandas de resistencia con anclajes', 65.00, 20, TRUE),
+('Pre-entreno Energy', 'Suplemento pre-entreno sabor sandía 250g', 150.00, 12, TRUE);
+
+-- Insertar cajas de ejemplo adicionales
+INSERT INTO cajas (descripcion, saldo_inicial, saldo_actual, abierta) VALUES
+('Caja Principal - Recepción', 1000.00, 1000.00, TRUE),
+('Caja Secundaria - Tienda', 500.00, 500.00, TRUE),
+('Caja Eventos - Fin de Semana', 300.00, 300.00, FALSE);
+
+-- ==========================================================
+-- VERIFICACIÓN FINAL DEL SISTEMA SOFT DELETE
+-- ==========================================================
+
+-- Verificar que todas las tablas principales tienen la columna activo
+SELECT 
+    table_name, 
+    column_name, 
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns 
+WHERE table_name IN ('usuarios', 'productos', 'membresias', 'administrativos', 'pagos')
+    AND column_name = 'activo'
+ORDER BY table_name;
+
+-- Verificar conteos de registros activos vs totales
+SELECT 'usuarios' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM usuarios
+UNION ALL
+SELECT 'productos' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM productos
+UNION ALL
+SELECT 'membresias' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM membresias
+UNION ALL
+SELECT 'administrativos' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM administrativos
+UNION ALL
+SELECT 'pagos' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM pagos;
+
+-- ==========================================================
+-- CONFIGURACIÓN FINAL Y VERIFICACIÓN DEL SISTEMA
+-- ==========================================================
+
+-- Verificar que todas las tablas principales tienen la columna activo
+SELECT 
+    table_name, 
+    column_name, 
+    data_type,
+    is_nullable,
+    column_default
+FROM information_schema.columns 
+WHERE table_name IN ('usuarios', 'productos', 'membresias', 'administrativos', 'pagos', 'ventas')
+    AND column_name = 'activo'
+ORDER BY table_name;
+
+-- Verificar conteos de registros activos vs totales en todas las tablas
+SELECT 'usuarios' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM usuarios
+UNION ALL
+SELECT 'productos' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM productos
+UNION ALL
+SELECT 'membresias' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM membresias
+UNION ALL
+SELECT 'administrativos' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM administrativos
+UNION ALL
+SELECT 'pagos' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM pagos
+UNION ALL
+SELECT 'ventas' as tabla,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE activo = true) as activos,
+    COUNT(*) FILTER (WHERE activo = false) as inactivos
+FROM ventas;
+
+-- ==========================================================
+-- INFORMACIÓN IMPORTANTE PARA NUEVA INSTALACIÓN
+-- ==========================================================
+
+/*
+PASOS PARA IMPLEMENTAR EN NUEVA PC:
+
+1. CREAR BASE DE DATOS:
+   CREATE DATABASE gimansio;
+
+2. EJECUTAR TODO EL SCRIPT ANTERIOR (desde CREATE TABLE hasta triggers)
+
+3. CONFIGURAR BACKEND:
+   - npm install en carpeta backend-gym
+   - Configurar archivo .env con datos de PostgreSQL
+   - npm start
+
+4. CONFIGURAR FRONTEND:
+   - npm install en carpeta frontend-gym
+   - npm run dev para desarrollo
+   - npm run build && npm start para producción
+
+5. ACCESO MÓVIL:
+   - Configurar IP local en .env.local del frontend
+   - Usar script dev-mobile: npm run dev-mobile
+
+6. VERIFICACIONES:
+   - Comprobar conexión a base de datos
+   - Probar registro de membresías
+   - Verificar cálculo automático de fecha_fin
+   - Comprobar reflejos en cajas
+   - Probar soft delete en todas las tablas
+
+CARACTERÍSTICAS IMPLEMENTADAS:
+✅ Base de datos completa con todas las tablas
+✅ Triggers para cálculo automático de fecha_fin (CORREGIDO)
+✅ Triggers para reflejar pagos/ventas en cajas
+✅ Triggers para reflejar eliminaciones en cajas
+✅ Soft delete en todas las tablas principales
+✅ Índices optimizados para performance
+✅ Datos de prueba incluidos
+✅ Sistema de movimientos de caja automatizado
+✅ Configuración para acceso móvil
+
+MONEDA: Bolivianos (Bs.)
+VERSIÓN: Final optimizada - Octubre 2025
+*/
+
+COMMIT;
+
+
+-- ==========================================================
+-- TRIGGER CORREGIDO: calcular fecha_fin automáticamente
+-- ==========================================================
+-- CORRECCIÓN: Cambiar ::interval::date por ::interval para evitar error de conversión
+DROP TRIGGER IF EXISTS tg_calcular_fecha_fin_insert ON registro_membresias;
+DROP TRIGGER IF EXISTS tg_calcular_fecha_fin_update ON registro_membresias;
+DROP FUNCTION IF EXISTS calcular_fecha_fin();
+
+CREATE OR REPLACE FUNCTION calcular_fecha_fin()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Calcular fecha_fin basado en fecha_inicio y duración de la membresía
+    -- FIX: Cambiar ::interval::date por ::interval solamente
+    SELECT NEW.fecha_inicio + (m.duracion_dias || ' days')::interval
+    INTO NEW.fecha_fin
+    FROM membresias m
+    WHERE m.id_membresia = NEW.id_membresia;
+    
+    -- Si no se encuentra la membresía, usar default de 30 días
+    IF NEW.fecha_fin IS NULL THEN
+        NEW.fecha_fin := NEW.fecha_inicio + interval '30 days';
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger para INSERT
+CREATE TRIGGER tg_calcular_fecha_fin_insert
+BEFORE INSERT ON registro_membresias
+FOR EACH ROW
+EXECUTE FUNCTION calcular_fecha_fin();
+
+-- Trigger para UPDATE (cuando cambie fecha_inicio o id_membresia)
+CREATE TRIGGER tg_calcular_fecha_fin_update
+BEFORE UPDATE ON registro_membresias
+FOR EACH ROW
+WHEN (OLD.fecha_inicio IS DISTINCT FROM NEW.fecha_inicio OR OLD.id_membresia IS DISTINCT FROM NEW.id_membresia)
+EXECUTE FUNCTION calcular_fecha_fin();
+
+-- ==========================================================
+-- TRIGGERS PARA REFLEJAR ELIMINACIONES EN CAJAS
+-- ==========================================================
+
+-- Trigger para restar de caja cuando se elimina (soft delete) un pago
+CREATE OR REPLACE FUNCTION reflejar_eliminacion_pago_en_caja()
+RETURNS TRIGGER AS $$
+DECLARE
+    nombre_cliente TEXT;
+BEGIN
+    -- Solo procesar si el pago se está desactivando (soft delete)
+    IF OLD.activo = TRUE AND NEW.activo = FALSE THEN
+        -- Obtener nombre completo del cliente
+        SELECT u.nombre || ' ' || u.apellido INTO nombre_cliente
+        FROM usuarios u
+        JOIN registro_membresias r ON r.id_usuario = u.id_usuario
+        WHERE r.id_registro = OLD.id_registro;
+
+        -- Restar el monto de la caja
+        UPDATE cajas
+        SET saldo_actual = saldo_actual - OLD.monto_pagado
+        WHERE id_caja = OLD.id_caja;
+
+        -- Registrar el movimiento de egreso por eliminación
+        INSERT INTO movimientos_caja (id_caja, id_admin, tipo_movimiento, descripcion, monto, origen, id_referencia)
+        VALUES (OLD.id_caja, NEW.id_admin, 'Egreso', 'Eliminación de pago de membresía de ' || nombre_cliente, OLD.monto_pagado, 'Reembolso', OLD.id_pago);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tg_reflejar_eliminacion_pago_en_caja
+AFTER UPDATE ON pagos
+FOR EACH ROW
+EXECUTE FUNCTION reflejar_eliminacion_pago_en_caja();
+
+-- Trigger para restar de caja cuando se elimina (soft delete) una venta
+CREATE OR REPLACE FUNCTION reflejar_eliminacion_venta_en_caja()
+RETURNS TRIGGER AS $$
+DECLARE
+    nombre_cliente TEXT;
+BEGIN
+    -- Solo procesar si la venta se está desactivando (soft delete)
+    IF OLD.activo = TRUE AND NEW.activo = FALSE THEN
+        -- Obtener nombre completo del cliente
+        SELECT u.nombre || ' ' || u.apellido INTO nombre_cliente
+        FROM usuarios u
+        WHERE u.id_usuario = OLD.id_usuario;
+
+        -- Restar el total de la caja
+        UPDATE cajas
+        SET saldo_actual = saldo_actual - OLD.total
+        WHERE id_caja = OLD.id_caja;
+
+        -- Registrar el movimiento de egreso por eliminación
+        INSERT INTO movimientos_caja (id_caja, id_admin, tipo_movimiento, descripcion, monto, origen, id_referencia)
+        VALUES (OLD.id_caja, NEW.id_admin, 'Egreso', 'Eliminación de venta de productos a ' || nombre_cliente, OLD.total, 'Reembolso', OLD.id_venta);
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tg_reflejar_eliminacion_venta_en_caja
+AFTER UPDATE ON ventas
+FOR EACH ROW
+EXECUTE FUNCTION reflejar_eliminacion_venta_en_caja();

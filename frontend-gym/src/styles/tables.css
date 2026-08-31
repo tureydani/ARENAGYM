@@ -1,0 +1,1073 @@
+/* Estilos para componentes de tablas */
+.table-container {
+  background: linear-gradient(145deg, #1F2937 0%, #111827 100%);
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  /* Altura mínima para asegurar que los modales se vean completamente */
+  min-height: 600px;
+}
+
+/* Altura mínima específica cuando el contenedor es relativo (para modales) */
+.table-container.relative {
+  min-height: 700px;
+}
+
+.table-header {
+  background: linear-gradient(135deg, #4C1D95, #2D1B69);
+  border-bottom: 1px solid rgba(147, 51, 234, 0.5);
+  padding: 1.5rem;
+}
+
+.table-title {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #10B981, #22D3EE);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34, 211, 238, 0.4);
+}
+
+.btn-secondary {
+  background: rgba(107, 114, 128, 0.8);
+  color: white;
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(147, 51, 234, 0.6);
+  border-color: #22D3EE;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+.table-wrapper {
+  background: #0F0F23;
+  max-height: 600px;
+  overflow-y: auto;
+  /* Asegurar altura mínima para tablas vacías */
+  min-height: 300px;
+  /* Centrar contenido cuando no hay datos */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilos para el estado vacío de la tabla */
+.table-wrapper .data-table {
+  flex: 1;
+}
+
+.table-wrapper .data-table tbody {
+  min-height: 200px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  background: linear-gradient(135deg, #374151, #1F2937);
+  color: #22D3EE;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(147, 51, 234, 0.3);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(147, 51, 234, 0.2);
+  color: #E5E7EB !important;
+  transition: all 0.3s ease;
+}
+
+/* Asegurar que todos los textos sean visibles */
+.data-table td span,
+.data-table td div,
+.data-table td p {
+  color: #E5E7EB !important;
+}
+
+/* Estilos especiales para nombres de clientes */
+.data-table td .client-name,
+.data-table td[data-label*="Cliente"],
+.data-table td[data-label*="Usuario"] {
+  color: #F3F4F6 !important;
+  font-weight: 600 !important;
+}
+
+/* Hacer más visibles los nombres en general */
+.data-table td strong,
+.data-table td .name,
+.data-table td .usuario-nombre {
+  color: #F9FAFB !important;
+  font-weight: 600 !important;
+}
+
+.data-table tr:hover {
+  background: rgba(147, 51, 234, 0.1);
+}
+
+.data-table tr:hover td {
+  color: #FFFFFF !important;
+}
+
+.data-table tr:hover td span,
+.data-table tr:hover td div,
+.data-table tr:hover td p {
+  color: #FFFFFF !important;
+}
+
+.data-table tr:hover td .client-name,
+.data-table tr:hover td strong,
+.data-table tr:hover td .name,
+.data-table tr:hover td .usuario-nombre {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.status-inactive {
+  background: rgba(239, 68, 68, 0.2);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-pending {
+  background: rgba(251, 191, 36, 0.2);
+  color: #F59E0B;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.loading-spinner {
+  border: 3px solid rgba(147, 51, 234, 0.3);
+  border-top: 3px solid #22D3EE;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Estilos para contenido vacío en tablas */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  color: #9CA3AF;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-subtext {
+  color: #6B7280;
+  font-size: 0.875rem;
+}
+
+/* Responsive design para tablas */
+@media (max-width: 1024px) {
+  .table-container {
+    min-height: 500px;
+    border-radius: 8px;
+  }
+  
+  .table-container.relative {
+    min-height: 600px;
+  }
+  
+  .table-header {
+    padding: 1rem;
+  }
+  
+  .table-title {
+    font-size: 1.25rem;
+  }
+  
+  .table-actions {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-danger {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    min-height: 450px;
+    border-radius: 6px;
+    margin: 0;
+  }
+  
+  .table-container.relative {
+    min-height: 500px;
+  }
+  
+  .table-header {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .table-title {
+    font-size: 1.125rem;
+  }
+  
+  .table-actions {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  
+  .data-table {
+    font-size: 0.85rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .data-table th {
+    font-size: 0.8rem;
+  }
+  
+  /* Ocultar algunas columnas en tablets */
+  .data-table th:nth-child(n+6),
+  .data-table td:nth-child(n+6) {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .table-container {
+    min-height: 400px;
+    border-radius: 4px;
+    margin: 0 -4px;
+  }
+  
+  .table-container.relative {
+    min-height: 450px;
+  }
+  
+  .table-header {
+    padding: 0.5rem;
+  }
+  
+  .table-title {
+    font-size: 1rem;
+  }
+  
+  .table-actions {
+    gap: 0.25rem;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-danger {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    flex: 1;
+    min-width: 80px;
+  }
+  
+  .data-table {
+    font-size: 0.8rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .data-table th {
+    font-size: 0.75rem;
+  }
+  
+  /* En móviles, mostrar solo las columnas esenciales */
+  .data-table th:nth-child(n+5),
+  .data-table td:nth-child(n+5) {
+    display: none;
+  }
+  
+  /* Mejorar visibilidad en móviles */
+  .client-name, .name, .usuario-nombre {
+    font-size: 12px !important;
+    padding: 1px 3px !important;
+  }
+  
+  .status-badge {
+    padding: 0.15rem 0.5rem;
+    font-size: 0.7rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  
+  .enhanced-btn-sm {
+    padding: 0.25rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* Tabla responsive con scroll horizontal para móviles */
+@media (max-width: 480px) {
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .data-table {
+    min-width: 600px; /* Fuerza scroll horizontal */
+    font-size: 0.75rem;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 0.4rem 0.2rem;
+    white-space: nowrap;
+  }
+  
+  /* Mostrar todas las columnas con scroll horizontal */
+  .data-table th,
+  .data-table td {
+    display: table-cell !important;
+  }
+  
+  .client-name, .name, .usuario-nombre {
+    font-size: 11px !important;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .price-amount, .amount-paid, .total-amount {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.3rem;
+  }
+}
+
+/* Mejoras específicas para tablas modernas en móvil */
+@media (max-width: 768px) {
+  .modern-table {
+    padding: 0.75rem;
+    margin: 0.25rem;
+    border-radius: 12px;
+  }
+
+  .enhanced-table th,
+  .table-row-enhanced td {
+    padding: 0.6rem 0.4rem;
+    font-size: 0.8rem;
+  }
+  
+  .enhanced-table th {
+    font-size: 0.75rem;
+  }
+
+  .action-buttons {
+    flex-direction: row;
+    gap: 0.25rem;
+    justify-content: center;
+  }
+  
+  .enhanced-btn-sm {
+    padding: 0.3rem;
+    border-radius: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modern-table {
+    padding: 0.5rem;
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  .enhanced-table th,
+  .table-row-enhanced td {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.75rem;
+  }
+  
+  .enhanced-table th {
+    font-size: 0.7rem;
+  }
+  
+  .client-info, .service-info, .product-info {
+    gap: 0.1rem;
+  }
+  
+  .client-name {
+    font-size: 11px !important;
+  }
+  
+  .client-id {
+    font-size: 10px !important;
+  }
+  
+  .service-type, .service-duration,
+  .product-summary, .product-preview {
+    font-size: 10px !important;
+  }
+}
+
+/* Contenedores específicos responsive */
+@media (max-width: 768px) {
+  .pagos-container, .ventas-container {
+    height: 100vh;
+  }
+  
+  .pagos-content-wrapper, .ventas-content-wrapper {
+    padding: 0 0.5rem;
+  }
+  
+  .pagos-content, .ventas-content {
+    padding: 0.5rem 0;
+  }
+  
+  .pagos-pagination, .ventas-pagination {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pagos-content-wrapper, .ventas-content-wrapper {
+    padding: 0 0.25rem;
+  }
+  
+  .pagos-content, .ventas-content {
+    padding: 0.25rem 0;
+  }
+}
+
+/* Estilos mejorados para tablas modernas */
+.modern-table {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.enhanced-table {
+  border-radius: 12px;
+  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.enhanced-table th {
+  background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
+  color: white;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem 0.75rem;
+  text-align: left;
+  font-size: 0.875rem;
+  border: none;
+}
+
+.enhanced-table th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.enhanced-table th:last-child {
+  border-top-right-radius: 12px;
+}
+
+.table-row-enhanced {
+  background: rgba(31, 41, 55, 0.6);
+  transition: all 0.3s ease;
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.table-row-enhanced:hover {
+  background: rgba(139, 92, 246, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.table-row-enhanced td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  border: none;
+}
+
+/* Celdas específicas */
+.id-cell {
+  font-weight: bold;
+  color: #A855F7;
+  font-size: 0.9rem;
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.client-name {
+  font-weight: 600;
+  color: #E5E7EB;
+  font-size: 0.9rem;
+}
+
+.client-id {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.service-type {
+  font-weight: 500;
+  color: #10B981;
+  font-size: 0.85rem;
+}
+
+.service-duration {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.price-cell {
+  text-align: right;
+}
+
+.price-amount {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  color: #FFFFFF;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.caja-info {
+  color: #F59E0B;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.date-cell {
+  color: #D1D5DB;
+  font-size: 0.85rem;
+}
+
+.amount-cell {
+  text-align: right;
+}
+
+.amount-paid {
+  background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%);
+  color: #FFFFFF;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Estados mejorados */
+.status-complete {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+  border: none;
+}
+
+.status-pending {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+  border: none;
+}
+
+.status-partial {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  border: none;
+}
+
+/* Botones de acción mejorados */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.enhanced-btn-sm {
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.enhanced-btn-sm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  color: white;
+}
+
+.btn-edit:hover {
+  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+}
+
+.btn-delete:hover {
+  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+}
+
+/* Estilos específicos para productos en ventas */
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.product-summary {
+  font-weight: 500;
+  color: #8B5CF6;
+  font-size: 0.85rem;
+}
+
+.product-preview {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  line-height: 1.2;
+}
+
+.product-item {
+  color: #10B981;
+}
+
+.more-products {
+  color: #F59E0B;
+  font-weight: 600;
+}
+
+.total-amount {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  color: #FFFFFF;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.btn-info {
+  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
+  color: white;
+}
+
+.btn-info:hover {
+  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+}
+
+@media (max-width: 768px) {
+  .modern-table {
+    padding: 1rem;
+    margin: 0.5rem;
+  }
+
+  .enhanced-table th,
+  .table-row-enhanced td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+/* Estilos específicos para scroll simple en pagos */
+.pagos-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0F0F23;
+  overflow: hidden;
+}
+
+.pagos-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.5) rgba(31, 41, 55, 0.3);
+}
+
+.pagos-content-wrapper::-webkit-scrollbar {
+  width: 12px;
+}
+
+.pagos-content-wrapper::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.3);
+  border-radius: 6px;
+  margin: 4px;
+}
+
+.pagos-content-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.5);
+  border-radius: 6px;
+  border: 2px solid rgba(15, 15, 35, 0.3);
+}
+
+.pagos-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.7);
+}
+
+.pagos-content {
+  padding: 1rem 0;
+  min-height: calc(100vh - 200px);
+}
+
+.pagos-pagination {
+  flex-shrink: 0;
+  padding: 1rem;
+  background: rgba(31, 41, 55, 0.8);
+  border-top: 1px solid rgba(147, 51, 234, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.tab-container {
+  flex-shrink: 0;
+  background: rgba(31, 41, 55, 0.9);
+  border-bottom: 1px solid rgba(147, 51, 234, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+/* Asegurar que la tabla tenga scroll suave */
+.pagos-container .table-container {
+  min-height: auto;
+  max-height: none;
+}
+
+.pagos-container .enhanced-table {
+  margin-bottom: 0;
+}
+
+/* Indicador visual de scroll */
+.pagos-content-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    rgba(147, 51, 234, 0.3), 
+    transparent 10%, 
+    transparent 90%, 
+    rgba(147, 51, 234, 0.3)
+  );
+  pointer-events: none;
+}
+
+/* Estilos específicos para scroll simple en ventas */
+.ventas-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0F0F23;
+  overflow: hidden;
+}
+
+.ventas-content-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(6, 182, 212, 0.5) rgba(31, 41, 55, 0.3);
+}
+
+.ventas-content-wrapper::-webkit-scrollbar {
+  width: 12px;
+}
+
+.ventas-content-wrapper::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.3);
+  border-radius: 6px;
+  margin: 4px;
+}
+
+.ventas-content-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.5);
+  border-radius: 6px;
+  border: 2px solid rgba(15, 15, 35, 0.3);
+}
+
+.ventas-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(6, 182, 212, 0.7);
+}
+
+.ventas-content {
+  padding: 1rem 0;
+  min-height: calc(100vh - 200px);
+}
+
+.ventas-pagination {
+  flex-shrink: 0;
+  padding: 1rem;
+  background: rgba(31, 41, 55, 0.8);
+  border-top: 1px solid rgba(6, 182, 212, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+/* Asegurar que la tabla tenga scroll suave en ventas */
+.ventas-container .table-container {
+  min-height: auto;
+  max-height: none;
+}
+
+.ventas-container .enhanced-table {
+  margin-bottom: 0;
+}
+
+/* Indicador visual de scroll para ventas */
+.ventas-content-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, 
+    rgba(6, 182, 212, 0.3), 
+    transparent 10%, 
+    transparent 90%, 
+    rgba(6, 182, 212, 0.3)
+  );
+  pointer-events: none;
+}
+
+/* ESTILOS ESPECÍFICOS PARA MEJORAR VISIBILIDAD DE NOMBRES DE CLIENTES */
+
+/* Estilos específicos para nombres de clientes en tablas */
+.client-name, 
+.name, 
+.usuario-nombre,
+td .client-name,
+td .name,
+td .usuario-nombre {
+  color: #F9FAFB !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  letter-spacing: 0.025em !important;
+  line-height: 1.4 !important;
+}
+
+/* Información específica del cliente */
+.client-info .client-name,
+.client-info .name {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2));
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  display: inline-block !important;
+}
+
+/* ID del cliente con mejor contraste */
+.client-id {
+  color: #E5E7EB !important;
+  font-size: 12px !important;
+  opacity: 0.9 !important;
+  font-weight: 500 !important;
+}
+
+/* Al hacer hover, mejorar aún más la visibilidad */
+.data-table tr:hover .client-name,
+.data-table tr:hover .name,
+.data-table tr:hover .usuario-nombre,
+.table-row-enhanced:hover .client-name,
+.table-row-enhanced:hover .name,
+.table-row-enhanced:hover .usuario-nombre {
+  color: #FFFFFF !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6) !important;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.4)) !important;
+  border-color: rgba(139, 92, 246, 0.6) !important;
+  transform: scale(1.02) !important;
+  transition: all 0.2s ease !important;
+}
+
+.data-table tr:hover .client-id,
+.table-row-enhanced:hover .client-id {
+  color: #F3F4F6 !important;
+  opacity: 1 !important;
+}
+
+/* Estilos para elementos relacionados con información del cliente */
+.service-info .service-type,
+.product-info .product-summary {
+  color: #E5E7EB !important;
+  font-weight: 500 !important;
+}
+
+.service-duration,
+.product-preview {
+  color: #D1D5DB !important;
+  font-size: 12px !important;
+  opacity: 0.8 !important;
+}
+
+/* Información de caja con mejor contraste */
+.caja-info {
+  color: #FCD34D !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Hover para información de servicio y caja */
+.data-table tr:hover .service-type,
+.data-table tr:hover .product-summary,
+.table-row-enhanced:hover .service-type,
+.table-row-enhanced:hover .product-summary {
+  color: #FFFFFF !important;
+}
+
+.data-table tr:hover .caja-info,
+.table-row-enhanced:hover .caja-info {
+  color: #FEF3C7 !important;
+}
+
+.data-table tr:hover .service-duration,
+.data-table tr:hover .product-preview,
+.table-row-enhanced:hover .service-duration,
+.table-row-enhanced:hover .product-preview {
+  color: #F3F4F6 !important;
+  opacity: 1 !important;
+}
+
+/* Estilos adicionales para asegurar máxima visibilidad */
+.enhanced-table .client-name,
+.enhanced-table .name,
+.enhanced-table .usuario-nombre {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px !important;
+  padding: 2px 4px !important;
+  display: inline-block !important;
+  min-width: fit-content !important;
+}
+
+/* Responsive para nombres de clientes */
+@media (max-width: 768px) {
+  .client-name, 
+  .name, 
+  .usuario-nombre {
+    font-size: 13px !important;
+  }
+  
+  .client-info .client-name,
+  .client-info .name {
+    padding: 1px 4px !important;
+  }
+}

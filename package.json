@@ -1,0 +1,1 @@
+﻿{"name":"gimnasio-app","version":"1.0.0","description":"App del gimnasio","scripts":{"start":"start-hidden.bat","stop":"stop.bat","install:all":"cd backend-gym && npm install && cd ../frontend-gym && npm install"}}
