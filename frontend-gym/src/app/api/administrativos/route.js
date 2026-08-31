@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { Administrativo } from '@/lib/db/models';
 
 export async function GET(request) {
@@ -40,11 +41,15 @@ export async function POST(request) {
       nombre: nombre.trim(),
       apellido: apellido.trim(),
       usuario: usuario.trim(),
-      contraseña,
+      contraseña: await bcrypt.hash(contraseña, 10),
       fecha_contratacion: fecha_contratacion || new Date()
     });
 
-    return NextResponse.json(admin, { status: 201 });
+    // Nunca devolver el hash de la contraseña al cliente.
+    const adminJson = admin.toJSON();
+    delete adminJson.contraseña;
+
+    return NextResponse.json(adminJson, { status: 201 });
   } catch (error) {
     console.error('Error al crear administrativo:', error);
 

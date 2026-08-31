@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { verificarAuthAdmin } from './lib/auth/adminAuth';
 
 // CORS para /api/*: la app Flutter (web/emulador/dispositivo) y la web
 // del gimnasio pueden vivir en orígenes distintos al de esta API.
@@ -15,9 +16,34 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
-export function middleware(request: NextRequest) {
+// Rutas /api/* que NO requieren sesión de administrativo:
+// - /api/cliente/*: tiene su propio JWT (app móvil de clientes, ver
+//   src/lib/auth/clienteAuth.js), validado dentro de cada route handler.
+// - /api/administrativos/login: es justamente la ruta que entrega el token,
+//   no puede exigirlo para sí misma.
+// - /api (raíz): healthcheck público, sin datos sensibles.
+function requiereSesionAdmin(pathname: string) {
+  if (pathname === '/api') return false;
+  if (pathname.startsWith('/api/cliente/')) return false;
+  if (pathname === '/api/administrativos/login') return false;
+  return pathname.startsWith('/api/');
+}
+
+export async function middleware(request: NextRequest) {
   if (request.method === 'OPTIONS') {
     return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  }
+
+  const { pathname } = request.nextUrl;
+
+  if (requiereSesionAdmin(pathname)) {
+    const auth = await verificarAuthAdmin(request);
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401, headers: CORS_HEADERS }
+      );
+    }
   }
 
   const response = NextResponse.next();

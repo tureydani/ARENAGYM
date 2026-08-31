@@ -37,17 +37,26 @@ const Administrativo = sequelize.define('Administrativo', {
 }, {
   tableName: 'administrativos',
   timestamps: false,
+  // "contraseña" (el hash bcrypt) nunca debe salir en una respuesta de la
+  // API salvo para el propio login, que consulta con .unscoped() a
+  // propósito para poder compararla. Excluirla acá cubre de una sola vez
+  // todos los endpoints que devuelven Administrativo directamente o vía
+  // include (usuarios, pagos, ventas, registros de membresía, etc.).
   defaultScope: {
     where: {
       activo: true
-    }
+    },
+    attributes: { exclude: ['contraseña'] }
   },
   scopes: {
-    withInactive: {},
+    withInactive: {
+      attributes: { exclude: ['contraseña'] }
+    },
     onlyInactive: {
       where: {
         activo: false
-      }
+      },
+      attributes: { exclude: ['contraseña'] }
     }
   }
 });

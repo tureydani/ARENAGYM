@@ -18,24 +18,22 @@ export default function LoginForm() {
     try {
       // La API vive en la misma app de Next.js (mismo origen), así que
       // usamos una ruta relativa en vez de un host/puerto separado.
-      const res = await fetch('/api/administrativos');
+      const res = await fetch('/api/administrativos/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, contraseña }),
+      });
+
+      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error('Error al conectar con el servidor');
+        setError(data.error || 'Usuario o contraseña incorrectos');
+        return;
       }
 
-      const admins = await res.json();
-
-      const found = admins.find(
-        (a) => a.usuario === usuario && a.contraseña === contraseña
-      );
-
-      if (found) {
-        sessionStorage.setItem('admin', JSON.stringify(found));
-        router.push('/dashboard');
-      } else {
-        setError('Usuario o contraseña incorrectos');
-      }
+      sessionStorage.setItem('admin', JSON.stringify(data.administrativo));
+      sessionStorage.setItem('adminToken', data.token);
+      router.push('/dashboard');
     } catch (err) {
       setError('Error de conexión con el servidor.');
     } finally {

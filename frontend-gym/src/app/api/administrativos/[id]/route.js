@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
+import bcrypt from 'bcryptjs';
 import { Administrativo } from '@/lib/db/models';
 
 export async function GET(request, { params }) {
@@ -55,7 +56,7 @@ export async function PUT(request, { params }) {
     if (nombre) updateData.nombre = nombre.trim();
     if (apellido) updateData.apellido = apellido.trim();
     if (usuario) updateData.usuario = usuario.trim();
-    if (contraseña) updateData.contraseña = contraseña;
+    if (contraseña) updateData.contraseña = await bcrypt.hash(contraseña, 10);
     if (fecha_contratacion) updateData.fecha_contratacion = fecha_contratacion;
 
     await admin.update(updateData);

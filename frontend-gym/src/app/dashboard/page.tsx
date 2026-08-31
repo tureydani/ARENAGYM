@@ -97,7 +97,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     const adminData = sessionStorage.getItem('admin');
-    if (!adminData) {
+    const token = sessionStorage.getItem('adminToken');
+    if (!adminData || !token) {
       router.push('/');
       return;
     }
@@ -113,6 +114,7 @@ export default function Dashboard() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('admin');
+    sessionStorage.removeItem('adminToken');
     router.push('/');
   };
 
