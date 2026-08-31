@@ -654,10 +654,11 @@ export default function TablaCajas() {
 
   return (
     <div className="table-container h-full flex flex-col relative">
+      <div className="p-6 flex flex-col gap-6 flex-1 overflow-y-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Control de Cajas</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Control de Cajas</h2>
           <p className="text-slate-500">Administra las cajas registradoras del gimnasio</p>
         </div>
         <div className="flex gap-3">
@@ -845,6 +846,7 @@ export default function TablaCajas() {
           onNextPage={goToNextPage}
         />
       )}
+      </div>
 
       {/* Modal de Formulario */}
       {showModal && (
