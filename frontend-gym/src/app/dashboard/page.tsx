@@ -9,6 +9,7 @@ import TablaRegistroMembresias from '../../components/TablaRegistroMembresias';
 import TablaPagos from '../../components/TablaPagos';
 import TablaProductos from '../../components/TablaProductos';
 import TablaCajas from '../../components/TablaCajas';
+import TablaAsistencias from '../../components/TablaAsistencias';
 import '../../styles/dashboard.css';
 
 interface Admin {
@@ -29,6 +30,12 @@ const IconClipboardList = () => (
 const IconBanknotes = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 9v1m-7-5a7 7 0 1114 0 7 7 0 01-14 0z" />
+  </svg>
+);
+
+const IconQrCode = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.5h5.25v5.25H3.75V4.5zM15 4.5h5.25v5.25H15V4.5zM3.75 15.75h5.25V21H3.75v-5.25zM15 15.75h2.25M15 18h2.25M15 20.25h2.25M20.25 15.75V21M6 6.75h1.5v1.5H6v-1.5zM17.25 6.75h1.5v1.5h-1.5v-1.5zM6 17.25h1.5v1.5H6v-1.5z" />
   </svg>
 );
 
@@ -132,6 +139,7 @@ export default function Dashboard() {
     { id: 'registros', name: 'Registros', icon: <IconClipboardList />, description: 'Inscripciones activas' },
     { id: 'pagos', name: 'Pagos', icon: <IconBanknotes />, description: 'Gestión financiera' },
     { id: 'usuarios', name: 'Clientes', icon: <IconUsers />, description: 'Gestión de usuarios' },
+    { id: 'asistencias', name: 'Asistencias', icon: <IconQrCode />, description: 'Control de asistencias por QR' },
     ...(showAdminPanels ? [
       { id: 'membresias', name: 'Membresías', icon: <IconFlag />, description: 'Tipos de membresías' },
       { id: 'administrativos', name: 'Administrativos', icon: <IconIdentification />, description: 'Administradores del sistema' },
@@ -148,6 +156,8 @@ export default function Dashboard() {
         return <TablaPagos />;
       case 'usuarios':
         return <TablaUsuarios />;
+      case 'asistencias':
+        return <TablaAsistencias />;
       case 'administrativos':
         return <TablaAdministrativos />;
       case 'membresias':
