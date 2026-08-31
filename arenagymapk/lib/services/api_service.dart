@@ -132,11 +132,16 @@ class ApiService {
     });
   }
 
-  /// GET /asistencias -> { totalMes, racha, ultimaVisita, diasDelMes }
-  Future<ResumenAsistencias> obtenerAsistencias() {
+  /// GET /asistencias[?mes=YYYY-MM] -> { totalMes, totalHistorico, racha,
+  /// ultimaVisita, diasDelMes }. Si se indica [mes] (formato "YYYY-MM"), el
+  /// backend responde con los días de asistencia de ese mes puntual; si se
+  /// omite, usa el mes actual.
+  Future<ResumenAsistencias> obtenerAsistencias({String? mes}) {
     return _guarded(() async {
-      final response =
-          await http.get(_uri('/asistencias'), headers: await _authHeaders());
+      final uri = mes == null
+          ? _uri('/asistencias')
+          : _uri('/asistencias').replace(queryParameters: {'mes': mes});
+      final response = await http.get(uri, headers: await _authHeaders());
       final json = _decodeOrThrow(response);
       return ResumenAsistencias.fromJson(json);
     });

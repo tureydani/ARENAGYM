@@ -6,8 +6,9 @@ import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
+import 'asistencias_calendario_tab.dart';
 
-/// Pestaña "Progreso": combina Metas y Progresos (mediciones físicas) en dos
+/// Pestaña "Progreso": combina Metas, Mediciones y Asistencias en tres
 /// sub-tabs dentro de una misma pestaña, para que el cliente vea su espacio
 /// personal de evolución sin salir de la sección.
 class ProgresoTab extends StatefulWidget {
@@ -23,7 +24,7 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -68,6 +69,7 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
               tabs: const [
                 Tab(text: 'Metas'),
                 Tab(text: 'Mediciones'),
+                Tab(text: 'Asistencias'),
               ],
             ),
           ),
@@ -78,6 +80,7 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
             children: const [
               _MetasSection(),
               _ProgresosSection(),
+              AsistenciasCalendarioTab(),
             ],
           ),
         ),
