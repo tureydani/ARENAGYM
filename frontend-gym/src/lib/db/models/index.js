@@ -9,6 +9,8 @@ const Caja = require('./caja');
 const Venta = require('./venta');
 const DetalleVenta = require('./detalleVenta');
 const MovimientoCaja = require('./movimientoCaja');
+const Asistencia = require('./asistencia');
+const Notificacion = require('./notificacion');
 
 // Definir todas las relaciones
 
@@ -139,6 +141,24 @@ Administrativo.hasMany(MovimientoCaja, {
   foreignKey: 'id_admin'
 });
 
+// Asistencia - Usuario
+Asistencia.belongsTo(Usuario, {
+  foreignKey: 'id_usuario',
+  as: 'Usuario'
+});
+Usuario.hasMany(Asistencia, {
+  foreignKey: 'id_usuario'
+});
+
+// Notificacion - Usuario
+Notificacion.belongsTo(Usuario, {
+  foreignKey: 'id_usuario',
+  as: 'Usuario'
+});
+Usuario.hasMany(Notificacion, {
+  foreignKey: 'id_usuario'
+});
+
 module.exports = {
   Usuario,
   Administrativo,
@@ -149,5 +169,7 @@ module.exports = {
   Caja,
   Venta,
   DetalleVenta,
-  MovimientoCaja
+  MovimientoCaja,
+  Asistencia,
+  Notificacion
 };
