@@ -56,62 +56,50 @@ Sistema completo de gestión para gimnasios desarrollado con tecnologías modern
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/danielquentaescobar/gimnasio.git
-cd Gimnasio
+git clone <url-del-repo-nuevo>
+cd Gimnasio/frontend-gym
 
-# 2. Configurar Backend
-cd backend-gym
+# 2. Instalar dependencias
 npm install
 
-# 3. Configurar Frontend
-cd ../frontend-gym
-npm install
-
-# 4. Configurar Base de Datos
+# 3. Configurar Base de Datos (Postgres en Supabase u otro proveedor)
 # Ejecutar el script DB__Gimnasio.txt en PostgreSQL
-# Ejecutar triggers: stock_control_triggers.sql
 
-# 5. Variables de Entorno
-# Crear archivo .env en backend-gym con:
-DB_NAME=gimnasio
+# 4. Variables de Entorno
+# Crear archivo .env.local en frontend-gym con:
+DB_NAME=postgres
 DB_USER=tu_usuario
-DB_PASSWORD=tu_password
-DB_HOST=localhost
+DB_PASS=tu_password
+DB_HOST=tu_host
 DB_PORT=5432
+DB_SSL=true
 ```
 
 ### Ejecución
 
 ```bash
-# Terminal 1 - Backend (Puerto 3000)
-cd backend-gym
-npm start
-
-# Terminal 2 - Frontend (Puerto 3001)
 cd frontend-gym
-npm run dev
+npm run dev   # http://localhost:3001 (frontend + API routes en /api/*)
 ```
 
 ## 📁 Estructura del Proyecto
 
 ```
 Gimnasio/
-├── backend-gym/           # API Backend
-│   ├── controllers/       # Controladores de rutas
-│   ├── models/           # Modelos de Sequelize
-│   ├── routes/           # Definición de rutas
-│   └── config/           # Configuración de BD
-├── frontend-gym/         # Aplicación React/Next.js
+├── frontend-gym/           # Aplicación Next.js (frontend + API, un solo proyecto)
 │   └── src/
-│       ├── components/   # Componentes reutilizables
-│       ├── pages/        # Páginas de la aplicación
-│       └── styles/       # Estilos CSS/Tailwind
-├── documentacion/        # Documentación completa
-│   ├── principal/        # Docs principales
-│   ├── correcciones/     # Historial de correcciones
-│   ├── funcionalidades/  # Documentación de features
-│   └── guias/           # Guías de uso
-└── *.sql                # Scripts de base de datos
+│       ├── app/
+│       │   ├── api/        # Rutas de API (antes backend-gym, ahora Next.js Route Handlers)
+│       │   └── dashboard/  # Páginas de la aplicación
+│       ├── components/     # Componentes reutilizables
+│       ├── lib/db/         # Sequelize: conexión y modelos
+│       └── styles/         # Estilos CSS/Tailwind
+├── documentacion/          # Documentación completa
+│   ├── principal/          # Docs principales
+│   ├── correcciones/       # Historial de correcciones
+│   ├── funcionalidades/    # Documentación de features
+│   └── guias/              # Guías de uso
+└── *.sql                   # Scripts de base de datos
 ```
 
 ## 🎯 Funcionalidades por Módulo

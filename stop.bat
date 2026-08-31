@@ -12,30 +12,16 @@ for /f "tokens=2" %%i in ('tasklist /fi "windowtitle eq Gimnasio*" /fo csv ^| fi
     taskkill /f /pid %%i >nul 2>&1
 )
 
-echo 🔍 Liberando puertos específicos...
-REM Matar procesos en puerto 3000
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3000') do (
-    taskkill /f /pid %%a >nul 2>&1
-)
-
-REM Matar procesos en puerto 3001  
+echo 🔍 Liberando puerto especifico...
+REM Matar procesos en puerto 3001
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr :3001') do (
     taskkill /f /pid %%a >nul 2>&1
 )
 
 echo.
-echo 📊 Verificando puertos...
+echo 📊 Verificando puerto...
 echo.
-echo 🔧 Puerto 3000 (Backend):
-netstat -ano | findstr :3000
-if errorlevel 1 (
-    echo   ✅ Puerto 3000 LIBRE
-) else (
-    echo   ⚠️  Puerto 3000 aún en uso
-)
-
-echo.
-echo 🖥️ Puerto 3001 (Frontend):
+echo 🖥️ Puerto 3001 (App):
 netstat -ano | findstr :3001
 if errorlevel 1 (
     echo   ✅ Puerto 3001 LIBRE

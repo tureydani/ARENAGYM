@@ -16,20 +16,14 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      // Detectar si estamos en localhost o en la red
-      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const API_URL = isLocalhost 
-        ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000')
-        : (process.env.NEXT_PUBLIC_MOBILE_API_URL || 'http://192.168.2.107:3000');
-      
-      console.log('🔗 Conectando a:', API_URL); // Para debugging
-      
-      const res = await fetch(`${API_URL}/api/administrativos`);
-      
+      // La API vive en la misma app de Next.js (mismo origen), así que
+      // usamos una ruta relativa en vez de un host/puerto separado.
+      const res = await fetch('/api/administrativos');
+
       if (!res.ok) {
         throw new Error('Error al conectar con el servidor');
       }
-      
+
       const admins = await res.json();
 
       const found = admins.find(
@@ -43,7 +37,7 @@ export default function LoginForm() {
         setError('Usuario o contraseña incorrectos');
       }
     } catch (err) {
-      setError('Error de conexión. Asegúrate de que el servidor esté corriendo en el puerto 3000.');
+      setError('Error de conexión con el servidor.');
     } finally {
       setLoading(false);
     }

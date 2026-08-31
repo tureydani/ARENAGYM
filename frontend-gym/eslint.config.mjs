@@ -20,6 +20,14 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
+  {
+    // Los modelos de Sequelize y la config de conexión son un puerto fiel
+    // (CommonJS) del backend original y usan require() intencionalmente.
+    files: ["src/lib/db/**/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ];
 
 export default eslintConfig;
