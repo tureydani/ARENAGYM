@@ -31,6 +31,12 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/**/*.jks
+android/key.properties
 /coverage/
 
 # Symbolication related
