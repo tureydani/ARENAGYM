@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import api from '../utils/api';
 import { SearchBar } from './ui';
+import ModalCalendarioAsistencias from './ModalCalendarioAsistencias';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -54,6 +55,9 @@ export default function TablaAsistencias() {
   const [recientes, setRecientes] = useState([]);
   const [loadingRecientes, setLoadingRecientes] = useState(false);
   const [errorRecientes, setErrorRecientes] = useState('');
+
+  // --- Modal de calendario de asistencias de un cliente puntual ---
+  const [usuarioCalendario, setUsuarioCalendario] = useState(null); // { id_usuario, nombre, apellido } | null
 
   const fetchUsuarios = useCallback(async () => {
     setLoadingUsuarios(true);
@@ -365,18 +369,34 @@ export default function TablaAsistencias() {
                 </div>
               ) : (
                 filteredUsuarios.map((usuario) => (
-                  <button
+                  <div
                     key={usuario.id_usuario}
-                    onClick={() => handleSeleccionarUsuario(usuario)}
-                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 transition-colors text-sm"
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-indigo-50 transition-colors text-sm"
                   >
-                    <span className="font-medium text-slate-900">
-                      {usuario.nombre} {usuario.apellido}
-                    </span>
-                    {usuario.telefono && (
-                      <span className="text-slate-400 ml-2">{usuario.telefono}</span>
-                    )}
-                  </button>
+                    <button
+                      onClick={() => handleSeleccionarUsuario(usuario)}
+                      className="flex-1 text-left min-w-0"
+                    >
+                      <span className="font-medium text-slate-900">
+                        {usuario.nombre} {usuario.apellido}
+                      </span>
+                      {usuario.telefono && (
+                        <span className="text-slate-400 ml-2">{usuario.telefono}</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUsuarioCalendario(usuario);
+                      }}
+                      title="Ver calendario de asistencias"
+                      className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full text-indigo-500 hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -452,7 +472,18 @@ export default function TablaAsistencias() {
                   </tr>
                 ) : (
                   recientes.map((asistencia) => (
-                    <tr key={asistencia.id_asistencia}>
+                    <tr
+                      key={asistencia.id_asistencia}
+                      onClick={() =>
+                        setUsuarioCalendario({
+                          id_usuario: asistencia.id_usuario,
+                          nombre: asistencia.Usuario?.nombre || '',
+                          apellido: asistencia.Usuario?.apellido || ''
+                        })
+                      }
+                      className="cursor-pointer hover:bg-indigo-50 transition-colors"
+                      title="Ver calendario de asistencias de este cliente"
+                    >
                       <td>
                         {asistencia.Usuario
                           ? `${asistencia.Usuario.nombre} ${asistencia.Usuario.apellido}`
@@ -467,6 +498,11 @@ export default function TablaAsistencias() {
           </div>
         )}
       </div>
+
+      <ModalCalendarioAsistencias
+        usuario={usuarioCalendario}
+        onClose={() => setUsuarioCalendario(null)}
+      />
     </div>
   );
 }
