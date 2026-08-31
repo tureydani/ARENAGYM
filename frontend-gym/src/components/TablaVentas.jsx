@@ -25,6 +25,16 @@ const TablaVentas = () => {
   const [editingVenta, setEditingVenta] = useState(null);
   const [selectedVenta, setSelectedVenta] = useState(null);
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
+
+  // Filas expandidas ("Ver más") para mostrar ID, caja y fecha
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const toggleExpandRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
   
   // Estados para exportación
   const [showExportModal, setShowExportModal] = useState(false);
@@ -486,12 +496,10 @@ const TablaVentas = () => {
           <table className="table enhanced-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th className="w-8"></th>
                 <th>Cliente</th>
                 <th>Productos</th>
                 <th>Total (Bs)</th>
-                <th>Caja</th>
-                <th>Fecha</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -499,97 +507,118 @@ const TablaVentas = () => {
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan="8" className="text-center py-8">
+                <td colSpan="6" className="text-center py-8">
                   <div className="text-slate-500">
                     {searchTerm ? 'No se encontraron ventas que coincidan con la búsqueda' : 'No hay ventas registradas'}
                   </div>
                 </td>
               </tr>
             ) : (
-              paginatedData.map((venta) => (
-                <tr key={venta.id_venta} className="table-row-enhanced">
-                  <td className="id-cell">{venta.id_venta}</td>
-                  <td>
-                    <div className="client-info">
-                      <div className="client-name">
-                        {venta.Usuario ? 
-                          `${venta.Usuario.nombre} ${venta.Usuario.apellido}` : 
-                          `ID: ${venta.id_usuario}`
-                        }
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="product-info">
-                      <div className="product-summary">
-                        {venta.Detalles && venta.Detalles.length > 0 ? 
-                          `${venta.Detalles.length} producto(s)` : 
-                          'Sin detalles'
-                        }
-                      </div>
-                      {venta.Detalles && venta.Detalles.length > 0 && (
-                        <div className="product-preview">
-                          {venta.Detalles.slice(0, 2).map((detalle, idx) => (
-                            <span key={idx} className="product-item">
-                              {detalle.Producto ? detalle.Producto.nombre : `Producto ${detalle.id_producto}`}
-                              {idx < Math.min(venta.Detalles.length, 2) - 1 && ', '}
-                            </span>
-                          ))}
-                          {venta.Detalles.length > 2 && <span className="more-products">...</span>}
+              paginatedData.map((venta) => {
+                const expanded = expandedRows.has(venta.id_venta);
+                return (
+                  <React.Fragment key={venta.id_venta}>
+                    <tr className="table-row-enhanced">
+                      <td>
+                        <button
+                          onClick={() => toggleExpandRow(venta.id_venta)}
+                          className="text-slate-400 hover:text-indigo-600 transition-colors"
+                          title={expanded ? 'Ocultar detalles' : 'Ver más detalles'}
+                        >
+                          <svg className={`w-4 h-4 transition-transform ${expanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </td>
+                      <td>
+                        <div className="client-info">
+                          <div className="client-name">
+                            {venta.Usuario ?
+                              `${venta.Usuario.nombre} ${venta.Usuario.apellido}` :
+                              `ID: ${venta.id_usuario}`
+                            }
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="amount-cell">
-                      <span className="total-amount">Bs {parseFloat(venta.total).toFixed(2)}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="caja-info">
-                      {venta.Caja ? 
-                        venta.Caja.descripcion || `Caja ${venta.id_caja}` : 
-                        `Caja ${venta.id_caja}`
-                      }
-                    </div>
-                  </td>
-                  <td className="date-cell">{new Date(venta.fecha_venta).toLocaleDateString()}</td>
-                  <td>
-                    <span className={`status-badge ${
-                      venta.estado === 'Completada' ? 'status-complete' :
-                      venta.estado === 'Pendiente' ? 'status-pending' :
-                      'status-partial'
-                    }`}>
-                      {venta.estado}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-buttons">
-                      <button
-                        onClick={() => openDetalleModal(venta)}
-                        className="btn-info enhanced-btn-sm"
-                        title="Ver detalle"
-                      >
-                        <span className="btn-icon"><IconEye /></span>
-                      </button>
-                      <button
-                        onClick={() => openEditModal(venta)}
-                        className="btn-edit enhanced-btn-sm"
-                        title="Editar venta"
-                      >
-                        <span className="btn-icon"><IconPencil /></span>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(venta.id_venta)}
-                        className="btn-delete enhanced-btn-sm"
-                        title="Eliminar venta"
-                      >
-                        <span className="btn-icon"><IconTrash /></span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                      </td>
+                      <td>
+                        <div className="product-info">
+                          <div className="product-summary">
+                            {venta.Detalles && venta.Detalles.length > 0 ?
+                              `${venta.Detalles.length} producto(s)` :
+                              'Sin detalles'
+                            }
+                          </div>
+                          {venta.Detalles && venta.Detalles.length > 0 && (
+                            <div className="product-preview">
+                              {venta.Detalles.slice(0, 2).map((detalle, idx) => (
+                                <span key={idx} className="product-item">
+                                  {detalle.Producto ? detalle.Producto.nombre : `Producto ${detalle.id_producto}`}
+                                  {idx < Math.min(venta.Detalles.length, 2) - 1 && ', '}
+                                </span>
+                              ))}
+                              {venta.Detalles.length > 2 && <span className="more-products">...</span>}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="amount-cell">
+                          <span className="total-amount">Bs {parseFloat(venta.total).toFixed(2)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${
+                          venta.estado === 'Completada' ? 'status-complete' :
+                          venta.estado === 'Pendiente' ? 'status-pending' :
+                          'status-partial'
+                        }`}>
+                          {venta.estado}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            onClick={() => openDetalleModal(venta)}
+                            className="btn-info enhanced-btn-sm"
+                            title="Ver detalle"
+                          >
+                            <span className="btn-icon"><IconEye /></span>
+                          </button>
+                          <button
+                            onClick={() => openEditModal(venta)}
+                            className="btn-edit enhanced-btn-sm"
+                            title="Editar venta"
+                          >
+                            <span className="btn-icon"><IconPencil /></span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(venta.id_venta)}
+                            className="btn-delete enhanced-btn-sm"
+                            title="Eliminar venta"
+                          >
+                            <span className="btn-icon"><IconTrash /></span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded && (
+                      <tr className="bg-slate-50">
+                        <td></td>
+                        <td colSpan="5" className="py-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-500">
+                            <div><span className="font-semibold text-slate-600">ID:</span> {venta.id_venta}</div>
+                            <div>
+                              <span className="font-semibold text-slate-600">Caja:</span>{' '}
+                              {venta.Caja ? venta.Caja.descripcion || `Caja ${venta.id_caja}` : `Caja ${venta.id_caja}`}
+                            </div>
+                            <div><span className="font-semibold text-slate-600">Fecha:</span> {new Date(venta.fecha_venta).toLocaleDateString()}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })
             )}
           </tbody>
         </table>

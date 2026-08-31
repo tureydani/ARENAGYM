@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import api from '../utils/api';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -28,6 +28,16 @@ export default function TablaUsuarios() {
   // Estado para modal de advertencia de duplicados
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateUserData, setDuplicateUserData] = useState({ nombre: '', apellido: '' });
+
+  // Filas expandidas ("Ver más") para mostrar ID y fechas
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const toggleExpandRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // Función de búsqueda específica para usuarios
   const searchUsuarios = (data, searchTerm) => {
@@ -442,54 +452,78 @@ export default function TablaUsuarios() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th className="w-8"></th>
                 <th>Nombre Completo</th>
                 <th>Teléfono</th>
-                <th>F. Nacimiento</th>
-                <th>F. Registro</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="text-center py-8">
+                  <td colSpan="4" className="text-center py-8">
                     <div className="text-slate-500">
                       {searchTerm ? 'No se encontraron usuarios que coincidan con la búsqueda' : 'No hay usuarios registrados'}
                     </div>
                   </td>
                 </tr>
               ) : (
-                paginatedData.map((usuario) => (
-                  <tr key={usuario.id_usuario}>
-                    <td>{usuario.id_usuario}</td>
-                    <td>{usuario.nombre} {usuario.apellido}</td>
-                    <td>{usuario.telefono}</td>
-                    <td>
-                      {usuario.fecha_nacimiento 
-                        ? new Date(usuario.fecha_nacimiento).toLocaleDateString() 
-                        : 'N/A'
-                      }
-                    </td>
-                    <td>{new Date(usuario.fecha_registro).toLocaleDateString()}</td>
-                    <td>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => openEditModal(usuario)}
-                          className="btn-secondary text-xs px-3 py-1"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => handleDelete(usuario.id_usuario)}
-                          className="btn-danger text-xs px-3 py-1"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                paginatedData.map((usuario) => {
+                  const expanded = expandedRows.has(usuario.id_usuario);
+                  return (
+                    <Fragment key={usuario.id_usuario}>
+                      <tr>
+                        <td>
+                          <button
+                            onClick={() => toggleExpandRow(usuario.id_usuario)}
+                            className="text-slate-400 hover:text-indigo-600 transition-colors"
+                            title={expanded ? 'Ocultar detalles' : 'Ver más detalles'}
+                          >
+                            <svg className={`w-4 h-4 transition-transform ${expanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </td>
+                        <td>{usuario.nombre} {usuario.apellido}</td>
+                        <td>{usuario.telefono}</td>
+                        <td>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => openEditModal(usuario)}
+                              className="btn-secondary text-xs px-3 py-1"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleDelete(usuario.id_usuario)}
+                              className="btn-danger text-xs px-3 py-1"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {expanded && (
+                        <tr className="bg-slate-50">
+                          <td></td>
+                          <td colSpan="3" className="py-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-500">
+                              <div><span className="font-semibold text-slate-600">ID:</span> {usuario.id_usuario}</div>
+                              <div>
+                                <span className="font-semibold text-slate-600">F. Nacimiento:</span>{' '}
+                                {usuario.fecha_nacimiento ? new Date(usuario.fecha_nacimiento).toLocaleDateString() : 'N/A'}
+                              </div>
+                              <div>
+                                <span className="font-semibold text-slate-600">F. Registro:</span>{' '}
+                                {new Date(usuario.fecha_registro).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })
               )}
             </tbody>
           </table>

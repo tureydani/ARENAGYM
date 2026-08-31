@@ -25,6 +25,16 @@ const TablaPagos = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+
+  // Filas expandidas ("Ver más") para mostrar ID, precio base, caja y fecha
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const toggleExpandRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
   const [editingPago, setEditingPago] = useState(null);
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
   
@@ -514,12 +524,9 @@ const TablaPagos = () => {
               <table className="table enhanced-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th className="w-8"></th>
                 <th>Cliente</th>
                 <th>Tipo de Servicio</th>
-                <th>Precio (Bs)</th>
-                <th>Caja</th>
-                <th>Fecha Pago</th>
                 <th>Monto Pagado (Bs)</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -528,7 +535,7 @@ const TablaPagos = () => {
           <tbody>
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan="9" className="text-center py-8">
+                <td colSpan="6" className="text-center py-8">
                   <div className="text-slate-500">
                     {searchTerm ? 'No se encontraron pagos que coincidan con la búsqueda' : 'No hay pagos registrados'}
                   </div>
@@ -537,68 +544,82 @@ const TablaPagos = () => {
             ) : (
               paginatedData.map((pago) => {
                 const registroInfo = getRegistroInfo(pago.id_registro);
+                const expanded = expandedRows.has(pago.id_pago);
                 return (
-                  <tr key={pago.id_pago} className="table-row-enhanced">
-                    <td className="id-cell">{pago.id_pago}</td>
-                    <td>
-                      <div className="client-info">
-                        <div className="client-name">{registroInfo.usuario}</div>
-                        <div className="client-id">ID: #{pago.id_registro}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="service-info">
-                        <div className="service-type">{registroInfo.membresia}</div>
-                        <div className="service-duration">{registroInfo.duracion}</div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="price-cell">
-                        <span className="price-amount">Bs {parseFloat(registroInfo.precio).toFixed(2)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="caja-info">
-                        {pago.Caja ? 
-                          pago.Caja.descripcion || `Caja ${pago.id_caja}` : 
-                          `Caja ${pago.id_caja}`
-                        }
-                      </div>
-                    </td>
-                    <td className="date-cell">{new Date(pago.fecha_pago).toLocaleDateString()}</td>
-                    <td>
-                      <div className="amount-cell">
-                        <span className="amount-paid">Bs {parseFloat(pago.monto_pagado).toFixed(2)}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${
-                        pago.estado_pago === 'Completo' ? 'status-complete' :
-                        pago.estado_pago === 'Pendiente' ? 'status-pending' :
-                        'status-partial'
-                      }`}>
-                        {pago.estado_pago}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-buttons">
+                  <React.Fragment key={pago.id_pago}>
+                    <tr className="table-row-enhanced">
+                      <td>
                         <button
-                          onClick={() => openEditModal(pago)}
-                          className="btn-edit enhanced-btn-sm"
-                          title="Editar pago"
+                          onClick={() => toggleExpandRow(pago.id_pago)}
+                          className="text-slate-400 hover:text-indigo-600 transition-colors"
+                          title={expanded ? 'Ocultar detalles' : 'Ver más detalles'}
                         >
-                          <span className="btn-icon"><IconPencil /></span>
+                          <svg className={`w-4 h-4 transition-transform ${expanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </button>
-                        <button
-                          onClick={() => handleDelete(pago.id_pago)}
-                          className="btn-delete enhanced-btn-sm"
-                          title="Eliminar pago"
-                        >
-                          <span className="btn-icon"><IconTrash /></span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td>
+                        <div className="client-info">
+                          <div className="client-name">{registroInfo.usuario}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="service-info">
+                          <div className="service-type">{registroInfo.membresia}</div>
+                          <div className="service-duration">{registroInfo.duracion}</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="amount-cell">
+                          <span className="amount-paid">Bs {parseFloat(pago.monto_pagado).toFixed(2)}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${
+                          pago.estado_pago === 'Completo' ? 'status-complete' :
+                          pago.estado_pago === 'Pendiente' ? 'status-pending' :
+                          'status-partial'
+                        }`}>
+                          {pago.estado_pago}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="action-buttons">
+                          <button
+                            onClick={() => openEditModal(pago)}
+                            className="btn-edit enhanced-btn-sm"
+                            title="Editar pago"
+                          >
+                            <span className="btn-icon"><IconPencil /></span>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(pago.id_pago)}
+                            className="btn-delete enhanced-btn-sm"
+                            title="Eliminar pago"
+                          >
+                            <span className="btn-icon"><IconTrash /></span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded && (
+                      <tr className="bg-slate-50">
+                        <td></td>
+                        <td colSpan="5" className="py-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-xs text-slate-500">
+                            <div><span className="font-semibold text-slate-600">ID:</span> {pago.id_pago} (Registro #{pago.id_registro})</div>
+                            <div><span className="font-semibold text-slate-600">Precio membresía:</span> Bs {parseFloat(registroInfo.precio).toFixed(2)}</div>
+                            <div>
+                              <span className="font-semibold text-slate-600">Caja:</span>{' '}
+                              {pago.Caja ? pago.Caja.descripcion || `Caja ${pago.id_caja}` : `Caja ${pago.id_caja}`}
+                            </div>
+                            <div><span className="font-semibold text-slate-600">Fecha Pago:</span> {new Date(pago.fecha_pago).toLocaleDateString()}</div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })
             )}

@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import api from '../utils/api';
 import { usePagination } from '../hooks/usePagination';
 import { SearchBar, Pagination, IconDocumentDownload, IconShoppingCart } from './ui';
@@ -47,6 +47,22 @@ export default function TablaRegistroMembresias() {
   const [filtroFecha, setFiltroFecha] = useState('todos');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+
+  // Filtro rápido: mostrar solo membresías activas (no vencidas)
+  const [soloActivos, setSoloActivos] = useState(false);
+  const registrosParaTabla = soloActivos
+    ? registros.filter(registro => registro.activo && new Date(registro.fecha_fin) > new Date())
+    : registros;
+
+  // Filas expandidas ("Ver más") para mostrar ID, administrativo y fechas exactas
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const toggleExpandRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // Funciones de exportación
   const filtrarRegistrosPorFecha = () => {
@@ -260,7 +276,7 @@ export default function TablaRegistroMembresias() {
     hasNextPage,
     hasPrevPage,
     handleSearch
-  } = usePagination(registros, 8, searchRegistros);
+  } = usePagination(registrosParaTabla, 8, searchRegistros);
 
   const [formData, setFormData] = useState({
     id_usuario: '',
@@ -877,6 +893,23 @@ export default function TablaRegistroMembresias() {
             Refrescar
           </button>
           <button
+            onClick={() => {
+              setSoloActivos(!soloActivos);
+              goToPage(1);
+            }}
+            className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium border transition-colors ${
+              soloActivos
+                ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700'
+                : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'
+            }`}
+            title={soloActivos ? 'Mostrando solo activas (clic para ver todas)' : 'Mostrar solo membresías activas (ocultar vencidas)'}
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4.5h18M6 9h12M9 13.5h6" />
+            </svg>
+            <span className="hidden sm:inline">{soloActivos ? 'Solo activas' : 'Todas'}</span>
+          </button>
+          <button
             onClick={() => setShowExportModal(true)}
             className="btn-info flex items-center gap-2"
           >
@@ -949,10 +982,8 @@ export default function TablaRegistroMembresias() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th className="w-8"></th>
                 <th>Usuario y Membresía</th>
-                <th>Administrativo</th>
-                <th>Fechas</th>
                 <th>Estado</th>
                 <th>Tiempo Restante</th>
                 <th>Acciones</th>
@@ -961,7 +992,7 @@ export default function TablaRegistroMembresias() {
             <tbody>
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8">
+                  <td colSpan="5" className="text-center py-8">
                     <div className="text-slate-500">
                       {searchTerm ? 'No se encontraron registros que coincidan con la búsqueda' : 'No hay registros de membresías'}
                     </div>
@@ -971,76 +1002,92 @@ export default function TablaRegistroMembresias() {
                 paginatedData.map((registro) => {
                   const estado = getEstadoRegistro(registro.activo, registro.fecha_fin);
                   const membresiaInfo = getMembresiaInfo(registro.id_membresia);
-                  
+                  const expanded = expandedRows.has(registro.id_registro);
+
                   return (
-                    <tr key={registro.id_registro}>
-                      <td>{registro.id_registro}</td>
-                      <td>
-                        <div className="font-medium text-slate-900">
-                          {getUsuarioNombre(registro.id_usuario)}
-                        </div>
-                        <div className="text-sm text-indigo-600">
-                          {getMembresiaTipo(registro.id_membresia)}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          Bs. ${membresiaInfo.precio}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="text-sm text-yellow-400">
-                          {registro.Administrativo ? 
-                            `${registro.Administrativo.nombre} ${registro.Administrativo.apellido}` : 
-                            `ID: ${registro.id_admin}`
-                          }
-                        </div>
-                      </td>
-                      <td>
-                        <div className="text-sm">
-                          <div className="text-green-400">
-                            Inicio: {formatFecha(registro.fecha_inicio)}
-                          </div>
-                          <div className="text-orange-400">
-                            Fin: {formatFecha(registro.fecha_fin)}
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${
-                          estado === 'Activo' ? 'status-active' :
-                          estado === 'Por vencer' ? 'status-pending' :
-                          estado === 'Vencido' ? 'status-inactive' :
-                          'status-inactive'
-                        }`}>
-                          {estado}
-                        </span>
-                      </td>
-                      <td>
-                        <div className={`font-medium ${
-                          calcularDiasRestantes(registro.fecha_fin) === 'Vencida' ? 'text-red-400' :
-                          calcularDiasRestantes(registro.fecha_fin).includes('día') && 
-                          parseInt(calcularDiasRestantes(registro.fecha_fin)) <= 7 ? 'text-yellow-400' :
-                          'text-green-400'
-                        }`}>
-                          {calcularDiasRestantes(registro.fecha_fin)}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex space-x-2">
+                    <Fragment key={registro.id_registro}>
+                      <tr>
+                        <td>
                           <button
-                            onClick={() => openEditModal(registro)}
-                            className="btn-secondary text-xs px-3 py-1"
+                            onClick={() => toggleExpandRow(registro.id_registro)}
+                            className="text-slate-400 hover:text-indigo-600 transition-colors"
+                            title={expanded ? 'Ocultar detalles' : 'Ver más detalles'}
                           >
-                            Editar
+                            <svg className={`w-4 h-4 transition-transform ${expanded ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
                           </button>
-                          <button
-                            onClick={() => deleteRegistro(registro.id_registro)}
-                            className="btn-danger text-xs px-3 py-1"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                        </td>
+                        <td>
+                          <div className="font-medium text-slate-900">
+                            {getUsuarioNombre(registro.id_usuario)}
+                          </div>
+                          <div className="text-sm text-indigo-600">
+                            {getMembresiaTipo(registro.id_membresia)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            Bs. {membresiaInfo.precio}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${
+                            estado === 'Activo' ? 'status-active' :
+                            estado === 'Por vencer' ? 'status-pending' :
+                            estado === 'Vencido' ? 'status-inactive' :
+                            'status-inactive'
+                          }`}>
+                            {estado}
+                          </span>
+                        </td>
+                        <td>
+                          <div className={`font-medium ${
+                            calcularDiasRestantes(registro.fecha_fin) === 'Vencida' ? 'text-red-400' :
+                            calcularDiasRestantes(registro.fecha_fin).includes('día') &&
+                            parseInt(calcularDiasRestantes(registro.fecha_fin)) <= 7 ? 'text-yellow-400' :
+                            'text-green-400'
+                          }`}>
+                            {calcularDiasRestantes(registro.fecha_fin)}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => openEditModal(registro)}
+                              className="btn-secondary text-xs px-3 py-1"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => deleteRegistro(registro.id_registro)}
+                              className="btn-danger text-xs px-3 py-1"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {expanded && (
+                        <tr className="bg-slate-50">
+                          <td></td>
+                          <td colSpan="4" className="py-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-500">
+                              <div><span className="font-semibold text-slate-600">ID:</span> {registro.id_registro}</div>
+                              <div>
+                                <span className="font-semibold text-slate-600">Administrativo:</span>{' '}
+                                {registro.Administrativo ?
+                                  `${registro.Administrativo.nombre} ${registro.Administrativo.apellido}` :
+                                  `ID: ${registro.id_admin}`
+                                }
+                              </div>
+                              <div>
+                                <span className="font-semibold text-slate-600">Fechas:</span>{' '}
+                                Inicio {formatFecha(registro.fecha_inicio)} · Fin {formatFecha(registro.fecha_fin)}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   );
                 })
               )}
