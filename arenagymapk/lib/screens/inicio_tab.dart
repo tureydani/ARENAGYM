@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../utils/date_utils.dart';
 import '../widgets/app_card.dart';
 import 'login_screen.dart';
+import 'mi_qr_screen.dart';
 
 /// Pestaña "Inicio": saludo, membresía activa y resumen de asistencias.
 class InicioTab extends StatefulWidget {
@@ -85,6 +86,8 @@ class _InicioTabState extends State<InicioTab> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     _buildSaludo(),
+                    const SizedBox(height: 12),
+                    _buildBotonQr(),
                     const SizedBox(height: 16),
                     _buildMembresiaCard(),
                     const SizedBox(height: 16),
@@ -130,6 +133,19 @@ class _InicioTabState extends State<InicioTab> {
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
         ),
+      ),
+    );
+  }
+
+  Widget _buildBotonQr() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const MiQrScreen()),
+        ),
+        icon: const Icon(Icons.qr_code_2),
+        label: const Text('Mostrar mi código de acceso'),
       ),
     );
   }

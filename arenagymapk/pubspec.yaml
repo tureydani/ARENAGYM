@@ -41,6 +41,8 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   # Formateo de fechas (fecha_fin, ultima_visita, etc.)
   intl: ^0.20.2
+  # Generar el QR de asistencia a partir del token del backend
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

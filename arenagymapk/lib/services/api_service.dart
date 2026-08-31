@@ -142,6 +142,24 @@ class ApiService {
     });
   }
 
+  /// GET /asistencia-qr -> { token, expiraEnSegundos }
+  /// Token de vida muy corta (2 min) para mostrar como QR en el
+  /// control de acceso del gimnasio. Se debe volver a pedir antes de
+  /// que expire (la pantalla que lo muestra ya se encarga de eso).
+  Future<({String token, int expiraEnSegundos})> obtenerTokenAsistenciaQr() {
+    return _guarded(() async {
+      final response = await http.get(
+        _uri('/asistencia-qr'),
+        headers: await _authHeaders(),
+      );
+      final json = _decodeOrThrow(response);
+      return (
+        token: json['token'] as String,
+        expiraEnSegundos: json['expiraEnSegundos'] as int? ?? 120,
+      );
+    });
+  }
+
   /// GET /notificaciones -> [ {...}, ... ]
   Future<List<Notificacion>> obtenerNotificaciones() {
     return _guarded(() async {
