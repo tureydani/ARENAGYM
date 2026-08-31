@@ -10,20 +10,6 @@ const nextConfig: NextConfig = {
   // node_modules en el entorno serverless.
   serverExternalPackages: ['sequelize', 'pg', 'pg-hstore'],
 
-  // 🔹 Permitir acceso desde cualquier host en la red local
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-        ],
-      },
-    ];
-  },
 };
 
 export default nextConfig;
