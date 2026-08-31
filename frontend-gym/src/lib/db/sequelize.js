@@ -1,5 +1,13 @@
 const { Sequelize } = require('sequelize');
 
+// Sequelize elige el driver del dialecto ('pg') de forma dinámica en tiempo
+// de ejecución a partir de un string, así que el tracer de dependencias de
+// Vercel (@vercel/nft) no puede detectar ese require() y no incluye 'pg' en
+// el bundle de la función serverless ("Please install pg package manually").
+// Forzamos un require() estático y directo para que sí quede registrado
+// como dependencia real de este archivo.
+require('pg');
+
 // En serverless (Vercel), cada invocación puede reutilizar el contenedor entre
 // llamadas "calientes". Cacheamos la instancia en globalThis para no crear una
 // nueva conexión/pool en cada invocación (mismo patrón recomendado por Next.js
