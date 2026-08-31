@@ -12,16 +12,16 @@ const Badge = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium';
   
   const variants = {
-    default: 'bg-gray-500/20 text-gray-300 border border-gray-500/30',
+    default: 'bg-slate-100 text-slate-600 border border-slate-200',
     active: 'status-active',
     inactive: 'status-inactive',
     pending: 'status-pending',
-    success: 'bg-green-500/20 text-green-400 border border-green-500/30',
-    warning: 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
-    error: 'bg-red-500/20 text-red-400 border border-red-500/30',
-    info: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
-    purple: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
-    cyan: 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+    success: 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+    warning: 'bg-amber-50 text-amber-600 border border-amber-200',
+    error: 'bg-red-50 text-red-600 border border-red-200',
+    info: 'bg-sky-50 text-sky-600 border border-sky-200',
+    purple: 'bg-indigo-50 text-indigo-600 border border-indigo-200',
+    cyan: 'bg-indigo-50 text-indigo-600 border border-indigo-200'
   };
   
   const sizes = {

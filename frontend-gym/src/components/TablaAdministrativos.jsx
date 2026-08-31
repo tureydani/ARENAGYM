@@ -129,7 +129,7 @@ export default function TablaAdministrativos() {
   };
 
   const deleteAdministrativo = async (id) => {
-    if (window.confirm('⚠️ ¿Estás seguro de que quieres eliminar este administrativo?\n\nEsta acción no se puede deshacer y puede afectar otros registros asociados.')) {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este administrativo?\n\nEsta acción no se puede deshacer y puede afectar otros registros asociados.')) {
       try {
         setLoading(true);
         await api.delete(`/administrativos/${id}`);
@@ -186,7 +186,7 @@ export default function TablaAdministrativos() {
       nombre: admin.nombre,
       apellido: admin.apellido,
       usuario: admin.usuario,
-      contraseña: '',  // No mostrar la contraseña actual
+      contraseña: '', // No mostrar la contraseña actual
       fecha_contratacion: admin.fecha_contratacion ? admin.fecha_contratacion.split('T')[0] : ''
     });
     setShowModal(true);
@@ -233,7 +233,7 @@ export default function TablaAdministrativos() {
         <div className="flex items-center space-x-4">
           <h2 className="table-title">Gestión de Administrativos</h2>
           <div className="stats-number text-lg">{totalItems}</div>
-          <span className="text-sm text-purple-300">
+          <span className="text-sm text-slate-500">
             {searchTerm ? 'resultados encontrados' : 'administrativos registrados'}
           </span>
         </div>
@@ -262,7 +262,7 @@ export default function TablaAdministrativos() {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="px-6 py-4 border-b border-purple-700/30">
+      <div className="px-6 py-4 border-b border-slate-200">
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={handleSearch}
@@ -300,7 +300,7 @@ export default function TablaAdministrativos() {
         <div className="px-6 py-8 text-center flex-1 flex items-center justify-center">
           <div>
             <div className="loading-spinner mx-auto mb-3"></div>
-            <p className="text-purple-300">Cargando datos...</p>
+            <p className="text-slate-500">Cargando datos...</p>
           </div>
         </div>
       )}
@@ -323,7 +323,7 @@ export default function TablaAdministrativos() {
               {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-8">
-                    <div className="text-purple-300">
+                    <div className="text-slate-500">
                       {searchTerm ? 'No se encontraron administrativos que coincidan con la búsqueda' : 'No hay administrativos registrados'}
                     </div>
                   </td>
@@ -333,19 +333,19 @@ export default function TablaAdministrativos() {
                   <tr key={`admin-${admin.id_admin}-${index}`}>
                     <td>{admin.id_admin}</td>
                     <td>
-                      <div className="font-medium text-white">
+                      <div className="font-medium text-slate-900">
                         {admin.nombre} {admin.apellido}
                       </div>
                       <div className="text-xs text-gray-500">
                         ID: {admin.id_admin}
                       </div>
                     </td>
-                    <td className="text-cyan-400 font-medium">
+                    <td className="text-indigo-600 font-medium">
                       {admin.usuario}
                     </td>
                     <td>{formatFecha(admin.fecha_contratacion)}</td>
                     <td>
-                      <div className="text-purple-300 font-medium">
+                      <div className="text-slate-500 font-medium">
                         {calcularAntiguedad(admin.fecha_contratacion)}
                       </div>
                     </td>
@@ -469,8 +469,8 @@ export default function TablaAdministrativos() {
                 </div>
 
                 {formData.fecha_contratacion && (
-                  <div className="p-3 bg-gray-800/50 rounded-md">
-                    <p className="text-sm text-purple-300">
+                  <div className="p-3 bg-slate-50 rounded-md">
+                    <p className="text-sm text-slate-500">
                       <strong>Vista previa:</strong> {formatFecha(formData.fecha_contratacion)}
                       <br />
                       <strong>Antigüedad actual:</strong> {calcularAntiguedad(formData.fecha_contratacion)}

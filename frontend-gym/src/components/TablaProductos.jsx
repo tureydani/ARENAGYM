@@ -7,6 +7,7 @@ import SearchBar from './ui/SearchBar';
 import Pagination from './ui/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import api from '../utils/api';
+import { IconPencil, IconTrash, IconDocumentDownload, IconPlus, IconArchiveBox } from './ui/Icons';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -260,7 +261,7 @@ export default function TablaProductos() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="loading-spinner mx-auto mb-4"></div>
-          <p className="text-purple-300">Cargando productos...</p>
+          <p className="text-slate-500">Cargando productos...</p>
         </div>
       </div>
     );
@@ -271,15 +272,17 @@ export default function TablaProductos() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Gestión de Productos</h2>
-          <p className="text-purple-300">Administra el catálogo de productos del gimnasio</p>
+          <h2 className="text-2xl font-bold text-slate-900">Gestión de Productos</h2>
+          <p className="text-slate-500">Administra el catálogo de productos del gimnasio</p>
         </div>
         <div className="flex gap-3">
           <Button onClick={exportToCSV} variant="outline" size="sm">
-            📊 Exportar CSV
+            <IconDocumentDownload className="w-4 h-4 inline-block mr-1" />
+            Exportar CSV
           </Button>
           <Button onClick={() => setShowModal(true)} size="sm">
-            ➕ Nuevo Producto
+            <IconPlus className="w-4 h-4 inline-block mr-1" />
+            Nuevo Producto
           </Button>
         </div>
       </div>
@@ -294,14 +297,14 @@ export default function TablaProductos() {
           />
         </div>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-cyan-400">{productosArray.length}</div>
-          <div className="text-sm text-purple-300">Total Productos</div>
+          <div className="text-2xl font-bold text-indigo-600">{productosArray.length}</div>
+          <div className="text-sm text-slate-500">Total Productos</div>
         </Card>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-green-400">
+          <div className="text-2xl font-bold text-emerald-600">
             {productosArray.reduce((sum, p) => sum + formatStock(p.stock), 0)}
           </div>
-          <div className="text-sm text-purple-300">Total Stock</div>
+          <div className="text-sm text-slate-500">Total Stock</div>
         </Card>
       </div>
 
@@ -309,56 +312,56 @@ export default function TablaProductos() {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-purple-900/30">
+            <thead className="bg-indigo-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   ID
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Producto
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Descripción
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Precio
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Stock
                 </th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-700/30">
+            <tbody className="divide-y divide-slate-200">
               {paginatedItems.map((producto) => (
-                <tr key={producto.id_producto} className="hover:bg-purple-900/20 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-300">
+                <tr key={producto.id_producto} className="hover:bg-indigo-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
                     #{producto.id_producto}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">
+                    <div className="text-sm font-medium text-slate-900">
                       {producto.nombre}
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-purple-200 max-w-xs truncate">
+                    <div className="text-sm text-slate-600 max-w-xs truncate">
                       {producto.descripcion || 'Sin descripción'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-green-400">
+                    <div className="text-sm font-medium text-emerald-600">
                       Bs. {formatPrice(producto.precio)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       formatStock(producto.stock) > 10
-                        ? 'bg-green-900/50 text-green-300'
+                        ? 'bg-emerald-50 text-emerald-700'
                         : formatStock(producto.stock) > 0
-                        ? 'bg-yellow-900/50 text-yellow-300'
-                        : 'bg-red-900/50 text-red-300'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-red-50 text-red-700'
                     }`}>
                       {formatStock(producto.stock)} unidades
                     </span>
@@ -369,35 +372,37 @@ export default function TablaProductos() {
                         onClick={() => handleEdit(producto)}
                         variant="outline"
                         size="sm"
-                        className="text-blue-400 border-blue-400 hover:bg-blue-400"
+                        className="text-indigo-600 border-indigo-300 hover:bg-indigo-50"
                       >
-                        ✏️ Editar
+                        <IconPencil className="w-3.5 h-3.5 inline-block mr-1" />
+                        Editar
                       </Button>
                       <Button
                         onClick={() => handleStockUpdate(producto, 'suma')}
                         variant="outline"
                         size="sm"
-                        className="text-green-400 border-green-400 hover:bg-green-400"
+                        className="text-emerald-600 border-emerald-300 hover:bg-emerald-50"
                         title="Agregar stock"
                       >
-                        📦+ Stock
+                        + Stock
                       </Button>
                       <Button
                         onClick={() => handleStockUpdate(producto, 'resta')}
                         variant="outline"
                         size="sm"
-                        className="text-yellow-400 border-yellow-400 hover:bg-yellow-400"
+                        className="text-amber-600 border-amber-300 hover:bg-amber-50"
                         title="Reducir stock"
                       >
-                        📦- Stock
+                        - Stock
                       </Button>
                       <Button
                         onClick={() => handleDelete(producto)}
                         variant="outline"
                         size="sm"
-                        className="text-red-400 border-red-400 hover:bg-red-400 hover:text-white"
+                        className="text-red-600 border-red-300 hover:bg-red-50 hover:text-red-700"
                       >
-                        🗑️ Eliminar
+                        <IconTrash className="w-3.5 h-3.5 inline-block mr-1" />
+                        Eliminar
                       </Button>
                     </div>
                   </td>
@@ -409,8 +414,9 @@ export default function TablaProductos() {
 
         {paginatedItems.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-purple-300 mb-4">
-              📦 No se encontraron productos
+            <IconArchiveBox className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+            <div className="text-slate-500 mb-4">
+              No se encontraron productos
             </div>
             <Button onClick={() => setShowModal(true)} size="sm">
               Agregar primer producto

@@ -300,7 +300,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
         await fetchProductos();
         
         if (onSuccess) {
-          onSuccess(`✅ Venta #${response.data.id_venta} registrada exitosamente - Total: Bs. ${total.toFixed(2)}`);
+          onSuccess(`Venta #${response.data.id_venta} registrada exitosamente - Total: Bs. ${total.toFixed(2)}`);
         }
 
         // Cerrar automáticamente el modal después de 3 segundos
@@ -320,7 +320,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container venta-rapida-modal-minimal" onClick={e => e.stopPropagation()}>
         <div className="modal-header-minimal">
-          <h3>⚡ Venta Rápida</h3>
+          <h3>Venta Rápida</h3>
           <button className="modal-close-minimal" onClick={onClose}>×</button>
         </div>
 
@@ -331,7 +331,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
               <div className="form-header-minimal">
                 {/* Cliente */}
                 <div className="input-group-minimal">
-                  <label>👤 Cliente</label>
+                  <label>Cliente</label>
                   <div className="user-search-minimal" ref={userInputRef}>
                     <input
                       type="text"
@@ -375,7 +375,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
 
                 {/* Caja */}
                 <div className="input-group-minimal">
-                  <label>💰 Caja</label>
+                  <label>Caja</label>
                   <div className="caja-selector-minimal">
                     {cajas.length > 0 ? (
                       cajas.map(caja => (
@@ -407,7 +407,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                 {/* Panel de Productos */}
                 <div className="productos-panel-minimal">
                   <div className="panel-header-minimal">
-                    <label>🛍️ Productos Disponibles</label>
+                    <label>Productos Disponibles</label>
                   </div>
                   
                   <div className="productos-grid-minimal">
@@ -444,7 +444,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                 {/* Panel de Carrito */}
                 <div className="carrito-panel-minimal">
                   <div className="panel-header-minimal">
-                    <label>🛒 Carrito ({carrito.length})</label>
+                    <label>Carrito ({carrito.length})</label>
                   </div>
                   
                   <div className="carrito-content-minimal">
@@ -498,14 +498,14 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                                 Procesando...
                               </>
                             ) : (
-                              <>💳 Procesar Venta</>
+                              <>Procesar Venta</>
                             )}
                           </button>
                         </div>
                       </>
                     ) : (
                       <div className="carrito-vacio-minimal">
-                        <div className="empty-icon">🛒</div>
+                        <div className="empty-icon"></div>
                         <span>Sin productos seleccionados</span>
                         <small>Agrega productos para continuar</small>
                       </div>
@@ -517,7 +517,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
           ) : (
             // Vista de éxito
             <div className="success-view-minimal">
-              <div className="success-icon-minimal">✅</div>
+              <div className="success-icon-minimal"></div>
               <h4>¡Venta Registrada Exitosamente!</h4>
               
               <div className="success-info">
@@ -540,7 +540,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                   onClose();
                 }}
               >
-                ✨ Nueva Venta
+                Nueva Venta
               </button>
             </div>
           )}

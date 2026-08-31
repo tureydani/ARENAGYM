@@ -6,7 +6,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { usePagination } from '../hooks/usePagination';
-import { SearchBar, Pagination } from './ui';
+import { SearchBar, Pagination, IconExclamationTriangle } from './ui';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -168,8 +168,8 @@ export default function TablaUsuarios() {
     const fechaHoy = getFechaHoyLocal();
     
     // Debug: mostrar fecha en consola
-    console.log('📅 Fecha de registro establecida:', fechaHoy);
-    console.log('📅 Fecha completa:', new Date().toLocaleString());
+    console.log('Fecha de registro establecida:', fechaHoy);
+    console.log('Fecha completa:', new Date().toLocaleString());
     
     setFormData({
       nombre: '',
@@ -355,7 +355,7 @@ export default function TablaUsuarios() {
         <div className="flex items-center space-x-4">
           <h2 className="table-title">Gestión de Usuarios</h2>
           <div className="stats-number text-lg">{totalItems}</div>
-          <span className="text-sm text-purple-300">
+          <span className="text-sm text-slate-500">
             {searchTerm ? 'resultados encontrados' : 'usuarios registrados'}
           </span>
         </div>
@@ -393,7 +393,7 @@ export default function TablaUsuarios() {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="px-6 py-4 border-b border-purple-700/30">
+      <div className="px-6 py-4 border-b border-slate-200">
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={handleSearch}
@@ -431,7 +431,7 @@ export default function TablaUsuarios() {
         <div className="px-6 py-8 text-center flex-1 flex items-center justify-center">
           <div>
             <div className="loading-spinner mx-auto mb-3"></div>
-            <p className="text-purple-300">Cargando datos...</p>
+            <p className="text-slate-500">Cargando datos...</p>
           </div>
         </div>
       )}
@@ -454,7 +454,7 @@ export default function TablaUsuarios() {
               {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-8">
-                    <div className="text-purple-300">
+                    <div className="text-slate-500">
                       {searchTerm ? 'No se encontraron usuarios que coincidan con la búsqueda' : 'No hay usuarios registrados'}
                     </div>
                   </td>
@@ -590,8 +590,8 @@ export default function TablaUsuarios() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-gray-800/50 rounded-md">
-                  <p className="text-sm text-purple-300">
+                <div className="p-3 bg-slate-50 rounded-md">
+                  <p className="text-sm text-slate-500">
                     <strong>Vista previa:</strong> Se exportarán {filtrarUsuariosPorFecha().length} usuarios
                   </p>
                 </div>
@@ -682,7 +682,7 @@ export default function TablaUsuarios() {
                     <label className="form-label">
                       Fecha de Registro 
                       <span className="text-xs text-green-400 ml-2">
-                        (📅 Hoy: {getFechaHoyLocal()})
+                        (Hoy: {getFechaHoyLocal()})
                       </span>
                     </label>
                     <input
@@ -721,17 +721,17 @@ export default function TablaUsuarios() {
       {showDuplicateModal && (
         <div className="modal-overlay">
           <div className="modal-container max-w-md">
-            <div className="modal-header bg-yellow-600/20 border-b border-yellow-500/30">
+            <div className="modal-header bg-amber-50 border-b border-amber-200">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-amber-600 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                 </div>
-                <h3 className="modal-title text-yellow-400">⚠️ Usuario Duplicado</h3>
+                <h3 className="modal-title text-amber-700">Usuario Duplicado</h3>
               </div>
               <button
-                className="modal-close text-yellow-400 hover:text-yellow-300"
+                className="modal-close text-amber-600 hover:text-amber-700"
                 onClick={closeDuplicateModal}
               >
                 ×
@@ -740,27 +740,27 @@ export default function TablaUsuarios() {
             
             <div className="modal-body">
               <div className="text-center space-y-4">
-                <div className="text-6xl">👤</div>
-                
+                <IconExclamationTriangle className="w-12 h-12 mx-auto text-amber-500" />
+
                 <div className="space-y-2">
-                  <h4 className="text-lg font-semibold text-white">
+                  <h4 className="text-lg font-semibold text-slate-900">
                     ¡Ya existe un usuario con este nombre!
                   </h4>
                   
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                    <p className="text-yellow-300 font-medium">
-                      <span className="text-yellow-400">📋 Nombre:</span> {duplicateUserData.nombre} {duplicateUserData.apellido}
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-amber-800 font-medium">
+                      <span className="text-amber-700">Nombre:</span> {duplicateUserData.nombre} {duplicateUserData.apellido}
                     </p>
                   </div>
                   
-                  <p className="text-purple-300 text-sm">
+                  <p className="text-slate-500 text-sm">
                     Ya existe un miembro registrado con el mismo nombre y apellido en el sistema.
                   </p>
                 </div>
 
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 text-left">
-                  <h5 className="text-blue-400 font-medium mb-2">💡 Sugerencias:</h5>
-                  <ul className="text-sm text-purple-300 space-y-1">
+                  <h5 className="text-blue-400 font-medium mb-2">Sugerencias:</h5>
+                  <ul className="text-sm text-slate-500 space-y-1">
                     <li>• Verifica si es la misma persona</li>
                     <li>• Agrega el segundo nombre o inicial</li>
                     <li>• Incluye un apellido adicional</li>

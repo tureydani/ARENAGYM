@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '../utils/api';
 import { usePagination } from '../hooks/usePagination';
-import { SearchBar, Pagination } from './ui';
+import { SearchBar, Pagination, IconDocumentDownload, IconShoppingCart } from './ui';
 import ModalVentaRapida from './ModalVentaRapida';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -470,9 +470,9 @@ export default function TablaRegistroMembresias() {
         
         const mensaje = formData.registrarPago 
           ? (pagoExitoso 
-              ? `✅ Registro de membresía${mensajePago} creados exitosamente`
-              : '⚠️ Registro creado, pago falló')
-          : '✅ Registro de membresía creado exitosamente';
+              ? `Registro de membresía${mensajePago} creados exitosamente`
+              : 'Registro creado, pago falló')
+          : 'Registro de membresía creado exitosamente';
         
         setSuccess(mensaje);
         setTimeout(() => {
@@ -546,7 +546,7 @@ export default function TablaRegistroMembresias() {
       });
       
       setShowNewUserModal(false);
-      setSuccess('✅ Usuario creado y seleccionado exitosamente');
+      setSuccess('Usuario creado y seleccionado exitosamente');
       setTimeout(() => setSuccess(''), 3000);
       
     } catch (err) {
@@ -849,11 +849,11 @@ export default function TablaRegistroMembresias() {
         <div className="flex items-center space-x-4">
           <h2 className="table-title">Registro de Membresías</h2>
           <div className="stats-number text-lg">{totalItems}</div>
-          <span className="text-sm text-purple-300">
+          <span className="text-sm text-slate-500">
             {searchTerm ? 'resultados encontrados' : 'registros totales'}
           </span>
           <div className="flex items-center space-x-4 text-xs">
-            <div className="text-green-400">
+            <div className="text-emerald-600">
               {getRegistrosActivos()} activos
             </div>
             <div className="text-red-400">
@@ -880,13 +880,15 @@ export default function TablaRegistroMembresias() {
             onClick={() => setShowExportModal(true)}
             className="btn-info flex items-center gap-2"
           >
-            📊 Exportar
+            <IconDocumentDownload className="w-4 h-4" />
+            Exportar
           </button>
           <button
             onClick={openVentaModal}
             className="btn-success flex items-center gap-2"
           >
-            🛒 Venta Rápida
+            <IconShoppingCart className="w-4 h-4" />
+            Venta Rápida
           </button>
           <button
             onClick={openCreateModal}
@@ -898,7 +900,7 @@ export default function TablaRegistroMembresias() {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="px-6 py-4 border-b border-purple-700/30">
+      <div className="px-6 py-4 border-b border-slate-200">
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={handleSearch}
@@ -936,7 +938,7 @@ export default function TablaRegistroMembresias() {
         <div className="px-6 py-8 text-center flex-1 flex items-center justify-center">
           <div>
             <div className="loading-spinner mx-auto mb-3"></div>
-            <p className="text-purple-300">Cargando datos...</p>
+            <p className="text-slate-500">Cargando datos...</p>
           </div>
         </div>
       )}
@@ -960,7 +962,7 @@ export default function TablaRegistroMembresias() {
               {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="text-center py-8">
-                    <div className="text-purple-300">
+                    <div className="text-slate-500">
                       {searchTerm ? 'No se encontraron registros que coincidan con la búsqueda' : 'No hay registros de membresías'}
                     </div>
                   </td>
@@ -974,10 +976,10 @@ export default function TablaRegistroMembresias() {
                     <tr key={registro.id_registro}>
                       <td>{registro.id_registro}</td>
                       <td>
-                        <div className="font-medium text-white">
+                        <div className="font-medium text-slate-900">
                           {getUsuarioNombre(registro.id_usuario)}
                         </div>
-                        <div className="text-sm text-cyan-400">
+                        <div className="text-sm text-indigo-600">
                           {getMembresiaTipo(registro.id_membresia)}
                         </div>
                         <div className="text-xs text-gray-500">
@@ -1085,7 +1087,7 @@ export default function TablaRegistroMembresias() {
                       <button
                         type="button"
                         onClick={() => setShowNewUserModal(true)}
-                        className="text-xs px-3 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded transition-colors"
+                        className="text-xs px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-colors"
                       >
                         + Nuevo Usuario
                       </button>
@@ -1110,7 +1112,7 @@ export default function TablaRegistroMembresias() {
                           <button
                             type="button"
                             onClick={clearUserSelection}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1121,23 +1123,23 @@ export default function TablaRegistroMembresias() {
                       
                       {/* Dropdown de autocompletado */}
                       {showUserDropdown && filteredUsuarios.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-h-60 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                           {filteredUsuarios.map((usuario) => (
                             <button
                               key={usuario.id_usuario}
                               type="button"
                               onClick={() => handleSelectUser(usuario)}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-700 focus:bg-gray-700 focus:outline-none border-b border-gray-700 last:border-b-0"
+                              className="w-full px-4 py-3 text-left hover:bg-slate-50 focus:bg-slate-50 focus:outline-none border-b border-slate-100 last:border-b-0"
                             >
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
                                   {usuario.nombre.charAt(0)}{usuario.apellido.charAt(0)}
                                 </div>
                                 <div className="flex-1">
-                                  <div className="font-medium text-white">
+                                  <div className="font-medium text-slate-900">
                                     {usuario.nombre} {usuario.apellido}
                                   </div>
-                                  <div className="text-sm text-gray-400">
+                                  <div className="text-sm text-slate-500">
                                     {usuario.telefono && (
                                       <span className="text-green-400">{usuario.telefono}</span>
                                     )}
@@ -1152,19 +1154,19 @@ export default function TablaRegistroMembresias() {
                             <button
                               type="button"
                               onClick={() => setShowNewUserModal(true)}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-700 focus:bg-gray-700 focus:outline-none border-t border-gray-600"
+                              className="w-full px-4 py-3 text-left hover:bg-slate-50 focus:bg-slate-50 focus:outline-none border-t border-slate-200"
                             >
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-cyan-600 rounded-full flex items-center justify-center text-white">
+                                <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white">
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                                   </svg>
                                 </div>
                                 <div className="flex-1">
-                                  <div className="font-medium text-cyan-400">
+                                  <div className="font-medium text-indigo-600">
                                     Crear nuevo usuario
                                   </div>
-                                  <div className="text-sm text-gray-400">
+                                  <div className="text-sm text-slate-500">
                                     No se encontraron usuarios con "{searchUsuarios}"
                                   </div>
                                 </div>
@@ -1186,7 +1188,7 @@ export default function TablaRegistroMembresias() {
                     </div>
                   ) : (
                     // Para edición, mostrar usuario fijo
-                    <div className="form-input bg-gray-800 text-gray-400 cursor-not-allowed">
+                    <div className="form-input bg-slate-50 text-slate-400 cursor-not-allowed">
                       {usuarios.find(u => u.id_usuario === formData.id_usuario)?.nombre} {usuarios.find(u => u.id_usuario === formData.id_usuario)?.apellido}
                       <span className="text-xs ml-2">(No editable)</span>
                     </div>
@@ -1248,7 +1250,7 @@ export default function TablaRegistroMembresias() {
 
                 {/* Sección de Pago Directo */}
                 {!editingRegistro && (
-                  <div className="border-t border-purple-700/30 pt-4 mt-4">
+                  <div className="border-t border-slate-200 pt-4 mt-4">
                     <div className="form-group">
                       <label className="flex items-center">
                         <input
@@ -1257,11 +1259,11 @@ export default function TablaRegistroMembresias() {
                           onChange={(e) => setFormData({...formData, registrarPago: e.target.checked})}
                           className="mr-2"
                         />
-                        <span className="form-label mb-0 text-cyan-400">
-                          💳 Registrar pago inmediatamente
+                        <span className="form-label mb-0 text-indigo-600">
+                          Registrar pago inmediatamente
                         </span>
                       </label>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Marca esta opción para registrar el pago al mismo tiempo que la membresía
                       </p>
                     </div>
@@ -1299,9 +1301,9 @@ export default function TablaRegistroMembresias() {
                 )}
 
                 {formData.fecha_inicio && formData.fecha_fin && (
-                  <div className="p-3 bg-gray-800/50 rounded-md mt-4">
-                    <p className="text-sm text-purple-300">
-                      <strong>📋 Resumen del Registro:</strong>
+                  <div className="p-3 bg-slate-50 rounded-md mt-4">
+                    <p className="text-sm text-slate-500">
+                      <strong>Resumen del Registro:</strong>
                       <br />
                       Inicio: {formatFecha(formData.fecha_inicio)}
                       <br />
@@ -1311,8 +1313,8 @@ export default function TablaRegistroMembresias() {
                       {formData.registrarPago && formData.montoPago && (
                         <>
                           <br />
-                          <span className="text-cyan-400">
-                            💰 Pago: {formData.montoPago} Bs ({formData.estadoPago})
+                          <span className="text-indigo-600">
+                            Pago: {formData.montoPago} Bs ({formData.estadoPago})
                           </span>
                         </>
                       )}
@@ -1371,19 +1373,19 @@ export default function TablaRegistroMembresias() {
       {/* Indicador de Registro Completado */}
       {registroCompletado && (
         <div className="fixed top-20 right-4 z-50 animate-slide-in-right">
-          <div className="bg-green-600 text-white px-6 py-4 rounded-lg shadow-xl flex items-center space-x-3 border-l-4 border-green-400">
+          <div className="bg-emerald-600 text-white px-6 py-4 rounded-lg shadow-xl flex items-center space-x-3 border-l-4 border-emerald-300">
             <div className="flex-shrink-0">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <p className="font-semibold">✅ Registro Completado</p>
+              <p className="font-semibold">Registro Completado</p>
               <p className="text-sm text-green-100">La operación se realizó exitosamente</p>
             </div>
             <button 
               onClick={() => setRegistroCompletado(false)}
-              className="ml-4 text-green-200 hover:text-white text-xl font-bold"
+              className="ml-4 text-emerald-100 hover:text-white text-xl font-bold"
             >
               ×
             </button>
@@ -1394,17 +1396,17 @@ export default function TablaRegistroMembresias() {
       {/* Indicador de Registro Fallido */}
       {registroFallido && (
         <div className="fixed top-20 right-4 z-50 animate-slide-in-right">
-          <div className="bg-red-600 text-white px-6 py-4 rounded-lg shadow-xl flex items-center space-x-3 border-l-4 border-red-400 max-w-md">
+          <div className="bg-red-600 text-white px-6 py-4 rounded-lg shadow-xl flex items-center space-x-3 border-l-4 border-red-300 max-w-md">
             <div className="flex-shrink-0">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div className="flex-1">
-              <p className="font-semibold">❌ Registro Fallido</p>
+              <p className="font-semibold">Registro Fallido</p>
               <p className="text-sm text-red-100">Ocurrió un error durante el proceso</p>
               {detalleError && (
-                <p className="text-xs text-red-200 mt-1 bg-red-700/30 p-2 rounded">
+                <p className="text-xs text-red-100 mt-1 bg-red-700/30 p-2 rounded">
                   {detalleError}
                 </p>
               )}
@@ -1414,7 +1416,7 @@ export default function TablaRegistroMembresias() {
                 setRegistroFallido(false);
                 setDetalleError('');
               }}
-              className="ml-4 text-red-200 hover:text-white text-xl font-bold"
+              className="ml-4 text-red-100 hover:text-white text-xl font-bold"
             >
               ×
             </button>
@@ -1427,7 +1429,7 @@ export default function TablaRegistroMembresias() {
         <div className="modal-overlay">
           <div className="modal-container max-w-md">
             <div className="modal-header">
-              <h3 className="modal-title">➕ Nuevo Usuario</h3>
+              <h3 className="modal-title">Nuevo Usuario</h3>
               <button 
                 className="modal-close" 
                 onClick={() => setShowNewUserModal(false)}
@@ -1493,9 +1495,9 @@ export default function TablaRegistroMembresias() {
                   </div>
                 </div>
 
-                <div className="p-3 bg-gray-800/50 rounded-md">
-                  <p className="text-xs text-purple-300">
-                    ℹ️ <strong>Nota:</strong> Una vez creado, el usuario será seleccionado automáticamente 
+                <div className="p-3 bg-slate-50 rounded-md">
+                  <p className="text-xs text-slate-500">
+                    <strong>Nota:</strong> Una vez creado, el usuario será seleccionado automáticamente 
                     para el registro de membresía.
                   </p>
                 </div>

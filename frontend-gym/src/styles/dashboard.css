@@ -1,50 +1,44 @@
 /* Estilos para el Dashboard */
 .dashboard-container {
   min-height: 100vh;
-  background: #0F0F23;
-  color: white;
+  background: #F8FAFC;
+  color: #0F172A;
 }
 
 .dashboard-sidebar {
-  background: linear-gradient(180deg, #4C1D95 0%, #2D1B69 100%);
-  border-right: 1px solid rgba(147, 51, 234, 0.3);
-  box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+  background: #FFFFFF;
+  border-right: 1px solid #E2E8F0;
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.04);
 }
 
 .dashboard-main {
-  background: #0F0F23;
+  background: #F8FAFC;
   min-height: 100vh;
 }
 
 .dashboard-header {
-  background: rgba(31, 41, 55, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(147, 51, 234, 0.2);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .dashboard-card {
-  background: linear-gradient(145deg, #1F2937 0%, #111827 100%);
-  border: 1px solid rgba(147, 51, 234, 0.3);
-  box-shadow: 
-    0 10px 25px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(147, 51, 234, 0.1);
-  transition: all 0.3s ease;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .dashboard-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 30px rgba(147, 51, 234, 0.2);
-  border-color: rgba(34, 211, 238, 0.5);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #C7D2FE;
 }
 
 .dashboard-tab {
-  background: transparent;
-  border: 1px solid rgba(147, 51, 234, 0.3);
-  color: rgba(147, 51, 234, 0.8);
-  transition: all 0.3s ease;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  color: #64748B;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   position: relative;
   overflow: hidden;
   min-height: 72px; /* Altura mínima para acomodar contenido */
@@ -56,33 +50,16 @@
   white-space: nowrap; /* Evita que el texto se corte */
 }
 
-.dashboard-tab::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.1), transparent);
-  transition: left 0.3s;
-}
-
-.dashboard-tab:hover::before {
-  left: 100%;
-}
-
 .dashboard-tab.active {
-  background: linear-gradient(135deg, #9333EA, #3B82F6);
-  color: white;
-  border-color: #22D3EE;
-  box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+  background: #EEF2FF;
+  color: #4F46E5;
+  border-color: #4F46E5;
 }
 
 .dashboard-tab:hover {
-  border-color: #22D3EE;
-  color: #22D3EE;
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
-  transform: translateY(-2px); /* Efecto de elevación */
+  border-color: #C7D2FE;
+  color: #4F46E5;
+  background: #F8FAFF;
 }
 
 /* Mejoras específicas para el contenido de los tabs */
@@ -119,31 +96,28 @@
   margin-top: 2px;
 }
 
-/* Badge de ADMIN mejorado */
-.dashboard-tab .text-xs.bg-purple-600 {
-  background: rgba(147, 51, 234, 0.8) !important;
-  border: 1px solid rgba(147, 51, 234, 0.5);
+/* Badge de ADMIN */
+.dashboard-tab .text-xs.bg-indigo-600 {
+  border: 1px solid #4338CA;
   font-size: 0.7rem;
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.dashboard-tab.active .text-xs.bg-purple-600 {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border-color: rgba(255, 255, 255, 0.3);
+.dashboard-tab.active .text-xs.bg-indigo-600 {
+  border-color: #FFFFFF;
 }
 
 .stats-card {
-  background: linear-gradient(145deg, #1F2937 0%, #111827 100%);
-  border: 1px solid rgba(147, 51, 234, 0.3);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
   position: relative;
   overflow: hidden;
 }
@@ -155,23 +129,21 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #9333EA, #22D3EE, #10B981);
+  background: #4F46E5;
 }
 
 .stats-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .stats-number {
-  color: #22D3EE;
+  color: #0F172A;
   font-size: 2rem;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
 }
 
 .stats-label {
-  color: rgba(147, 51, 234, 0.8);
+  color: #64748B;
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -184,20 +156,20 @@
     padding: 8px 12px;
     min-width: auto;
   }
-  
+
   .dashboard-tab .flex.items-center.gap-3,
   .dashboard-tab .flex.items-center.space-x-3 {
     gap: 6px;
   }
-  
+
   .dashboard-tab .text-lg {
     font-size: 1rem;
   }
-  
+
   .dashboard-tab .text-left > div:first-child {
     font-size: 0.85rem;
   }
-  
+
   .dashboard-tab .text-xs.opacity-75 {
     font-size: 0.7rem;
   }
@@ -211,25 +183,25 @@
     min-width: auto;
     flex: 0 0 auto;
   }
-  
+
   .dashboard-tab .text-xs.opacity-75 {
     display: none; /* Ocultar descripción en móvil */
   }
-  
+
   .dashboard-tab .text-left > div:first-child {
     margin-bottom: 0;
     font-size: 0.8rem;
   }
-  
+
   .dashboard-tab .flex.items-center.gap-3,
   .dashboard-tab .flex.items-center.space-x-3 {
     gap: 4px;
   }
-  
+
   .dashboard-tab .text-lg {
     font-size: 0.9rem;
   }
-  
+
   /* Hacer que los tabs sean más compactos en móvil */
   .dashboard-tab .text-left {
     padding-left: 0;
@@ -242,29 +214,14 @@
     padding: 4px 8px;
     border-radius: 6px;
   }
-  
+
   .dashboard-tab .text-left > div:first-child {
     font-size: 0.75rem;
   }
-  
+
   .dashboard-tab .text-lg {
     font-size: 0.85rem;
   }
-}
-
-/* Animaciones mejoradas */
-.dashboard-tab {
-  will-change: transform, box-shadow;
-}
-
-.dashboard-tab:hover {
-  animation: tab-pulse 0.6s ease-in-out;
-}
-
-@keyframes tab-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0.1); }
-  100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0); }
 }
 
 /* Mejoras para el contenedor de navegación */
@@ -291,11 +248,11 @@
     padding-left: 12px;
     padding-right: 12px;
   }
-  
+
   .dashboard-header h1 {
     font-size: 1rem;
   }
-  
+
   .dashboard-header .text-xs {
     font-size: 0.7rem;
   }
@@ -314,7 +271,7 @@
     border-radius: 8px;
     margin: 0 -8px;
   }
-  
+
   .dashboard-container main .max-w-7xl {
     padding-left: 12px;
     padding-right: 12px;
@@ -329,7 +286,7 @@
     left: 8px;
     width: auto;
   }
-  
+
   .bg-green-600.text-white {
     padding: 12px 16px;
     border-radius: 8px;
@@ -342,11 +299,11 @@
     min-width: 180px; /* Ancho mínimo en pantallas grandes */
     padding: 14px 24px;
   }
-  
+
   .dashboard-tab .text-left > div:first-child {
     font-size: 1rem;
   }
-  
+
   .dashboard-tab .text-xs.opacity-75 {
     font-size: 0.85rem;
   }

@@ -18,7 +18,7 @@ const SearchBar = ({
       <div className="relative">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           <svg
-            className="h-5 w-5 text-purple-400"
+            className="h-5 w-5 text-slate-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -35,7 +35,7 @@ const SearchBar = ({
           type="text"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-12 pr-10 py-3 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white placeholder-gray-400 focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+          className="w-full pl-12 pr-10 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-colors duration-200"
           placeholder={placeholder}
         />
         {showClearButton && searchTerm && (
@@ -43,7 +43,7 @@ const SearchBar = ({
             <button
               type="button"
               onClick={handleClear}
-              className="text-purple-400 hover:text-cyan-400 transition-colors duration-200 p-1 rounded-full hover:bg-purple-400/10"
+              className="text-slate-400 hover:text-indigo-600 transition-colors duration-200 p-1 rounded-full hover:bg-slate-100"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
@@ -58,7 +58,7 @@ const SearchBar = ({
         )}
       </div>
       {searchTerm && (
-        <div className="mt-2 text-xs text-purple-400">
+        <div className="mt-2 text-xs text-slate-500">
           Buscando: "{searchTerm}"
         </div>
       )}

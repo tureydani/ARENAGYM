@@ -185,11 +185,11 @@ export default function TablaMembresias() {
         <div className="flex items-center space-x-4">
           <h2 className="table-title">Gestión de Membresías</h2>
           <div className="stats-number text-lg">{totalItems}</div>
-          <span className="text-sm text-purple-300">
+          <span className="text-sm text-slate-500">
             {searchTerm ? 'resultados encontrados' : 'membresías registradas'}
           </span>
           {membresias.length > 0 && (
-            <div className="text-xs text-cyan-400">
+            <div className="text-xs text-indigo-600">
               (Total cargadas: {membresias.length})
             </div>
           )}
@@ -219,7 +219,7 @@ export default function TablaMembresias() {
       </div>
 
       {/* Barra de búsqueda */}
-      <div className="px-6 py-4 border-b border-purple-700/30">
+      <div className="px-6 py-4 border-b border-slate-200">
         <SearchBar
           searchTerm={searchTerm}
           onSearchChange={handleSearch}
@@ -257,7 +257,7 @@ export default function TablaMembresias() {
         <div className="px-6 py-8 text-center flex-1 flex items-center justify-center">
           <div>
             <div className="loading-spinner mx-auto mb-3"></div>
-            <p className="text-purple-300">Cargando datos...</p>
+            <p className="text-slate-500">Cargando datos...</p>
           </div>
         </div>
       )}
@@ -279,11 +279,11 @@ export default function TablaMembresias() {
               {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="text-center py-8">
-                    <div className="text-purple-300">
+                    <div className="text-slate-500">
                       {searchTerm ? (
                         <>No se encontraron membresías que coincidan con: "{searchTerm}"</>
                       ) : membresias.length === 0 ? (
-                        <>No hay membresías registradas. <span className="text-cyan-400">Crea la primera membresía usando el botón "+ Nueva Membresía"</span></>
+                        <>No hay membresías registradas. <span className="text-indigo-600">Crea la primera membresía usando el botón "+ Nueva Membresía"</span></>
                       ) : (
                         'No hay datos para mostrar'
                       )}
@@ -295,22 +295,22 @@ export default function TablaMembresias() {
                   <tr key={membresia.id_membresia}>
                     <td>{membresia.id_membresia}</td>
                     <td>
-                      <div className="font-medium text-white text-base">
+                      <div className="font-medium text-slate-900 text-base">
                         {membresia.tipo || 'Sin tipo definido'}
                       </div>
-                      <div className="text-xs text-gray-400 mt-1">
+                      <div className="text-xs text-slate-500 mt-1">
                         ID: {membresia.id_membresia}
                       </div>
                     </td>
                     <td>
-                      <div className="text-cyan-400 font-medium">
+                      <div className="text-indigo-600 font-medium">
                         {formatDuracion(membresia.duracion_dias)}
                       </div>
                       <div className="text-xs text-gray-500">
                         ({membresia.duracion_dias} días)
                       </div>
                     </td>
-                    <td className="font-bold text-green-400">
+                    <td className="font-bold text-emerald-600">
                       Bs. {parseFloat(membresia.precio).toFixed(2)}
                     </td>
                     <td>
@@ -409,8 +409,8 @@ export default function TablaMembresias() {
                 </div>
 
                 {formData.duracion_dias && (
-                  <div className="p-3 bg-gray-800/50 rounded-md">
-                    <p className="text-sm text-purple-300">
+                  <div className="p-3 bg-slate-50 rounded-md">
+                    <p className="text-sm text-slate-500">
                       <strong>Vista previa:</strong> {formatDuracion(parseInt(formData.duracion_dias) || 0)}
                     </p>
                   </div>

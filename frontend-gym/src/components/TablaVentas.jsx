@@ -5,6 +5,7 @@ import SearchBar from './ui/SearchBar';
 import Pagination from './ui/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import TablaPagos from './TablaPagos';
+import { IconDocumentDownload, IconPencil, IconTrash, IconEye, IconUser, IconShoppingCart, IconArchiveBox, IconCalendar, IconChartBar, IconCheckCircle, IconSave, IconBanknotes } from './ui/Icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -395,14 +396,14 @@ const TablaVentas = () => {
       // Mostrar notificación detallada con información de la caja y productos
       if (resultado.cajaAfectada) {
         alert(
-          `✅ Venta eliminada exitosamente\n\n` +
-          `💰 Monto total: Bs. ${resultado.montoVenta}\n` +
-          `👤 Cliente: ${resultado.cliente}\n` +
-          `📦 Productos restaurados: ${resultado.productosRestaurados}\n\n` +
-          `🏦 Caja afectada: ${resultado.cajaAfectada.descripcion}\n` +
-          `💵 Saldo anterior: Bs. ${resultado.cajaAfectada.saldoAnterior}\n` +
-          `💵 Saldo actual: Bs. ${resultado.cajaAfectada.saldoActual}\n` +
-          `📉 Diferencia: Bs. ${resultado.cajaAfectada.diferencia}`
+          `Venta eliminada exitosamente\n\n` +
+          `Monto total: Bs. ${resultado.montoVenta}\n` +
+          `Cliente: ${resultado.cliente}\n` +
+          `Productos restaurados: ${resultado.productosRestaurados}\n\n` +
+          `Caja afectada: ${resultado.cajaAfectada.descripcion}\n` +
+          `Saldo anterior: Bs. ${resultado.cajaAfectada.saldoAnterior}\n` +
+          `Saldo actual: Bs. ${resultado.cajaAfectada.saldoActual}\n` +
+          `Diferencia: Bs. ${resultado.cajaAfectada.diferencia}`
         );
       } else {
         alert('Venta eliminada exitosamente');
@@ -410,12 +411,12 @@ const TablaVentas = () => {
     } catch (error) {
       console.error('Error:', error);
       const errorMsg = error.response?.data?.error || 'Error al eliminar la venta';
-      alert(`❌ Error: ${errorMsg}`);
+      alert(`Error: ${errorMsg}`);
     }
   };
 
-  if (loading) return <div className="text-center py-8 text-white">Cargando ventas...</div>;
-  if (error) return <div className="text-center py-8 text-red-400">{error}</div>;
+  if (loading) return <div className="text-center py-8 text-slate-900">Cargando ventas...</div>;
+  if (error) return <div className="text-center py-8 text-red-600">{error}</div>;
 
   // Si está en la tab de pagos, mostrar TablaPagos
   if (activeTab === 'pagos') {
@@ -430,13 +431,13 @@ const TablaVentas = () => {
           className={`tab ${activeTab === 'pagos' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('pagos')}
         >
-          💳 Pagos
+          Pagos
         </button>
         <button 
           className={`tab ${activeTab === 'ventas' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('ventas')}
         >
-          🛒 Ventas
+          Ventas
         </button>
       </div>
 
@@ -456,13 +457,13 @@ const TablaVentas = () => {
 
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Gestión de Ventas</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Gestión de Ventas</h2>
         <div className="flex gap-3">
-          <Button 
-            onClick={() => setShowExportModal(true)} 
+          <Button
+            onClick={() => setShowExportModal(true)}
             className="btn-info enhanced-btn"
           >
-            <span className="btn-icon">📊</span>
+            <span className="btn-icon"><IconDocumentDownload /></span>
             Exportar
           </Button>
           <Button onClick={openCreateModal} className="btn-primary enhanced-btn">
@@ -499,7 +500,7 @@ const TablaVentas = () => {
             {paginatedData.length === 0 ? (
               <tr>
                 <td colSpan="8" className="text-center py-8">
-                  <div className="text-purple-300">
+                  <div className="text-slate-500">
                     {searchTerm ? 'No se encontraron ventas que coincidan con la búsqueda' : 'No hay ventas registradas'}
                   </div>
                 </td>
@@ -511,7 +512,7 @@ const TablaVentas = () => {
                   <td>
                     <div className="client-info">
                       <div className="client-name">
-                        👤 {venta.Usuario ? 
+                        {venta.Usuario ? 
                           `${venta.Usuario.nombre} ${venta.Usuario.apellido}` : 
                           `ID: ${venta.id_usuario}`
                         }
@@ -521,7 +522,7 @@ const TablaVentas = () => {
                   <td>
                     <div className="product-info">
                       <div className="product-summary">
-                        🛍️ {venta.Detalles && venta.Detalles.length > 0 ? 
+                        {venta.Detalles && venta.Detalles.length > 0 ? 
                           `${venta.Detalles.length} producto(s)` : 
                           'Sin detalles'
                         }
@@ -546,7 +547,7 @@ const TablaVentas = () => {
                   </td>
                   <td>
                     <div className="caja-info">
-                      🏦 {venta.Caja ? 
+                      {venta.Caja ? 
                         venta.Caja.descripcion || `Caja ${venta.id_caja}` : 
                         `Caja ${venta.id_caja}`
                       }
@@ -569,21 +570,21 @@ const TablaVentas = () => {
                         className="btn-info enhanced-btn-sm"
                         title="Ver detalle"
                       >
-                        <span className="btn-icon">👁️</span>
+                        <span className="btn-icon"><IconEye /></span>
                       </button>
                       <button
                         onClick={() => openEditModal(venta)}
                         className="btn-edit enhanced-btn-sm"
                         title="Editar venta"
                       >
-                        <span className="btn-icon">📝</span>
+                        <span className="btn-icon"><IconPencil /></span>
                       </button>
                       <button
                         onClick={() => handleDelete(venta.id_venta)}
                         className="btn-delete enhanced-btn-sm"
                         title="Eliminar venta"
                       >
-                        <span className="btn-icon">🗑️</span>
+                        <span className="btn-icon"><IconTrash /></span>
                       </button>
                     </div>
                   </td>
@@ -622,7 +623,7 @@ const TablaVentas = () => {
             <div className="modal-header modern-header">
               <div className="header-content">
                 <div className="header-icon">
-                  🛒
+                  <IconShoppingCart className="w-6 h-6" />
                 </div>
                 <div className="header-text">
                   <h3 className="modal-title">
@@ -649,23 +650,23 @@ const TablaVentas = () => {
                 <div className="form-section">
                   <div className="section-header">
                     <h4 className="section-title">
-                      <span className="section-icon">👤</span>
+                      <span className="section-icon"><IconUser /></span>
                       Cliente y Venta
                     </h4>
                   </div>
 
                   <div>
                     <label className="form-label modern">
-                      <span className="label-icon">👤</span>
+                      <span className="label-icon"><IconUser /></span>
                                               Cliente
                       {selectedCliente && formData.id_usuario && (
-                        <span style={{ 
-                          fontSize: '12px', 
-                          color: '#059669', 
+                        <span style={{
+                          fontSize: '12px',
+                          color: '#059669',
                           fontWeight: '500',
                           marginLeft: '8px'
                         }}>
-                          ✅
+                          <IconCheckCircle className="w-3 h-3 inline-block" />
                         </span>
                       )}
                     </label>
@@ -742,7 +743,7 @@ const TablaVentas = () => {
                     {selectedCliente && (
                       <div className="membership-preview">
                         <div className="preview-header">
-                          <span className="preview-icon">�</span>
+                          <span className="preview-icon"><IconEye /></span>
                           Cliente Seleccionado
                         </div>
                         <div className="preview-content">
@@ -782,27 +783,27 @@ const TablaVentas = () => {
                 <div className="form-section">
                   <div className="section-header">
                     <h4 className="section-title">
-                      <span className="section-icon">🛒</span>
+                      <span className="section-icon"><IconShoppingCart /></span>
                       Producto
                     </h4>
                   </div>
-                  
+
                   <div>
                     <label className="form-label modern">
-                      <span className="label-icon">�</span>
+                      <span className="label-icon"><IconShoppingCart /></span>
                       Producto
                       {selectedProducto && (
-                        <span style={{ 
-                          fontSize: '12px', 
-                          color: '#059669', 
+                        <span style={{
+                          fontSize: '12px',
+                          color: '#059669',
                           fontWeight: '500',
                           marginLeft: '8px'
                         }}>
-                          ✅
+                          <IconCheckCircle className="w-3 h-3 inline-block" />
                         </span>
                       )}
                     </label>
-                    
+
                     {/* Selector de productos con botón deslizable */}
                     {!selectedProducto ? (
                       <div className="product-selector">
@@ -811,7 +812,7 @@ const TablaVentas = () => {
                           className="btn-secondary modern-btn product-selector-btn"
                           onClick={() => setShowProductList(!showProductList)}
                         >
-                          <span className="label-icon">🛒</span>
+                          <span className="label-icon"><IconShoppingCart /></span>
                           Seleccionar Producto
                           <span className="select-arrow">{showProductList ? '▲' : '▼'}</span>
                         </button>
@@ -866,7 +867,7 @@ const TablaVentas = () => {
                 <div className="form-section">
                   <div className="section-header">
                     <h4 className="section-title">
-                      <span className="section-icon">🏪</span>
+                      <span className="section-icon"><IconArchiveBox /></span>
                       Datos de la Venta
                     </h4>
                   </div>
@@ -874,7 +875,7 @@ const TablaVentas = () => {
                   <div className="form-grid">
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">🏦</span>
+                        <span className="label-icon"><IconArchiveBox /></span>
                         Caja
                       </label>
                       <div className="enhanced-select">
@@ -898,7 +899,7 @@ const TablaVentas = () => {
 
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">📅</span>
+                        <span className="label-icon"><IconCalendar /></span>
                         Fecha de Venta
                       </label>
                       <input
@@ -912,7 +913,7 @@ const TablaVentas = () => {
 
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">💰</span>
+                        <span className="label-icon"><IconBanknotes /></span>
                         Total de Venta
                         {selectedProducto && formData.total && (
                           <span style={{ 
@@ -921,7 +922,7 @@ const TablaVentas = () => {
                             fontWeight: '500',
                             marginLeft: '8px'
                           }}>
-                            ✅ Auto-completado
+                            Auto-completado
                           </span>
                         )}
                       </label>
@@ -942,7 +943,7 @@ const TablaVentas = () => {
 
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">📊</span>
+                        <span className="label-icon"><IconChartBar /></span>
                         Estado de la Venta
                       </label>
                       <div className="enhanced-select">
@@ -951,9 +952,9 @@ const TablaVentas = () => {
                           onChange={(e) => setFormData({...formData, estado: e.target.value})}
                           className="form-select modern"
                         >
-                          <option value="Completada">✅ Completada</option>
-                          <option value="Pendiente">⏳ Pendiente</option>
-                          <option value="Cancelada">❌ Cancelada</option>
+                          <option value="Completada">Completada</option>
+                          <option value="Pendiente">Pendiente</option>
+                          <option value="Cancelada">Cancelada</option>
                         </select>
                         <span className="select-arrow">▼</span>
                       </div>
@@ -976,7 +977,7 @@ const TablaVentas = () => {
                     className="btn-primary modern-btn"
                     disabled={!formData.id_usuario || !formData.id_admin || !formData.id_caja || !formData.total}
                   >
-                    <span className="btn-icon">{editingVenta ? '✏️' : '💾'}</span>
+                    <span className="btn-icon">{editingVenta ? <IconPencil /> : <IconSave />}</span>
                     {editingVenta ? 'Actualizar Venta' : 'Registrar Venta'}
                   </button>
                 </div>
@@ -991,7 +992,7 @@ const TablaVentas = () => {
         <div className="simple-modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowDetalleModal(false)}>
           <div className="simple-modal-container">
             <div className="simple-modal-header">
-              <h3>📋 Detalle de Venta #{selectedVenta.id_venta}</h3>
+              <h3>Detalle de Venta #{selectedVenta.id_venta}</h3>
               <button 
                 onClick={() => setShowDetalleModal(false)}
                 className="simple-modal-close"
@@ -1003,15 +1004,15 @@ const TablaVentas = () => {
             <div className="simple-modal-body">
               {/* Información General */}
               <div className="simple-info-section">
-                <h4>📋 Información General</h4>
+                <h4>Información General</h4>
                 <div className="simple-info-grid">
-                  <div><strong>👤 Cliente:</strong> {selectedVenta.Usuario ? `${selectedVenta.Usuario.nombre} ${selectedVenta.Usuario.apellido}` : 'N/A'}</div>
-                  <div><strong>👨‍💼 Administrativo:</strong> {selectedVenta.Administrativo ? `${selectedVenta.Administrativo.nombre} ${selectedVenta.Administrativo.apellido}` : 'N/A'}</div>
-                  <div><strong>💰 Caja:</strong> {selectedVenta.Caja ? selectedVenta.Caja.descripcion || `Caja ${selectedVenta.id_caja}` : 'N/A'}</div>
-                  <div><strong>📅 Fecha:</strong> {new Date(selectedVenta.fecha_venta).toLocaleDateString('es-ES')}</div>
-                  <div><strong>📊 Estado:</strong> 
-                    <span className={selectedVenta.estado === 'Completada' ? 'text-green-400' : selectedVenta.estado === 'Pendiente' ? 'text-yellow-400' : 'text-red-400'}>
-                      {selectedVenta.estado === 'Completada' ? ' ✅' : selectedVenta.estado === 'Pendiente' ? ' ⏳' : ' ❌'} {selectedVenta.estado}
+                  <div><strong>Cliente:</strong> {selectedVenta.Usuario ? `${selectedVenta.Usuario.nombre} ${selectedVenta.Usuario.apellido}` : 'N/A'}</div>
+                  <div><strong>Administrativo:</strong> {selectedVenta.Administrativo ? `${selectedVenta.Administrativo.nombre} ${selectedVenta.Administrativo.apellido}` : 'N/A'}</div>
+                  <div><strong>Caja:</strong> {selectedVenta.Caja ? selectedVenta.Caja.descripcion || `Caja ${selectedVenta.id_caja}` : 'N/A'}</div>
+                  <div><strong>Fecha:</strong> {new Date(selectedVenta.fecha_venta).toLocaleDateString('es-ES')}</div>
+                  <div><strong>Estado:</strong>
+                    <span className={selectedVenta.estado === 'Completada' ? 'text-emerald-600' : selectedVenta.estado === 'Pendiente' ? 'text-amber-600' : 'text-red-600'}>
+                      {' '}{selectedVenta.estado}
                     </span>
                   </div>
                 </div>
@@ -1019,7 +1020,7 @@ const TablaVentas = () => {
 
               {/* Productos */}
               <div className="simple-info-section">
-                <h4>🛒 Productos Vendidos</h4>
+                <h4>Productos Vendidos</h4>
                 <div className="simple-table">
                   <table>
                     <thead>
@@ -1038,20 +1039,20 @@ const TablaVentas = () => {
                               <div>
                                 <strong>{detalle.Producto ? detalle.Producto.nombre : `Producto ID: ${detalle.id_producto}`}</strong>
                                 {detalle.Producto?.descripcion && <br />}
-                                <small className="text-gray-400">{detalle.Producto?.descripcion}</small>
+                                <small className="text-slate-500">{detalle.Producto?.descripcion}</small>
                               </div>
                             </td>
                             <td className="text-center">
                               <span className="quantity-badge">{detalle.cantidad}x</span>
                             </td>
-                            <td className="text-green-400"><strong>Bs. {parseFloat(detalle.precio_unitario).toFixed(2)}</strong></td>
-                            <td className="text-cyan-400"><strong>Bs. {parseFloat(detalle.subtotal).toFixed(2)}</strong></td>
+                            <td className="text-emerald-600"><strong>Bs. {parseFloat(detalle.precio_unitario).toFixed(2)}</strong></td>
+                            <td className="text-indigo-600"><strong>Bs. {parseFloat(detalle.subtotal).toFixed(2)}</strong></td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan="4" className="text-center text-gray-400 py-4">
-                            📦 No hay productos registrados en esta venta
+                          <td colSpan="4" className="text-center text-slate-500 py-4">
+                            No hay productos registrados en esta venta
                           </td>
                         </tr>
                       )}
@@ -1063,7 +1064,7 @@ const TablaVentas = () => {
               {/* Total */}
               <div className="simple-total-section">
                 <div className="simple-total">
-                  💰 Total: <strong>Bs. {parseFloat(selectedVenta.total).toFixed(2)}</strong>
+                  Total: <strong>Bs. {parseFloat(selectedVenta.total).toFixed(2)}</strong>
                 </div>
                 <div className="simple-total-note">
                   Bolivianos • Venta #{selectedVenta.id_venta}

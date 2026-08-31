@@ -1,30 +1,29 @@
 /* Estilos para componentes de tablas */
 .table-container {
-  background: linear-gradient(145deg, #1F2937 0%, #111827 100%);
-  border: 1px solid rgba(147, 51, 234, 0.3);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  /* Altura mínima para asegurar que los modales se vean completamente */
-  min-height: 600px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  /* Altura mínima compacta: se adapta al contenido en vez de forzar una tarjeta muy alta */
+  min-height: 380px;
 }
 
 /* Altura mínima específica cuando el contenedor es relativo (para modales) */
 .table-container.relative {
-  min-height: 700px;
+  min-height: 460px;
 }
 
 .table-header {
-  background: linear-gradient(135deg, #4C1D95, #2D1B69);
-  border-bottom: 1px solid rgba(147, 51, 234, 0.5);
-  padding: 1.5rem;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 1rem 1.25rem;
 }
 
 .table-title {
-  color: white;
+  color: #0F172A;
   font-size: 1.5rem;
   font-weight: 600;
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
 }
 
 .table-actions {
@@ -34,58 +33,56 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #10B981, #22D3EE);
-  color: white;
+  background: #4F46E5;
+  color: #FFFFFF;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(34, 211, 238, 0.4);
+  background: #4338CA;
 }
 
 .btn-secondary {
-  background: rgba(107, 114, 128, 0.8);
-  color: white;
-  border: 1px solid rgba(147, 51, 234, 0.3);
+  background: #F1F5F9;
+  color: #334155;
+  border: 1px solid #E2E8F0;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(147, 51, 234, 0.6);
-  border-color: #22D3EE;
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.3);
+  background: #E2E8F0;
+  border-color: #CBD5E1;
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #EF4444, #DC2626);
-  color: white;
+  background: #DC2626;
+  color: #FFFFFF;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
 }
 
 .btn-danger:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+  background: #B91C1C;
 }
 
 .table-wrapper {
-  background: #0F0F23;
-  max-height: 600px;
-  overflow-y: auto;
+  background: #F8FAFC;
+  /* Sin límite propio: el scroll lo maneja la página completa para evitar
+     una doble barra de scroll (una del contenedor y otra de la ventana). */
+  max-height: none;
+  overflow-y: visible;
   /* Asegurar altura mínima para tablas vacías */
-  min-height: 300px;
+  min-height: 200px;
   /* Centrar contenido cuando no hay datos */
   display: flex;
   flex-direction: column;
@@ -106,12 +103,12 @@
 }
 
 .data-table th {
-  background: linear-gradient(135deg, #374151, #1F2937);
-  color: #22D3EE;
+  background: #F8FAFC;
+  color: #334155;
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  border-bottom: 1px solid rgba(147, 51, 234, 0.3);
+  border-bottom: 1px solid rgba(79, 70, 229, 0.3);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -119,8 +116,8 @@
 
 .data-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(147, 51, 234, 0.2);
-  color: #E5E7EB !important;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+  color: #334155 !important;
   transition: all 0.3s ease;
 }
 
@@ -128,14 +125,14 @@
 .data-table td span,
 .data-table td div,
 .data-table td p {
-  color: #E5E7EB !important;
+  color: #334155 !important;
 }
 
 /* Estilos especiales para nombres de clientes */
 .data-table td .client-name,
 .data-table td[data-label*="Cliente"],
 .data-table td[data-label*="Usuario"] {
-  color: #F3F4F6 !important;
+  color: #334155 !important;
   font-weight: 600 !important;
 }
 
@@ -143,30 +140,29 @@
 .data-table td strong,
 .data-table td .name,
 .data-table td .usuario-nombre {
-  color: #F9FAFB !important;
+  color: #0F172A !important;
   font-weight: 600 !important;
 }
 
 .data-table tr:hover {
-  background: rgba(147, 51, 234, 0.1);
+  background: rgba(79, 70, 229, 0.1);
 }
 
 .data-table tr:hover td {
-  color: #FFFFFF !important;
+  color: #0F172A !important;
 }
 
 .data-table tr:hover td span,
 .data-table tr:hover td div,
 .data-table tr:hover td p {
-  color: #FFFFFF !important;
+  color: #0F172A !important;
 }
 
 .data-table tr:hover td .client-name,
 .data-table tr:hover td strong,
 .data-table tr:hover td .name,
 .data-table tr:hover td .usuario-nombre {
-  color: #FFFFFF !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: #0F172A !important;
 }
 
 .status-badge {
@@ -197,8 +193,8 @@
 }
 
 .loading-spinner {
-  border: 3px solid rgba(147, 51, 234, 0.3);
-  border-top: 3px solid #22D3EE;
+  border: 3px solid rgba(79, 70, 229, 0.3);
+  border-top: 3px solid #4F46E5;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -229,13 +225,13 @@
 }
 
 .empty-state-text {
-  color: #9CA3AF;
+  color: #64748B;
   font-size: 1rem;
   margin-bottom: 0.5rem;
 }
 
 .empty-state-subtext {
-  color: #6B7280;
+  color: #64748B;
   font-size: 0.875rem;
 }
 
@@ -521,11 +517,11 @@
 
 /* Estilos mejorados para tablas modernas */
 .modern-table {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.8) 100%);
+  background: #FFFFFF;
   border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #E2E8F0;
 }
 
 .enhanced-table {
@@ -536,8 +532,8 @@
 }
 
 .enhanced-table th {
-  background: linear-gradient(135deg, #8B5CF6 0%, #A855F7 100%);
-  color: white;
+  background: #4F46E5;
+  color: #FFFFFF;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -556,15 +552,13 @@
 }
 
 .table-row-enhanced {
-  background: rgba(31, 41, 55, 0.6);
-  transition: all 0.3s ease;
-  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+  background: #FFFFFF;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #F1F5F9;
 }
 
 .table-row-enhanced:hover {
-  background: rgba(139, 92, 246, 0.1);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+  background: #F8FAFF;
 }
 
 .table-row-enhanced td {
@@ -576,7 +570,7 @@
 /* Celdas específicas */
 .id-cell {
   font-weight: bold;
-  color: #A855F7;
+  color: #4F46E5;
   font-size: 0.9rem;
 }
 
@@ -588,13 +582,13 @@
 
 .client-name {
   font-weight: 600;
-  color: #E5E7EB;
+  color: #334155;
   font-size: 0.9rem;
 }
 
 .client-id {
   font-size: 0.75rem;
-  color: #9CA3AF;
+  color: #64748B;
 }
 
 .service-info {
@@ -611,7 +605,7 @@
 
 .service-duration {
   font-size: 0.75rem;
-  color: #6B7280;
+  color: #64748B;
 }
 
 .price-cell {
@@ -619,15 +613,12 @@
 }
 
 .price-amount {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  background: #059669;
   color: #FFFFFF;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-weight: 700;
   font-size: 0.85rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .caja-info {
@@ -637,7 +628,7 @@
 }
 
 .date-cell {
-  color: #D1D5DB;
+  color: #64748B;
   font-size: 0.85rem;
 }
 
@@ -646,34 +637,31 @@
 }
 
 .amount-paid {
-  background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%);
+  background: #4F46E5;
   color: #FFFFFF;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-weight: 700;
   font-size: 0.85rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Estados mejorados */
 .status-complete {
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: white;
-  border: none;
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
 }
 
 .status-pending {
-  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-  color: white;
-  border: none;
+  background: #FFFBEB;
+  color: #D97706;
+  border: 1px solid #FDE68A;
 }
 
 .status-partial {
-  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-  color: white;
-  border: none;
+  background: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
 }
 
 /* Botones de acción mejorados */
@@ -696,26 +684,25 @@
 }
 
 .enhanced-btn-sm:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .btn-edit {
-  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-  color: white;
+  background: #4F46E5;
+  color: #FFFFFF;
 }
 
 .btn-edit:hover {
-  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+  background: #4338CA;
 }
 
 .btn-delete {
-  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
-  color: white;
+  background: #DC2626;
+  color: #FFFFFF;
 }
 
 .btn-delete:hover {
-  background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+  background: #B91C1C;
 }
 
 /* Estilos específicos para productos en ventas */
@@ -727,13 +714,13 @@
 
 .product-summary {
   font-weight: 500;
-  color: #8B5CF6;
+  color: #4F46E5;
   font-size: 0.85rem;
 }
 
 .product-preview {
   font-size: 0.75rem;
-  color: #9CA3AF;
+  color: #64748B;
   line-height: 1.2;
 }
 
@@ -747,24 +734,21 @@
 }
 
 .total-amount {
-  background: linear-gradient(135deg, #047857 0%, #059669 100%);
+  background: #059669;
   color: #FFFFFF;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-weight: 700;
   font-size: 0.9rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .btn-info {
-  background: linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%);
-  color: white;
+  background: #0284C7;
+  color: #FFFFFF;
 }
 
 .btn-info:hover {
-  background: linear-gradient(135deg, #0284C7 0%, #0369A1 100%);
+  background: #0369A1;
 }
 
 @media (max-width: 768px) {
@@ -787,20 +771,15 @@
 
 /* Estilos específicos para scroll simple en pagos */
 .pagos-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #0F0F23;
-  overflow: hidden;
+  /* Ya no fuerza 100vh propio: esta pestaña vive dentro del dashboard
+     (que ya tiene su header/tabs/footer), forzar el viewport completo aqui
+     duplicaba el scroll. El alto se adapta al contenido real. */
+  background: #F8FAFC;
 }
 
 .pagos-content-wrapper {
-  flex: 1;
-  overflow-y: auto;
   overflow-x: hidden;
   padding: 0 1rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(147, 51, 234, 0.5) rgba(31, 41, 55, 0.3);
 }
 
 .pagos-content-wrapper::-webkit-scrollbar {
@@ -808,39 +787,37 @@
 }
 
 .pagos-content-wrapper::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.3);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   margin: 4px;
 }
 
 .pagos-content-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(147, 51, 234, 0.5);
+  background: rgba(79, 70, 229, 0.5);
   border-radius: 6px;
   border: 2px solid rgba(15, 15, 35, 0.3);
 }
 
 .pagos-content-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(147, 51, 234, 0.7);
+  background: rgba(79, 70, 229, 0.7);
 }
 
 .pagos-content {
   padding: 1rem 0;
-  min-height: calc(100vh - 200px);
+  min-height: 240px;
 }
 
 .pagos-pagination {
   flex-shrink: 0;
   padding: 1rem;
-  background: rgba(31, 41, 55, 0.8);
-  border-top: 1px solid rgba(147, 51, 234, 0.3);
-  backdrop-filter: blur(10px);
+  background: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
 }
 
 .tab-container {
   flex-shrink: 0;
-  background: rgba(31, 41, 55, 0.9);
-  border-bottom: 1px solid rgba(147, 51, 234, 0.3);
-  backdrop-filter: blur(10px);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
 }
 
 /* Asegurar que la tabla tenga scroll suave */
@@ -859,33 +836,22 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 2px;
+  width: 1px;
   height: 100%;
-  background: linear-gradient(to bottom, 
-    rgba(147, 51, 234, 0.3), 
-    transparent 10%, 
-    transparent 90%, 
-    rgba(147, 51, 234, 0.3)
-  );
+  background: #E2E8F0;
   pointer-events: none;
 }
 
 /* Estilos específicos para scroll simple en ventas */
 .ventas-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: #0F0F23;
-  overflow: hidden;
+  /* Ver nota en .pagos-container: se evita forzar 100vh propio para no
+     duplicar el scroll dentro del dashboard. */
+  background: #F8FAFC;
 }
 
 .ventas-content-wrapper {
-  flex: 1;
-  overflow-y: auto;
   overflow-x: hidden;
   padding: 0 1rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(6, 182, 212, 0.5) rgba(31, 41, 55, 0.3);
 }
 
 .ventas-content-wrapper::-webkit-scrollbar {
@@ -893,32 +859,31 @@
 }
 
 .ventas-content-wrapper::-webkit-scrollbar-track {
-  background: rgba(31, 41, 55, 0.3);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 6px;
   margin: 4px;
 }
 
 .ventas-content-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(6, 182, 212, 0.5);
+  background: rgba(79, 70, 229, 0.08);
   border-radius: 6px;
   border: 2px solid rgba(15, 15, 35, 0.3);
 }
 
 .ventas-content-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(6, 182, 212, 0.7);
+  background: rgba(79, 70, 229, 0.08);
 }
 
 .ventas-content {
   padding: 1rem 0;
-  min-height: calc(100vh - 200px);
+  min-height: 240px;
 }
 
 .ventas-pagination {
   flex-shrink: 0;
   padding: 1rem;
-  background: rgba(31, 41, 55, 0.8);
-  border-top: 1px solid rgba(6, 182, 212, 0.3);
-  backdrop-filter: blur(10px);
+  background: #FFFFFF;
+  border-top: 1px solid #E2E8F0;
 }
 
 /* Asegurar que la tabla tenga scroll suave en ventas */
@@ -937,30 +902,24 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 2px;
+  width: 1px;
   height: 100%;
-  background: linear-gradient(to bottom, 
-    rgba(6, 182, 212, 0.3), 
-    transparent 10%, 
-    transparent 90%, 
-    rgba(6, 182, 212, 0.3)
-  );
+  background: #E2E8F0;
   pointer-events: none;
 }
 
 /* ESTILOS ESPECÍFICOS PARA MEJORAR VISIBILIDAD DE NOMBRES DE CLIENTES */
 
 /* Estilos específicos para nombres de clientes en tablas */
-.client-name, 
-.name, 
+.client-name,
+.name,
 .usuario-nombre,
 td .client-name,
 td .name,
 td .usuario-nombre {
-  color: #F9FAFB !important;
+  color: #0F172A !important;
   font-weight: 600 !important;
   font-size: 14px !important;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
   letter-spacing: 0.025em !important;
   line-height: 1.4 !important;
 }
@@ -968,17 +927,17 @@ td .usuario-nombre {
 /* Información específica del cliente */
 .client-info .client-name,
 .client-info .name {
-  color: #FFFFFF !important;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2));
+  color: #0F172A !important;
+  background: #EEF2FF;
   padding: 2px 6px !important;
   border-radius: 4px !important;
-  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+  border: 1px solid #E0E7FF !important;
   display: inline-block !important;
 }
 
 /* ID del cliente con mejor contraste */
 .client-id {
-  color: #E5E7EB !important;
+  color: #334155 !important;
   font-size: 12px !important;
   opacity: 0.9 !important;
   font-weight: 500 !important;
@@ -991,39 +950,36 @@ td .usuario-nombre {
 .table-row-enhanced:hover .client-name,
 .table-row-enhanced:hover .name,
 .table-row-enhanced:hover .usuario-nombre {
-  color: #FFFFFF !important;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6) !important;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.4)) !important;
-  border-color: rgba(139, 92, 246, 0.6) !important;
-  transform: scale(1.02) !important;
-  transition: all 0.2s ease !important;
+  color: #0F172A !important;
+  background: #E0E7FF !important;
+  border-color: #C7D2FE !important;
+  transition: background-color 0.2s ease !important;
 }
 
 .data-table tr:hover .client-id,
 .table-row-enhanced:hover .client-id {
-  color: #F3F4F6 !important;
+  color: #334155 !important;
   opacity: 1 !important;
 }
 
 /* Estilos para elementos relacionados con información del cliente */
 .service-info .service-type,
 .product-info .product-summary {
-  color: #E5E7EB !important;
+  color: #334155 !important;
   font-weight: 500 !important;
 }
 
 .service-duration,
 .product-preview {
-  color: #D1D5DB !important;
+  color: #64748B !important;
   font-size: 12px !important;
   opacity: 0.8 !important;
 }
 
 /* Información de caja con mejor contraste */
 .caja-info {
-  color: #FCD34D !important;
+  color: #D97706 !important;
   font-weight: 500 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
 }
 
 /* Hover para información de servicio y caja */
@@ -1031,19 +987,19 @@ td .usuario-nombre {
 .data-table tr:hover .product-summary,
 .table-row-enhanced:hover .service-type,
 .table-row-enhanced:hover .product-summary {
-  color: #FFFFFF !important;
+  color: #0F172A !important;
 }
 
 .data-table tr:hover .caja-info,
 .table-row-enhanced:hover .caja-info {
-  color: #FEF3C7 !important;
+  color: #B45309 !important;
 }
 
 .data-table tr:hover .service-duration,
 .data-table tr:hover .product-preview,
 .table-row-enhanced:hover .service-duration,
 .table-row-enhanced:hover .product-preview {
-  color: #F3F4F6 !important;
+  color: #334155 !important;
   opacity: 1 !important;
 }
 
@@ -1051,7 +1007,6 @@ td .usuario-nombre {
 .enhanced-table .client-name,
 .enhanced-table .name,
 .enhanced-table .usuario-nombre {
-  background: rgba(255, 255, 255, 0.1) !important;
   border-radius: 4px !important;
   padding: 2px 4px !important;
   display: inline-block !important;

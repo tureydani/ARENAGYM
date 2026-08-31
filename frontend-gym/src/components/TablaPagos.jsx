@@ -5,6 +5,7 @@ import SearchBar from './ui/SearchBar';
 import Pagination from './ui/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import TablaVentas from './TablaVentas';
+import { IconDocumentDownload, IconPencil, IconTrash, IconMagnifyingGlass, IconIdentification, IconEye, IconBanknotes, IconArchiveBox, IconCalendar, IconChartBar, IconCheckCircle, IconSave } from './ui/Icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -416,13 +417,13 @@ const TablaPagos = () => {
       // Mostrar notificación detallada con información de la caja
       if (resultado.cajaAfectada) {
         alert(
-          `✅ Pago eliminado exitosamente\n\n` +
-          `💰 Monto: Bs. ${resultado.montoPago}\n` +
-          `👤 Cliente: ${resultado.cliente}\n\n` +
-          `📦 Caja afectada: ${resultado.cajaAfectada.descripcion}\n` +
-          `💵 Saldo anterior: Bs. ${resultado.cajaAfectada.saldoAnterior}\n` +
-          `💵 Saldo actual: Bs. ${resultado.cajaAfectada.saldoActual}\n` +
-          `📉 Diferencia: Bs. ${resultado.cajaAfectada.diferencia}`
+          `Pago eliminado exitosamente\n\n` +
+          `Monto: Bs. ${resultado.montoPago}\n` +
+          `Cliente: ${resultado.cliente}\n\n` +
+          `Caja afectada: ${resultado.cajaAfectada.descripcion}\n` +
+          `Saldo anterior: Bs. ${resultado.cajaAfectada.saldoAnterior}\n` +
+          `Saldo actual: Bs. ${resultado.cajaAfectada.saldoActual}\n` +
+          `Diferencia: Bs. ${resultado.cajaAfectada.diferencia}`
         );
       } else {
         alert('Pago eliminado exitosamente');
@@ -430,7 +431,7 @@ const TablaPagos = () => {
     } catch (error) {
       console.error('Error:', error);
       const errorMsg = error.response?.data?.error || 'Error al eliminar el pago';
-      alert(`❌ Error: ${errorMsg}`);
+      alert(`Error: ${errorMsg}`);
     }
   };
 
@@ -438,7 +439,7 @@ const TablaPagos = () => {
     return <TablaVentas />;
   }
 
-  if (loading) return <div className="text-center py-8 text-white">Cargando pagos...</div>;
+  if (loading) return <div className="text-center py-8 text-slate-900">Cargando pagos...</div>;
   if (error) return <div className="text-center py-8 text-red-400">{error}</div>;
 
   return (
@@ -449,13 +450,13 @@ const TablaPagos = () => {
           className={`tab ${activeTab === 'pagos' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('pagos')}
         >
-          💳 Pagos
+          Pagos
         </button>
         <button 
           className={`tab ${activeTab === 'ventas' ? 'tab-active' : ''}`}
           onClick={() => setActiveTab('ventas')}
         >
-          🛒 Ventas
+          Ventas
         </button>
       </div>
 
@@ -474,13 +475,13 @@ const TablaPagos = () => {
         <div className="pagos-content">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Gestión de Pagos</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Gestión de Pagos</h2>
             <div className="flex gap-3">
               <Button 
                 onClick={() => setShowExportModal(true)} 
                 className="btn-info enhanced-btn"
               >
-                <span className="btn-icon">📊</span>
+                <span className="btn-icon"><IconDocumentDownload /></span>
                 Exportar
               </Button>
               <Button onClick={openCreateModal} className="btn-primary enhanced-btn">
@@ -498,7 +499,7 @@ const TablaPagos = () => {
               placeholder="Buscar por ID, cliente, membresía, monto, estado..."
             />
             {searchTerm && (
-              <div className="mt-2 text-sm text-purple-300">
+              <div className="mt-2 text-sm text-slate-500">
                 {filteredPagos.length === 0 
                   ? `No se encontraron pagos para "${searchTerm}"` 
                   : `${filteredPagos.length} pago(s) encontrado(s)`
@@ -528,7 +529,7 @@ const TablaPagos = () => {
             {paginatedData.length === 0 ? (
               <tr>
                 <td colSpan="9" className="text-center py-8">
-                  <div className="text-purple-300">
+                  <div className="text-slate-500">
                     {searchTerm ? 'No se encontraron pagos que coincidan con la búsqueda' : 'No hay pagos registrados'}
                   </div>
                 </td>
@@ -541,13 +542,13 @@ const TablaPagos = () => {
                     <td className="id-cell">{pago.id_pago}</td>
                     <td>
                       <div className="client-info">
-                        <div className="client-name">👤 {registroInfo.usuario}</div>
+                        <div className="client-name">{registroInfo.usuario}</div>
                         <div className="client-id">ID: #{pago.id_registro}</div>
                       </div>
                     </td>
                     <td>
                       <div className="service-info">
-                        <div className="service-type">🏃‍♂️ {registroInfo.membresia}</div>
+                        <div className="service-type">{registroInfo.membresia}</div>
                         <div className="service-duration">{registroInfo.duracion}</div>
                       </div>
                     </td>
@@ -558,7 +559,7 @@ const TablaPagos = () => {
                     </td>
                     <td>
                       <div className="caja-info">
-                        🏦 {pago.Caja ? 
+                        {pago.Caja ? 
                           pago.Caja.descripcion || `Caja ${pago.id_caja}` : 
                           `Caja ${pago.id_caja}`
                         }
@@ -586,14 +587,14 @@ const TablaPagos = () => {
                           className="btn-edit enhanced-btn-sm"
                           title="Editar pago"
                         >
-                          <span className="btn-icon">📝</span>
+                          <span className="btn-icon"><IconPencil /></span>
                         </button>
                         <button
                           onClick={() => handleDelete(pago.id_pago)}
                           className="btn-delete enhanced-btn-sm"
                           title="Eliminar pago"
                         >
-                          <span className="btn-icon">🗑️</span>
+                          <span className="btn-icon"><IconTrash /></span>
                         </button>
                       </div>
                     </td>
@@ -633,7 +634,7 @@ const TablaPagos = () => {
             <div className="modal-header modern-header">
               <div className="header-content">
                 <div className="header-icon">
-                  💳
+                  
                 </div>
                 <div className="header-text">
                   <h3 className="modal-title">
@@ -660,14 +661,14 @@ const TablaPagos = () => {
                 <div className="form-section">
                   <div className="section-header">
                     <h4 className="section-title">
-                      <span className="section-icon">🔍</span>
+                      <span className="section-icon"><IconMagnifyingGlass /></span>
                       Membresía
                     </h4>
                   </div>
-                  
+
                   <div className="enhanced-search">
                     <div className="select-wrapper">
-                      <span className="select-icon">🏃</span>
+                      <span className="select-icon"><IconIdentification /></span>
                       <select
                         value={formData.id_registro}
                         onChange={(e) => {
@@ -686,7 +687,7 @@ const TablaPagos = () => {
                         className="form-select professional"
                         size="1"
                       >
-                        <option value="">🔍 Seleccionar membresía...</option>
+                        <option value="">Seleccionar membresía...</option>
                         {registros
                           .sort((a, b) => {
                             const infoA = getRegistroInfo(a.id_registro);
@@ -697,7 +698,7 @@ const TablaPagos = () => {
                             const registroInfo = getRegistroInfo(registro.id_registro);
                             return (
                               <option key={registro.id_registro} value={registro.id_registro}>
-                                👤 {registroInfo.usuario} • 🏃 {registroInfo.membresia} • 💰 Bs. {registroInfo.precio}
+                                {registroInfo.usuario} • {registroInfo.membresia} • Bs. {registroInfo.precio}
                               </option>
                             );
                           })}
@@ -706,7 +707,7 @@ const TablaPagos = () => {
                     {formData.id_registro && (
                       <div className="selected-info">
                         <span className="info-badge">
-                          ✅ Membresía seleccionada
+                          Membresía seleccionada
                         </span>
                       </div>
                     )}
@@ -718,7 +719,7 @@ const TablaPagos = () => {
                   {formData.id_registro && (
                     <div className="membership-preview">
                       <div className="preview-header">
-                        <span className="preview-icon">👁️</span>
+                        <span className="preview-icon"><IconEye /></span>
                         Vista Previa - Membresía Seleccionada
                       </div>
                       <div className="preview-content">
@@ -754,7 +755,7 @@ const TablaPagos = () => {
                 <div className="form-section">
                   <div className="section-header">
                     <h4 className="section-title">
-                      <span className="section-icon">💰</span>
+                      <span className="section-icon"><IconBanknotes /></span>
                       Pago
                     </h4>
                   </div>
@@ -762,7 +763,7 @@ const TablaPagos = () => {
                   <div className="form-grid">
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">🏦</span>
+                        <span className="label-icon"><IconArchiveBox /></span>
                         Caja
                       </label>
                       <div className="enhanced-select">
@@ -786,16 +787,16 @@ const TablaPagos = () => {
 
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">💵</span>
+                        <span className="label-icon"><IconBanknotes /></span>
                         Monto Pagado
                         {formData.id_registro && formData.monto_pagado && (
-                          <span style={{ 
-                            fontSize: '12px', 
-                            color: '#059669', 
+                          <span style={{
+                            fontSize: '12px',
+                            color: '#059669',
                             fontWeight: '500',
                             marginLeft: '8px'
                           }}>
-                            ✅
+                            <IconCheckCircle className="w-3 h-3 inline-block" />
                           </span>
                         )}
                       </label>
@@ -818,7 +819,7 @@ const TablaPagos = () => {
 
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">📅</span>
+                        <span className="label-icon"><IconCalendar /></span>
                         Fecha de Pago
                       </label>
                       <input
@@ -832,7 +833,7 @@ const TablaPagos = () => {
 
                     <div>
                       <label className="form-label modern">
-                        <span className="label-icon">📊</span>
+                        <span className="label-icon"><IconChartBar /></span>
                         Estado
                       </label>
                       <div className="enhanced-select">
@@ -841,9 +842,9 @@ const TablaPagos = () => {
                           onChange={(e) => setFormData({...formData, estado_pago: e.target.value})}
                           className="form-select modern"
                         >
-                          <option value="Completo">✅ Completo</option>
-                          <option value="Pendiente">⏳ Pendiente</option>
-                          <option value="Parcial">📋 Parcial</option>
+                          <option value="Completo">Completo</option>
+                          <option value="Pendiente">Pendiente</option>
+                          <option value="Parcial">Parcial</option>
                         </select>
                         <span className="select-arrow">▼</span>
                       </div>
@@ -866,7 +867,7 @@ const TablaPagos = () => {
                     className="btn-primary modern-btn"
                     disabled={!formData.id_registro || !formData.monto_pagado || !formData.id_caja}
                   >
-                    <span className="btn-icon">{editingPago ? '✏️' : '💾'}</span>
+                    <span className="btn-icon">{editingPago ? <IconPencil /> : <IconSave />}</span>
                     {editingPago ? 'Actualizar Pago' : 'Registrar Pago'}
                   </button>
                 </div>

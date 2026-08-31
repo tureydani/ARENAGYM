@@ -8,6 +8,7 @@ import Pagination from './ui/Pagination';
 import Badge from './ui/Badge';
 import { usePagination } from '../hooks/usePagination';
 import api from '../utils/api';
+import { IconDocumentDownload, IconArchiveBox, IconCheckCircle } from './ui/Icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -645,7 +646,7 @@ export default function TablaCajas() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="loading-spinner mx-auto mb-4"></div>
-          <p className="text-purple-300">Cargando cajas...</p>
+          <p className="text-slate-500">Cargando cajas...</p>
         </div>
       </div>
     );
@@ -656,18 +657,18 @@ export default function TablaCajas() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white">Control de Cajas</h2>
-          <p className="text-purple-300">Administra las cajas registradoras del gimnasio</p>
+          <h2 className="text-2xl font-bold text-slate-900">Control de Cajas</h2>
+          <p className="text-slate-500">Administra las cajas registradoras del gimnasio</p>
         </div>
         <div className="flex gap-3">
           <Button onClick={exportToCSV} variant="outline" size="sm">
-            � CSV Rápido
+            <IconDocumentDownload className="w-4 h-4 inline-block mr-1" /> CSV Rápido
           </Button>
           <Button onClick={() => setShowExportModal(true)} variant="outline" size="sm">
-            �📊 Exportar Completo
+            <IconDocumentDownload className="w-4 h-4 inline-block mr-1" /> Exportar Completo
           </Button>
           <Button onClick={() => setShowModal(true)} size="sm">
-            ➕ Nueva Caja
+            Nueva Caja
           </Button>
         </div>
       </div>
@@ -682,15 +683,15 @@ export default function TablaCajas() {
           />
         </div>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-cyan-400">{cajasArray.length}</div>
-          <div className="text-sm text-purple-300">Total Cajas</div>
-          <div className="text-xs text-green-400">{cajasAbiertas} abiertas</div>
+          <div className="text-2xl font-bold text-indigo-600">{cajasArray.length}</div>
+          <div className="text-sm text-slate-500">Total Cajas</div>
+          <div className="text-xs text-emerald-600">{cajasAbiertas} abiertas</div>
         </Card>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-green-400">
+          <div className="text-2xl font-bold text-emerald-600">
             Bs. {formatPrice(totalSaldo)}
           </div>
-          <div className="text-sm text-purple-300">Saldo Total</div>
+          <div className="text-sm text-slate-500">Saldo Total</div>
         </Card>
       </div>
 
@@ -698,68 +699,68 @@ export default function TablaCajas() {
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-purple-900/30">
+            <thead className="bg-indigo-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Descripción
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Fecha Apertura
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Saldo Inicial
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Saldo Actual
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-purple-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-700/30">
+            <tbody className="divide-y divide-slate-200">
               {paginatedItems.map((caja) => (
-                <tr key={caja.id_caja} className="hover:bg-purple-900/20 transition-colors">
-                  <td className="px-6 py-2 whitespace-nowrap text-sm text-purple-300">
+                <tr key={caja.id_caja} className="hover:bg-indigo-50 transition-colors">
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-slate-500">
                     #{caja.id_caja}
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap">
-                    <div className="text-sm font-medium text-white">
+                    <div className="text-sm font-medium text-slate-900">
                       {caja.descripcion}
                     </div>
                   </td>
-                  <td className="px-6 py-2 whitespace-nowrap text-sm text-purple-200">
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-slate-600">
                     {formatFecha(caja.fecha_apertura)}
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap">
-                    <div className="text-sm font-medium text-blue-400">
+                    <div className="text-sm font-medium text-indigo-600">
                       Bs. {formatPrice(caja.saldo_inicial)}
                     </div>
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap">
-                    <div className="text-sm font-medium text-green-400">
+                    <div className="text-sm font-medium text-emerald-600">
                       Bs. {formatPrice(caja.saldo_actual)}
                     </div>
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap">
                     <Badge 
                       variant={caja.abierta ? 'success' : 'secondary'}
-                      className={caja.abierta ? 'bg-green-900/50 text-green-300' : 'bg-red-900/50 text-red-300'}
+                      className={caja.abierta ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}
                     >
-                      {caja.abierta ? '🟢 Abierta' : '🔴 Cerrada'}
+                      {caja.abierta ? 'Abierta' : 'Cerrada'}
                     </Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex space-x-1">
                       <button
                         onClick={() => handleEdit(caja)}
-                        className="p-2 text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded transition-colors"
+                        className="p-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors"
                         title="Editar caja"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -768,7 +769,7 @@ export default function TablaCajas() {
                       </button>
                       <button
                         onClick={() => openMovimientoModal(caja)}
-                        className="p-2 text-green-400 hover:text-green-300 hover:bg-green-400/10 rounded transition-colors"
+                        className="p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded transition-colors"
                         title="Nuevo movimiento"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -777,7 +778,7 @@ export default function TablaCajas() {
                       </button>
                       <button
                         onClick={() => openMovimientosModal(caja)}
-                        className="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-400/10 rounded transition-colors"
+                        className="p-2 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 rounded transition-colors"
                         title="Ver historial"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -805,7 +806,7 @@ export default function TablaCajas() {
                       </button>
                       <button
                         onClick={() => handleDelete(caja)}
-                        className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded transition-colors"
+                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                         title="Eliminar caja"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -822,8 +823,8 @@ export default function TablaCajas() {
 
         {paginatedItems.length === 0 && (
           <div className="text-center py-12">
-            <div className="text-purple-300 mb-4">
-              💳 No se encontraron cajas
+            <div className="text-slate-500 mb-4">
+              No se encontraron cajas
             </div>
             <Button onClick={() => setShowModal(true)} size="sm">
               Crear primera caja
@@ -893,27 +894,27 @@ export default function TablaCajas() {
                       type="checkbox"
                       checked={formData.abierta}
                       onChange={(e) => handleInputChange('abierta', e.target.checked)}
-                      className="w-4 h-4 text-purple-600 bg-gray-800 border-purple-600 rounded"
+                      className="w-4 h-4 text-indigo-600 bg-white border-slate-300 rounded"
                     />
                     <span className="form-label mb-0">Caja abierta (operativa)</span>
                   </label>
                 </div>
 
                 {editingCaja && (
-                  <div className="bg-gray-800/50 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-blue-300 mb-2">Información de la Caja</h4>
+                  <div className="bg-slate-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-sky-700 mb-2">Información de la Caja</h4>
                     <div className="space-y-2 text-xs">
                       <div>
-                        <span className="text-purple-300">ID:</span>
-                        <span className="text-white ml-2">#{editingCaja.id_caja}</span>
+                        <span className="text-slate-500">ID:</span>
+                        <span className="text-slate-900 ml-2">#{editingCaja.id_caja}</span>
                       </div>
                       <div>
-                        <span className="text-purple-300">Saldo Inicial:</span>
-                        <span className="text-white ml-2">Bs. {formatPrice(editingCaja.saldo_inicial)}</span>
+                        <span className="text-slate-500">Saldo Inicial:</span>
+                        <span className="text-slate-900 ml-2">Bs. {formatPrice(editingCaja.saldo_inicial)}</span>
                       </div>
                       <div>
-                        <span className="text-purple-300">Saldo Actual:</span>
-                        <span className="text-green-400 ml-2">Bs. {formatPrice(editingCaja.saldo_actual)}</span>
+                        <span className="text-slate-500">Saldo Actual:</span>
+                        <span className="text-emerald-600 ml-2">Bs. {formatPrice(editingCaja.saldo_actual)}</span>
                       </div>
                     </div>
                   </div>
@@ -959,11 +960,11 @@ export default function TablaCajas() {
                       ...movimientoFormData,
                       tipo_movimiento: e.target.value
                     })}
-                    className="form-input bg-gray-800 border-gray-600 text-white"
+                    className="form-input bg-white border-slate-300 text-slate-900"
                     required
                   >
-                    <option value="Ingreso" className="bg-gray-800 text-green-300">💰 Ingreso</option>
-                    <option value="Egreso" className="bg-gray-800 text-red-300">💸 Egreso</option>
+                    <option value="Ingreso" className="bg-white text-emerald-700">Ingreso</option>
+                    <option value="Egreso" className="bg-white text-red-700">Egreso</option>
                   </select>
                 </div>
 
@@ -975,12 +976,12 @@ export default function TablaCajas() {
                       ...movimientoFormData,
                       origen: e.target.value
                     })}
-                    className="form-input bg-gray-800 border-gray-600 text-white"
+                    className="form-input bg-white border-slate-300 text-slate-900"
                     required
                   >
-                    <option value="Venta" className="bg-gray-800 text-blue-300">🛒 Venta</option>
-                    <option value="Pago" className="bg-gray-800 text-green-300">💳 Pago</option>
-                    <option value="Otro" className="bg-gray-800 text-gray-300">📋 Otro</option>
+                    <option value="Venta" className="bg-white text-sky-700">Venta</option>
+                    <option value="Pago" className="bg-white text-emerald-700">Pago</option>
+                    <option value="Otro" className="bg-white text-slate-600">Otro</option>
                   </select>
                 </div>
 
@@ -994,7 +995,7 @@ export default function TablaCajas() {
                       ...movimientoFormData,
                       monto: e.target.value
                     })}
-                    className="form-input bg-gray-800 border-gray-600 text-white"
+                    className="form-input bg-white border-slate-300 text-slate-900"
                     placeholder="0.00"
                     required
                   />
@@ -1008,7 +1009,7 @@ export default function TablaCajas() {
                       ...movimientoFormData,
                       descripcion: e.target.value
                     })}
-                    className="form-input bg-gray-800 border-gray-600 text-white"
+                    className="form-input bg-white border-slate-300 text-slate-900"
                     placeholder="Describe el motivo del movimiento..."
                     rows="3"
                     required
@@ -1017,7 +1018,7 @@ export default function TablaCajas() {
 
                 <div className="modal-actions">
                   <button type="submit" className="btn-primary">
-                    💰 Registrar Movimiento
+                    Registrar Movimiento
                   </button>
                   <button
                     type="button"
@@ -1038,76 +1039,76 @@ export default function TablaCajas() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '1200px', maxHeight: '90vh', overflow: 'auto' }}>
             <div className="modal-header">
-              <h3>📋 Historial de Movimientos - {selectedCaja.descripcion}</h3>
+              <h3>Historial de Movimientos - {selectedCaja.descripcion}</h3>
               <button onClick={() => setShowMovimientosModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <div className="mb-4 p-4 bg-gray-800/60 rounded-lg border border-gray-600/50">
+              <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-300 font-medium">💰 Saldo Inicial:</span>
-                    <span className="text-blue-400 font-bold">Bs. {formatPrice(selectedCaja.saldo_inicial)}</span>
+                    <span className="text-slate-600 font-medium">Saldo Inicial:</span>
+                    <span className="text-indigo-600 font-bold">Bs. {formatPrice(selectedCaja.saldo_inicial)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-300 font-medium">💵 Saldo Actual:</span>
-                    <span className="text-green-400 font-bold text-lg">Bs. {formatPrice(selectedCaja.saldo_actual)}</span>
+                    <span className="text-slate-600 font-medium">Saldo Actual:</span>
+                    <span className="text-emerald-600 font-bold text-lg">Bs. {formatPrice(selectedCaja.saldo_actual)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Filtros del Historial */}
-              <div className="mb-4 p-4 bg-gray-800/50 rounded-lg border border-purple-700/30">
+              <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-cyan-300 font-semibold text-lg">🔍 Filtros y Búsqueda</h4>
+                  <h4 className="text-indigo-600 font-semibold text-lg">Filtros y Búsqueda</h4>
                   <button
                     onClick={limpiarFiltrosHistorial}
-                    className="text-xs px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded-md transition-colors font-medium"
+                    className="text-xs px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors font-medium"
                   >
-                    🗑️ Limpiar
+                    Limpiar
                   </button>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                   {/* Buscador general */}
                   <div className="md:col-span-3">
-                    <label className="block text-purple-300 mb-1">Buscar en descripción o admin:</label>
+                    <label className="block text-slate-500 mb-1">Buscar en descripción o admin:</label>
                     <input
                       type="text"
                       value={historialSearch}
                       onChange={(e) => setHistorialSearch(e.target.value)}
                       placeholder="Buscar..."
-                      className="w-full px-3 py-2 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white placeholder-gray-400 focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
                     />
                   </div>
 
                   {/* Filtro por fechas */}
                   <div>
-                    <label className="block text-purple-300 mb-1">Desde:</label>
+                    <label className="block text-slate-500 mb-1">Desde:</label>
                     <input
                       type="date"
                       value={historialFechaInicio}
                       onChange={(e) => setHistorialFechaInicio(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-purple-300 mb-1">Hasta:</label>
+                    <label className="block text-slate-500 mb-1">Hasta:</label>
                     <input
                       type="date"
                       value={historialFechaFin}
                       onChange={(e) => setHistorialFechaFin(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
                     />
                   </div>
 
                   {/* Filtro por administrador */}
                   <div>
-                    <label className="block text-purple-300 mb-1">Administrador:</label>
+                    <label className="block text-slate-500 mb-1">Administrador:</label>
                     <select
                       value={historialAdminFilter}
                       onChange={(e) => setHistorialAdminFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
                     >
                       <option value="">Todos</option>
                       {administrativos.map(admin => (
@@ -1120,25 +1121,25 @@ export default function TablaCajas() {
 
                   {/* Filtro por tipo */}
                   <div>
-                    <label className="block text-purple-300 mb-1">Tipo:</label>
+                    <label className="block text-slate-500 mb-1">Tipo:</label>
                     <select
                       value={historialTipoFilter}
                       onChange={(e) => setHistorialTipoFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
                     >
                       <option value="">Todos</option>
-                      <option value="Ingreso">💰 Ingreso</option>
-                      <option value="Egreso">💸 Egreso</option>
+                      <option value="Ingreso">Ingreso</option>
+                      <option value="Egreso">Egreso</option>
                     </select>
                   </div>
 
                   {/* Filtro por origen */}
                   <div>
-                    <label className="block text-purple-300 mb-1">Origen:</label>
+                    <label className="block text-slate-500 mb-1">Origen:</label>
                     <select
                       value={historialOrigenFilter}
                       onChange={(e) => setHistorialOrigenFilter(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-800/80 border border-purple-600/50 rounded-lg text-white focus:border-purple-400 focus:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400/30 transition-all duration-200"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
                     >
                       <option value="">Todos</option>
                       <option value="Pago">Pago</option>
@@ -1152,28 +1153,28 @@ export default function TablaCajas() {
 
                 {/* Contador de resultados */}
                 <div className="mt-3 px-3 py-2 bg-blue-900/30 rounded-lg border border-blue-600/30">
-                  <span className="text-blue-300 text-sm font-medium">
-                    📊 Mostrando {getMovimientosByCaja(selectedCaja.id_caja).length} movimiento(s)
+                  <span className="text-sky-700 text-sm font-medium">
+                    Mostrando {getMovimientosByCaja(selectedCaja.id_caja).length} movimiento(s)
                   </span>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-800/80">
+                  <thead className="bg-white">
                     <tr>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-gray-600">Fecha</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-gray-600">Tipo</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-gray-600">Origen</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-gray-600">Descripción</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-gray-600">Monto</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-gray-600">Admin</th>
+                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Fecha</th>
+                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Tipo</th>
+                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Origen</th>
+                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Descripción</th>
+                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Monto</th>
+                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Admin</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-600/50 bg-gray-900/50">
+                  <tbody className="divide-y divide-slate-200 bg-slate-50">
                     {getMovimientosByCaja(selectedCaja.id_caja).map((mov) => (
-                      <tr key={mov.id_movimiento} className="hover:bg-gray-800/60 transition-colors">
-                        <td className="px-4 py-3 text-gray-300 font-medium">
+                      <tr key={mov.id_movimiento} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 text-slate-600 font-medium">
                           {formatFecha(mov.fecha_movimiento)}
                         </td>
                         <td className="px-4 py-3">
@@ -1182,21 +1183,21 @@ export default function TablaCajas() {
                               ? 'text-green-100 bg-green-700/80' 
                               : 'text-red-100 bg-red-700/80'
                           }`}>
-                            {mov.tipo_movimiento === 'Ingreso' ? '💰' : '💸'} {mov.tipo_movimiento}
+                            {mov.tipo_movimiento === 'Ingreso' ? '' : ''} {mov.tipo_movimiento}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-blue-300 font-medium">{mov.origen}</td>
+                        <td className="px-4 py-3 text-sky-700 font-medium">{mov.origen}</td>
                         <td className="px-4 py-3 text-gray-100">{mov.descripcion}</td>
                         <td className="px-4 py-3">
                           <span className={`font-bold text-lg ${
                             mov.tipo_movimiento === 'Ingreso' 
-                              ? 'text-green-400' 
-                              : 'text-red-400'
+                              ? 'text-emerald-600' 
+                              : 'text-red-600'
                           }`}>
                             {mov.tipo_movimiento === 'Ingreso' ? '+' : '-'}Bs. {formatPrice(mov.monto)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-cyan-300 font-medium">
+                        <td className="px-4 py-3 text-indigo-600 font-medium">
                           {mov.Administrativo?.nombre || 'N/A'}
                         </td>
                       </tr>
@@ -1205,10 +1206,10 @@ export default function TablaCajas() {
                 </table>
                 
                 {getMovimientosByCaja(selectedCaja.id_caja).length === 0 && (
-                  <div className="text-center py-12 bg-gray-800/30 rounded-lg border border-gray-600/50">
-                    <div className="text-6xl mb-4 opacity-50">📄</div>
-                    <p className="text-gray-300 text-lg font-medium">No hay movimientos registrados para esta caja</p>
-                    <p className="text-gray-400 text-sm mt-2">Los movimientos aparecerán aquí cuando se registren</p>
+                  <div className="text-center py-12 bg-slate-50 rounded-lg border border-slate-200">
+                    <IconArchiveBox className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                    <p className="text-slate-600 text-lg font-medium">No hay movimientos registrados para esta caja</p>
+                    <p className="text-slate-400 text-sm mt-2">Los movimientos aparecerán aquí cuando se registren</p>
                   </div>
                 )}
               </div>
@@ -1231,7 +1232,7 @@ export default function TablaCajas() {
         <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
           <div className="modal-container" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>📊 Exportación Completa de Cajas</h3>
+              <h3>Exportación Completa de Cajas</h3>
               <button className="modal-close" onClick={() => setShowExportModal(false)}>
                 &times;
               </button>
@@ -1250,7 +1251,7 @@ export default function TablaCajas() {
                       onChange={(e) => setTipoExportacion(e.target.value)}
                       className="mr-2"
                     />
-                    📄 PDF
+                    PDF
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1260,7 +1261,7 @@ export default function TablaCajas() {
                       onChange={(e) => setTipoExportacion(e.target.value)}
                       className="mr-2"
                     />
-                    📊 Excel
+                    Excel
                   </label>
                 </div>
               </div>
@@ -1338,7 +1339,7 @@ export default function TablaCajas() {
                   </button>
                 </div>
                 
-                <div className="max-h-48 overflow-y-auto border border-gray-600 rounded p-3 bg-gray-800/50">
+                <div className="max-h-48 overflow-y-auto border border-slate-300 rounded p-3 bg-slate-50">
                   {cajasArray.map(caja => (
                     <label key={caja.id_caja} className="flex items-center mb-2">
                       <input
@@ -1349,7 +1350,7 @@ export default function TablaCajas() {
                       />
                       <span className="text-sm">
                         {caja.descripcion || `Caja ${caja.id_caja}`} 
-                        <span className="text-gray-400">
+                        <span className="text-slate-500">
                           (Saldo: Bs. {formatPrice(caja.saldo_actual)})
                         </span>
                       </span>
@@ -1357,7 +1358,7 @@ export default function TablaCajas() {
                   ))}
                 </div>
                 
-                <div className="text-sm text-gray-400 mt-2">
+                <div className="text-sm text-slate-500 mt-2">
                   {cajasSeleccionadas.length === 0 
                     ? "Se exportarán todas las cajas" 
                     : `${cajasSeleccionadas.length} caja(s) seleccionada(s)`
@@ -1366,9 +1367,9 @@ export default function TablaCajas() {
               </div>
 
               {/* Resumen de exportación */}
-              <div className="bg-gray-800/50 p-4 rounded border border-gray-600">
-                <h4 className="text-lg font-medium mb-2">📋 Resumen de Exportación</h4>
-                <ul className="text-sm text-gray-300 space-y-1">
+              <div className="bg-slate-50 p-4 rounded border border-slate-300">
+                <h4 className="text-lg font-medium mb-2">Resumen de Exportación</h4>
+                <ul className="text-sm text-slate-600 space-y-1">
                   <li>• Formato: {tipoExportacion.toUpperCase()}</li>
                   <li>• Cajas: {cajasSeleccionadas.length || cajasArray.length}</li>
                   <li>• Movimientos: {incluirMovimientos ? 'Incluidos' : 'No incluidos'}</li>
@@ -1393,7 +1394,7 @@ export default function TablaCajas() {
                 onClick={ejecutarExportacion}
                 className="btn-primary"
               >
-                {tipoExportacion === 'pdf' ? '📄' : '📊'} Exportar {tipoExportacion.toUpperCase()}
+                <IconDocumentDownload className="w-4 h-4 inline-block mr-1" /> Exportar {tipoExportacion.toUpperCase()}
               </button>
             </div>
           </div>
@@ -1402,8 +1403,8 @@ export default function TablaCajas() {
 
       {/* Check de éxito */}
       {showSuccessCheck && (
-        <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
-          ✅ Movimiento registrado exitosamente
+        <div className="fixed top-4 right-4 bg-emerald-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
+          <IconCheckCircle className="w-4 h-4" /> Movimiento registrado exitosamente
         </div>
       )}
     </div>
