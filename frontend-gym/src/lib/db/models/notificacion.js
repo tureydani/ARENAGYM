@@ -35,6 +35,14 @@ const Notificacion = sequelize.define('Notificacion', {
   fecha_creacion: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  fecha_lectura: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  referencia_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   }
 }, {
   tableName: 'notificaciones',
