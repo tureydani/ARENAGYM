@@ -202,6 +202,29 @@ class ApiService {
     });
   }
 
+  /// DELETE /notificaciones/{id} -> { message }
+  Future<void> eliminarNotificacion(int idNotificacion) {
+    return _guarded(() async {
+      final response = await http.delete(
+        _uri('/notificaciones/$idNotificacion'),
+        headers: await _authHeaders(),
+      );
+      _decodeOrThrow(response);
+    });
+  }
+
+  /// PATCH /notificaciones/marcar-todas-leidas -> { message, cantidad }
+  Future<int> marcarTodasLasNotificacionesLeidas() {
+    return _guarded(() async {
+      final response = await http.patch(
+        _uri('/notificaciones/marcar-todas-leidas'),
+        headers: await _authHeaders(),
+      );
+      final json = _decodeOrThrow(response);
+      return json['cantidad'] as int? ?? 0;
+    });
+  }
+
   /// PATCH /perfil -> { usuario }
   Future<Usuario> actualizarPerfil({String? telefono, String? fotoPerfil, String? email}) {
     return _guarded(() async {

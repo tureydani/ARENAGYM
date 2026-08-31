@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import 'inicio_tab.dart';
 import 'notificaciones_tab.dart';
@@ -17,42 +20,95 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  int _noLeidas = 0;
+  Timer? _timer;
 
-  static const _tabs = [
-    InicioTab(),
-    ProgresoTab(),
-    NotificacionesTab(),
-    PerfilTab(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _actualizarContadorNoLeidas();
+    // Refresco periódico para que el badge no quede desactualizado mientras
+    // la app está abierta y el cliente no visita la pestaña de notificaciones.
+    _timer = Timer.periodic(
+      const Duration(seconds: 60),
+      (_) => _actualizarContadorNoLeidas(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _actualizarContadorNoLeidas() async {
+    try {
+      final notificaciones = await ApiService.instance.obtenerNotificaciones();
+      if (!mounted) return;
+      setState(() {
+        _noLeidas = notificaciones.where((n) => !n.leida).length;
+      });
+    } catch (_) {
+      // Silencioso: el badge simplemente no se actualiza en este ciclo.
+    }
+  }
+
+  void _onDestinationSelected(int value) {
+    final veniaDeNotificaciones = _index == 2;
+    setState(() => _index = value);
+    // Si el cliente sale de la pestaña de notificaciones, refresca el
+    // contador por si marcó/eliminó algo mientras estaba ahí.
+    if (veniaDeNotificaciones && value != 2) {
+      _actualizarContadorNoLeidas();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final tabs = [
+      const InicioTab(),
+      const ProgresoTab(),
+      NotificacionesTab(
+        onNotificacionesActualizadas: _actualizarContadorNoLeidas,
+        onNavegarAPestana: (index) => setState(() => _index = index),
+      ),
+      const PerfilTab(),
+    ];
+
     return Scaffold(
       body: SafeArea(
-        child: IndexedStack(index: _index, children: _tabs),
+        child: IndexedStack(index: _index, children: tabs),
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (value) => setState(() => _index = value),
+        onDestinationSelected: _onDestinationSelected,
         backgroundColor: AppColors.card,
         indicatorColor: AppColors.accent.withValues(alpha: 0.12),
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home, color: AppColors.accent),
             label: 'Inicio',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.trending_up_outlined),
             selectedIcon: Icon(Icons.trending_up, color: AppColors.accent),
             label: 'Progreso',
           ),
           NavigationDestination(
-            icon: Icon(Icons.notifications_outlined),
-            selectedIcon: Icon(Icons.notifications, color: AppColors.accent),
+            icon: Badge(
+              label: Text('$_noLeidas'),
+              isLabelVisible: _noLeidas > 0,
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            selectedIcon: Badge(
+              label: Text('$_noLeidas'),
+              isLabelVisible: _noLeidas > 0,
+              child: const Icon(Icons.notifications, color: AppColors.accent),
+            ),
             label: 'Notificaciones',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person, color: AppColors.accent),
             label: 'Perfil',
