@@ -20,6 +20,7 @@ export async function PUT(request, { params }) {
       membresia: membresiaActualizada
     });
   } catch (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    console.error('Error al restaurar membresía:', error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

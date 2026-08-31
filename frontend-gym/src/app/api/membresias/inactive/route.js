@@ -6,6 +6,7 @@ export async function GET() {
     const membresias = await Membresia.scope('onlyInactive').findAll();
     return NextResponse.json(membresias);
   } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
+    console.error('Error al obtener membresías inactivas:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

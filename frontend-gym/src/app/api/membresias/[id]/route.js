@@ -8,7 +8,8 @@ export async function GET(request, { params }) {
     if (!membresia) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     return NextResponse.json(membresia);
   } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
+    console.error('Error al obtener membresía:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -21,7 +22,8 @@ export async function PUT(request, { params }) {
     await membresia.update(body);
     return NextResponse.json(membresia);
   } catch (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    console.error('Error al actualizar membresía:', error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }
 

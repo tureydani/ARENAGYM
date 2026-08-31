@@ -105,8 +105,9 @@ export async function DELETE(request, { params }) {
         id_referencia: pago.id_pago
       }, { transaction });
 
-      // 3. Eliminar el pago (soft delete)
-      await pago.destroy({ transaction });
+      // 3. Eliminar el pago (soft delete: se conserva el registro para el
+      // historial financiero, igual que en el resto de entidades de la app)
+      await pago.update({ activo: false }, { transaction });
 
       // Confirmar transacción
       await transaction.commit();
@@ -129,7 +130,7 @@ export async function DELETE(request, { params }) {
 
     } catch (error) {
       // Revertir transacción en caso de error
-      await transaction.rollback();
+      if (!transaction.finished) await transaction.rollback();
       throw error;
     }
 

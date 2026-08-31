@@ -165,7 +165,7 @@ export async function DELETE(request, { params }) {
 
   } catch (error) {
     console.error('Error al eliminar registro de membresía con cascada:', error);
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     return NextResponse.json({
       error: error.message,
       message: "Error al eliminar el registro de membresía con eliminación en cascada"

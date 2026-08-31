@@ -121,7 +121,7 @@ export async function PUT(request, { params }) {
 
   } catch (error) {
     console.error('Error al restaurar registro de membresía con cascada:', error);
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     return NextResponse.json({
       error: error.message,
       message: "Error al restaurar el registro de membresía con restauración en cascada"

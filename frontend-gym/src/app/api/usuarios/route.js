@@ -11,7 +11,8 @@ export async function GET(request) {
     });
     return NextResponse.json(usuarios);
   } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
+    console.error('Error al obtener usuarios:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -47,6 +48,7 @@ export async function POST(request) {
     });
     return NextResponse.json(usuarioCompleto, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    console.error('Error al crear usuario:', error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

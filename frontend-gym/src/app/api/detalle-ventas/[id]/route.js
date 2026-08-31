@@ -90,7 +90,7 @@ export async function PUT(request, { params }) {
 
     return NextResponse.json(detalleActualizado);
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     console.error('Error al actualizar detalle de venta:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -125,7 +125,7 @@ export async function DELETE(request, { params }) {
     await transaction.commit();
     return NextResponse.json({ message: "Detalle eliminado correctamente y stock restaurado" });
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     console.error('Error al eliminar detalle de venta:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

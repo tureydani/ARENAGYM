@@ -22,6 +22,7 @@ export async function PATCH(request, { params }) {
       usuario: usuarioActualizado
     });
   } catch (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    console.error('Error al restaurar usuario:', error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

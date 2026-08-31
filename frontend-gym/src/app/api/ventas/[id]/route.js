@@ -126,7 +126,7 @@ export async function DELETE(request, { params }) {
       cliente: nombreCliente
     });
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     console.error('Error al eliminar venta:', error);
     return NextResponse.json({
       error: "Error al eliminar venta: " + error.message,

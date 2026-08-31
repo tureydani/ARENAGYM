@@ -97,7 +97,8 @@ export default function TablaAdministrativos() {
       setSuccess('Administrativo creado exitosamente');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Error al crear administrativo');
+      console.error('Error al crear administrativo:', err);
+      setError('Error al crear administrativo: ' + (err.response?.data?.message || err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }

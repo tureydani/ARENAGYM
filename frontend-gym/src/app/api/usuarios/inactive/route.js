@@ -8,6 +8,7 @@ export async function GET() {
     });
     return NextResponse.json(usuarios);
   } catch (error) {
-    return NextResponse.json({ error }, { status: 500 });
+    console.error('Error al obtener usuarios inactivos:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -71,7 +71,7 @@ export async function POST(request) {
 
     return NextResponse.json(detalleCompleto, { status: 201 });
   } catch (error) {
-    await transaction.rollback();
+    if (!transaction.finished) await transaction.rollback();
     console.error('Error al crear detalle de venta:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

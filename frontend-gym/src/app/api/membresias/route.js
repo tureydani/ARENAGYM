@@ -23,6 +23,7 @@ export async function POST(request) {
     const membresia = await Membresia.create(body);
     return NextResponse.json(membresia, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error }, { status: 400 });
+    console.error('Error al crear membresía:', error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }
