@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/meta.dart';
@@ -591,6 +593,11 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
     }
   }
 
+  /// [_progresos] está ordenado del más reciente al más antiguo (para la
+  /// lista); para gráficas de evolución y comparativas "antes vs ahora"
+  /// se necesita el orden cronológico inverso.
+  List<Progreso> get _progresosAscendentes => _progresos.reversed.toList();
+
   Future<void> _abrirFormularioNuevoProgreso() async {
     final creado = await showModalBottomSheet<bool>(
       context: context,
@@ -629,11 +636,18 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
                             ),
                           ],
                         )
-                      : ListView.separated(
+                      : ListView(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                          itemCount: _progresos.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 10),
-                          itemBuilder: (context, index) => _buildProgresoCard(_progresos[index]),
+                          children: [
+                            _EvolucionCard(progresosAscendentes: _progresosAscendentes),
+                            if (_progresosAscendentes.length >= 2) const SizedBox(height: 10),
+                            _AntesAhoraCard(progresosAscendentes: _progresosAscendentes),
+                            if (_progresosAscendentes.length >= 2) const SizedBox(height: 10),
+                            for (final progreso in _progresos) ...[
+                              _buildProgresoCard(progreso),
+                              const SizedBox(height: 10),
+                            ],
+                          ],
                         ),
                 ),
     );
@@ -721,6 +735,243 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Evolución (gráfica histórica) y Antes vs Ahora
+// ---------------------------------------------------------------------------
+
+/// Tarjeta "Evolución": una mini gráfica de línea por medida (peso, cintura,
+/// ...) construida solo con los datos ya existentes en [progresosAscendentes]
+/// (más antiguo primero). No hay valores derivados guardados en la BD: todo
+/// se calcula aquí, en el momento de mostrarlo.
+class _EvolucionCard extends StatelessWidget {
+  final List<Progreso> progresosAscendentes;
+
+  const _EvolucionCard({required this.progresosAscendentes});
+
+  List<double> _serie(double? Function(Progreso p) selector) {
+    return progresosAscendentes.map(selector).whereType<double>().toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final series = <String, List<double>>{
+      'Peso (kg)': _serie((p) => p.peso),
+      'Cintura (cm)': _serie((p) => p.cintura),
+      '% Grasa': _serie((p) => p.porcentajeGrasa),
+    }..removeWhere((_, valores) => valores.length < 2);
+
+    if (series.isEmpty) return const SizedBox.shrink();
+
+    final colores = [AppColors.accent, AppColors.success, AppColors.danger];
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.show_chart, size: 18, color: AppColors.accent),
+              const SizedBox(width: 8),
+              Text(
+                'Evolución',
+                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+          for (var i = 0; i < series.entries.length; i++) ...[
+            const SizedBox(height: 14),
+            _EvolucionFila(
+              label: series.entries.elementAt(i).key,
+              valores: series.entries.elementAt(i).value,
+              color: colores[i % colores.length],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EvolucionFila extends StatelessWidget {
+  final String label;
+  final List<double> valores;
+  final Color color;
+
+  const _EvolucionFila({required this.label, required this.valores, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+            Text(
+              '${valores.first.toStringAsFixed(1)} → ${valores.last.toStringAsFixed(1)}',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 44,
+          width: double.infinity,
+          child: CustomPaint(painter: _SparklinePainter(valores: valores, color: color)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dibuja una línea de evolución simple (sin dependencias externas): conecta
+/// cada valor de la serie normalizado al alto disponible, con un punto
+/// destacado en el valor más reciente.
+class _SparklinePainter extends CustomPainter {
+  final List<double> valores;
+  final Color color;
+
+  _SparklinePainter({required this.valores, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (valores.length < 2 || size.width <= 0 || size.height <= 0) return;
+
+    final minV = valores.reduce(math.min);
+    final maxV = valores.reduce(math.max);
+    final rango = (maxV - minV).abs() < 0.0001 ? 1.0 : (maxV - minV);
+    final dx = size.width / (valores.length - 1);
+
+    Offset puntoEn(int i) {
+      final normalizado = (valores[i] - minV) / rango;
+      final y = size.height - (normalizado * (size.height - 8)) - 4;
+      return Offset(dx * i, y);
+    }
+
+    final path = Path()..moveTo(puntoEn(0).dx, puntoEn(0).dy);
+    for (var i = 1; i < valores.length; i++) {
+      final p = puntoEn(i);
+      path.lineTo(p.dx, p.dy);
+    }
+
+    final lineaPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    canvas.drawPath(path, lineaPaint);
+
+    final puntoPaint = Paint()..color = color;
+    for (var i = 0; i < valores.length; i++) {
+      final p = puntoEn(i);
+      canvas.drawCircle(p, i == valores.length - 1 ? 4 : 2, puntoPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SparklinePainter oldDelegate) {
+    return oldDelegate.valores != valores || oldDelegate.color != color;
+  }
+}
+
+/// Tarjeta "Antes vs Ahora": compara la primera y la última medición
+/// registradas. Todo se calcula al vuelo a partir del historial existente.
+class _AntesAhoraCard extends StatelessWidget {
+  final List<Progreso> progresosAscendentes;
+
+  const _AntesAhoraCard({required this.progresosAscendentes});
+
+  @override
+  Widget build(BuildContext context) {
+    if (progresosAscendentes.length < 2) return const SizedBox.shrink();
+
+    final antes = progresosAscendentes.first;
+    final ahora = progresosAscendentes.last;
+
+    final comparaciones = <Widget>[];
+    void agregar(String label, String unidad, double? v1, double? v2) {
+      if (v1 == null || v2 == null) return;
+      final delta = v2 - v1;
+      final disminuyo = delta < -0.001;
+      final aumento = delta > 0.001;
+      final color = disminuyo
+          ? AppColors.success
+          : aumento
+              ? AppColors.accent
+              : AppColors.textSecondary;
+      final icono = disminuyo
+          ? Icons.arrow_downward
+          : aumento
+              ? Icons.arrow_upward
+              : Icons.remove;
+
+      comparaciones.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              ),
+              Text('${v1.toStringAsFixed(1)} $unidad', style: const TextStyle(fontSize: 13)),
+              const SizedBox(width: 6),
+              Icon(Icons.arrow_forward, size: 14, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                '${v2.toStringAsFixed(1)} $unidad',
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              const SizedBox(width: 8),
+              Icon(icono, size: 14, color: color),
+              Text(
+                delta.abs().toStringAsFixed(1),
+                style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    agregar('Peso', 'kg', antes.peso, ahora.peso);
+    agregar('% Grasa', '%', antes.porcentajeGrasa, ahora.porcentajeGrasa);
+    agregar('Cintura', 'cm', antes.cintura, ahora.cintura);
+    agregar('Pecho', 'cm', antes.pecho, ahora.pecho);
+    agregar('Brazo', 'cm', antes.brazo, ahora.brazo);
+    agregar('Pierna', 'cm', antes.pierna, ahora.pierna);
+    agregar('Cadera', 'cm', antes.cadera, ahora.cadera);
+
+    if (comparaciones.isEmpty) return const SizedBox.shrink();
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.compare_arrows, size: 18, color: AppColors.accent),
+              const SizedBox(width: 8),
+              Text(
+                'Antes vs Ahora',
+                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${antes.fecha} → ${ahora.fecha}',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
+          ),
+          const SizedBox(height: 8),
+          ...comparaciones,
         ],
       ),
     );
