@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import Administrativo from '@/lib/db/models/administrativo';
+import { Administrativo } from '@/lib/db/models';
 
 export async function GET(request) {
   try {

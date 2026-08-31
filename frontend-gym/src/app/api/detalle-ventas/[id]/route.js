@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
-import DetalleVenta from '@/lib/db/models/detalleVenta';
-import Venta from '@/lib/db/models/venta';
-import Producto from '@/lib/db/models/producto';
+import { DetalleVenta, Venta, Producto } from '@/lib/db/models';
 
 export async function GET(request, { params }) {
   const { id } = await params;

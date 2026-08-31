@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import Membresia from '@/lib/db/models/membresia';
+import { Membresia } from '@/lib/db/models';
 
 export async function PUT(request, { params }) {
   const { id } = await params;

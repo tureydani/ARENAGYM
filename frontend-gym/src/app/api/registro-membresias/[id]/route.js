@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
-import RegistroMembresia from '@/lib/db/models/registroMembresia';
-import Usuario from '@/lib/db/models/usuario';
-import Membresia from '@/lib/db/models/membresia';
-import Administrativo from '@/lib/db/models/administrativo';
-import Pago from '@/lib/db/models/pago';
+import { RegistroMembresia, Usuario, Membresia, Administrativo, Pago } from '@/lib/db/models';
 
 export async function GET(request, { params }) {
   const { id } = await params;

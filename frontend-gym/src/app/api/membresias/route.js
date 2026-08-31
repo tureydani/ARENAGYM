@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import Membresia from '@/lib/db/models/membresia';
+import { Membresia } from '@/lib/db/models';
 
 export async function GET(request) {
   try {

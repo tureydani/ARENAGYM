@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import MovimientoCaja from '@/lib/db/models/movimientoCaja';
-import Caja from '@/lib/db/models/caja';
-import Administrativo from '@/lib/db/models/administrativo';
+import { MovimientoCaja, Caja, Administrativo } from '@/lib/db/models';
 
 export async function GET() {
   try {

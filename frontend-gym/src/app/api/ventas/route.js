@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
-import Venta from '@/lib/db/models/venta';
-import DetalleVenta from '@/lib/db/models/detalleVenta';
-import Usuario from '@/lib/db/models/usuario';
-import Administrativo from '@/lib/db/models/administrativo';
-import Caja from '@/lib/db/models/caja';
-import Producto from '@/lib/db/models/producto';
+import { Venta, DetalleVenta, Usuario, Administrativo, Caja, Producto } from '@/lib/db/models';
 
 export async function GET(request) {
   try {

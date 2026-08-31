@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import Usuario from '@/lib/db/models/usuario';
-import Administrativo from '@/lib/db/models/administrativo';
+import { Usuario, Administrativo } from '@/lib/db/models';
 
 export async function GET() {
   try {

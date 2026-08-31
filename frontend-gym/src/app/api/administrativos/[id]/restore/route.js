@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
-import Administrativo from '@/lib/db/models/administrativo';
+import { Administrativo } from '@/lib/db/models';
 
 export async function PUT(request, { params }) {
   const { id } = await params;

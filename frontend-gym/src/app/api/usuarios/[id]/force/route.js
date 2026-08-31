@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import Usuario from '@/lib/db/models/usuario';
+import { Usuario } from '@/lib/db/models';
 
 export async function DELETE(request, { params }) {
   const { id } = await params;

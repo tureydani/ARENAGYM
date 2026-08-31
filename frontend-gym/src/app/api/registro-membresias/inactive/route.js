@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import RegistroMembresia from '@/lib/db/models/registroMembresia';
-import Usuario from '@/lib/db/models/usuario';
-import Membresia from '@/lib/db/models/membresia';
-import Administrativo from '@/lib/db/models/administrativo';
+import { RegistroMembresia, Usuario, Membresia, Administrativo } from '@/lib/db/models';
 
 export async function GET() {
   try {

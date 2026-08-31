@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import RegistroMembresia from '@/lib/db/models/registroMembresia';
+import { RegistroMembresia } from '@/lib/db/models';
 
 export async function DELETE(request, { params }) {
   const { id } = await params;

@@ -1,9 +1,5 @@
 import { NextResponse } from 'next/server';
-import Administrativo from '@/lib/db/models/administrativo';
-import Usuario from '@/lib/db/models/usuario';
-import Pago from '@/lib/db/models/pago';
-import RegistroMembresia from '@/lib/db/models/registroMembresia';
-import Venta from '@/lib/db/models/venta';
+import { Administrativo, Usuario, Pago, RegistroMembresia, Venta } from '@/lib/db/models';
 
 export async function DELETE(request, { params }) {
   const { id } = await params;
