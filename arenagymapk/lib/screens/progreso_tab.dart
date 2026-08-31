@@ -1134,7 +1134,7 @@ class _NuevoProgresoSheetState extends State<_NuevoProgresoSheet> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _campoNumerico('Cadera (cm)', _caderaController),
+                Row(children: [_campoNumerico('Cadera (cm)', _caderaController)]),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _observacionesController,
