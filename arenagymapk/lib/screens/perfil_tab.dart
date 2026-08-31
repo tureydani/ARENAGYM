@@ -4,9 +4,11 @@ import '../models/usuario.dart';
 import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage.dart';
+import '../services/theme_controller.dart';
 import '../theme/app_theme.dart';
 import '../utils/date_utils.dart';
 import '../widgets/app_card.dart';
+import 'auth_gate.dart';
 import 'login_screen.dart';
 
 /// Pestaña "Perfil": datos del cliente, edición de teléfono y cierre de
@@ -112,6 +114,7 @@ class _PerfilTabState extends State<PerfilTab> {
 
   Future<void> _cerrarSesion() async {
     await AuthStorage.instance.clearToken();
+    AuthGate.resetValidacion();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -134,6 +137,8 @@ class _PerfilTabState extends State<PerfilTab> {
                     const SizedBox(height: 16),
                     _buildDatosCard(),
                     const SizedBox(height: 16),
+                    _buildPreferenciasCard(),
+                    const SizedBox(height: 16),
                     _buildCerrarSesionButton(),
                   ],
                 ),
@@ -147,12 +152,12 @@ class _PerfilTabState extends State<PerfilTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -176,13 +181,13 @@ class _PerfilTabState extends State<PerfilTab> {
               ? NetworkImage(usuario.fotoPerfil!)
               : null,
           child: (usuario?.fotoPerfil == null || usuario!.fotoPerfil!.isEmpty)
-              ? const Icon(Icons.person, size: 44, color: AppColors.accent)
+              ? Icon(Icons.person, size: 44, color: AppColors.accent)
               : null,
         ),
         const SizedBox(height: 12),
         Text(
           usuario?.nombreCompleto ?? '',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: AppColors.textPrimary,
@@ -190,7 +195,7 @@ class _PerfilTabState extends State<PerfilTab> {
         ),
         Text(
           usuario?.email ?? '',
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
       ],
     );
@@ -202,7 +207,7 @@ class _PerfilTabState extends State<PerfilTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Datos personales',
             style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
@@ -240,11 +245,11 @@ class _PerfilTabState extends State<PerfilTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
               ),
             ],
           ),
@@ -257,27 +262,27 @@ class _PerfilTabState extends State<PerfilTab> {
     if (!_editandoEmail) {
       return Row(
         children: [
-          const Icon(Icons.email_outlined, size: 20, color: AppColors.textSecondary),
+          Icon(Icons.email_outlined, size: 20, color: AppColors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Email',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   (_usuario?.email.isEmpty ?? true) ? 'No registrado' : _usuario!.email,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
               ],
             ),
           ),
           IconButton(
             tooltip: 'Editar correo',
-            icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
+            icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
             onPressed: () => setState(() => _editandoEmail = true),
           ),
         ],
@@ -305,13 +310,13 @@ class _PerfilTabState extends State<PerfilTab> {
               )
             : IconButton(
                 tooltip: 'Guardar',
-                icon: const Icon(Icons.check, color: AppColors.success),
+                icon: Icon(Icons.check, color: AppColors.success),
                 onPressed: _guardarEmail,
               ),
         if (!_guardando)
           IconButton(
             tooltip: 'Cancelar',
-            icon: const Icon(Icons.close, color: AppColors.danger),
+            icon: Icon(Icons.close, color: AppColors.danger),
             onPressed: () {
               setState(() {
                 _editandoEmail = false;
@@ -327,13 +332,13 @@ class _PerfilTabState extends State<PerfilTab> {
     if (!_editandoTelefono) {
       return Row(
         children: [
-          const Icon(Icons.phone_outlined, size: 20, color: AppColors.textSecondary),
+          Icon(Icons.phone_outlined, size: 20, color: AppColors.textSecondary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Teléfono',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
@@ -342,14 +347,14 @@ class _PerfilTabState extends State<PerfilTab> {
                   (_usuario?.telefono == null || _usuario!.telefono!.isEmpty)
                       ? 'No registrado'
                       : _usuario!.telefono!,
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                 ),
               ],
             ),
           ),
           IconButton(
             tooltip: 'Editar teléfono',
-            icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
+            icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
             onPressed: () => setState(() => _editandoTelefono = true),
           ),
         ],
@@ -377,13 +382,13 @@ class _PerfilTabState extends State<PerfilTab> {
               )
             : IconButton(
                 tooltip: 'Guardar',
-                icon: const Icon(Icons.check, color: AppColors.success),
+                icon: Icon(Icons.check, color: AppColors.success),
                 onPressed: _guardarTelefono,
               ),
         if (!_guardando)
           IconButton(
             tooltip: 'Cancelar',
-            icon: const Icon(Icons.close, color: AppColors.danger),
+            icon: Icon(Icons.close, color: AppColors.danger),
             onPressed: () {
               setState(() {
                 _editandoTelefono = false;
@@ -395,13 +400,47 @@ class _PerfilTabState extends State<PerfilTab> {
     );
   }
 
+  Widget _buildPreferenciasCard() {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Preferencias',
+            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+          ),
+          const SizedBox(height: 8),
+          ValueListenableBuilder<bool>(
+            valueListenable: ThemeController.modoOscuro,
+            builder: (context, oscuro, _) {
+              return SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: Icon(
+                  oscuro ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                  color: AppColors.textSecondary,
+                ),
+                title: Text(
+                  'Modo oscuro',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                ),
+                value: oscuro,
+                activeThumbColor: AppColors.accent,
+                onChanged: (valor) => ThemeController.cambiarModo(valor),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCerrarSesionButton() {
     return OutlinedButton.icon(
       onPressed: _cerrarSesion,
-      icon: const Icon(Icons.logout, color: AppColors.danger),
-      label: const Text('Cerrar sesión', style: TextStyle(color: AppColors.danger)),
+      icon: Icon(Icons.logout, color: AppColors.danger),
+      label: Text('Cerrar sesión', style: TextStyle(color: AppColors.danger)),
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.danger),
+        side: BorderSide(color: AppColors.danger),
         padding: const EdgeInsets.symmetric(vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

@@ -51,12 +51,12 @@ class CalendarioMensual extends StatelessWidget {
           children: [
             IconButton(
               onPressed: onMesAnterior,
-              icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
+              icon: Icon(Icons.chevron_left, color: AppColors.textPrimary),
               tooltip: 'Mes anterior',
             ),
             Text(
               _capitalizar(DateFormat('MMMM y', 'es').format(mes)),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
                 color: AppColors.textPrimary,
@@ -64,7 +64,7 @@ class CalendarioMensual extends StatelessWidget {
             ),
             IconButton(
               onPressed: onMesSiguiente,
-              icon: const Icon(Icons.chevron_right, color: AppColors.textPrimary),
+              icon: Icon(Icons.chevron_right, color: AppColors.textPrimary),
               tooltip: 'Mes siguiente',
             ),
           ],
@@ -77,7 +77,7 @@ class CalendarioMensual extends StatelessWidget {
                 child: Center(
                   child: Text(
                     dia,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w600,
                       fontSize: 12,

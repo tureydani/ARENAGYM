@@ -103,12 +103,12 @@ class _MiQrScreenState extends State<MiQrScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+        Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
         const SizedBox(height: 16),
         Text(
           _errorMessage!,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: AppColors.textSecondary),
         ),
         const SizedBox(height: 16),
         ElevatedButton(onPressed: _obtenerToken, child: const Text('Reintentar')),
@@ -120,7 +120,7 @@ class _MiQrScreenState extends State<MiQrScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text(
+        Text(
           'Muestra este código en recepción para registrar tu asistencia',
           textAlign: TextAlign.center,
           style: TextStyle(color: AppColors.textSecondary),
@@ -144,11 +144,11 @@ class _MiQrScreenState extends State<MiQrScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.timer_outlined, size: 18, color: AppColors.textSecondary),
+            Icon(Icons.timer_outlined, size: 18, color: AppColors.textSecondary),
             const SizedBox(width: 6),
             Text(
               'Se renueva en $_segundosRestantes s',
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),

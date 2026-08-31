@@ -12,11 +12,25 @@ import 'login_screen.dart';
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
+  /// Olvida que la sesión ya fue validada, para que el próximo login
+  /// vuelva a confirmarse contra el backend (llamar al cerrar sesión).
+  static void resetValidacion() {
+    _AuthGateState._sesionYaValidada = false;
+  }
+
   @override
   State<AuthGate> createState() => _AuthGateState();
 }
 
 class _AuthGateState extends State<AuthGate> {
+  // Estático (no de instancia): sobrevive a que AuthGate se vuelva a montar
+  // dentro del mismo proceso de la app (ej. al cambiar el modo oscuro, que
+  // fuerza un remontaje completo del árbol de widgets desde la raíz). Sin
+  // esto, cada cambio de tema repetiría la llamada de red a /perfil, y si
+  // en ese momento no hay conexión, mandaría al usuario al login por error
+  // aunque su sesión siga siendo válida.
+  static bool _sesionYaValidada = false;
+
   @override
   void initState() {
     super.initState();
@@ -31,9 +45,15 @@ class _AuthGateState extends State<AuthGate> {
       return;
     }
 
+    if (_sesionYaValidada) {
+      _irAHome();
+      return;
+    }
+
     try {
       // Si el token es válido, esta llamada tendrá éxito.
       await ApiService.instance.obtenerPerfil();
+      _sesionYaValidada = true;
       _irAHome();
     } on ApiException catch (e) {
       if (e.isUnauthorized) {
@@ -61,7 +81,7 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.background,
       body: Center(
         child: Column(

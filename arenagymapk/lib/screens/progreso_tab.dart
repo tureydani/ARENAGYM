@@ -230,7 +230,7 @@ class _MetasSectionState extends State<_MetasSection> {
                   child: _metas.isEmpty
                       ? ListView(
                           padding: const EdgeInsets.all(16),
-                          children: const [
+                          children: [
                             AppCard(
                               child: Text(
                                 'Aún no tienes metas registradas. Toca el botón "+" '
@@ -257,12 +257,12 @@ class _MetasSectionState extends State<_MetasSection> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _cargarDatos, child: const Text('Reintentar')),
@@ -289,7 +289,7 @@ class _MetasSectionState extends State<_MetasSection> {
                 Expanded(
                   child: Text(
                     meta.tipoMeta,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w700,
                       fontSize: 16,
                       color: AppColors.textPrimary,
@@ -313,7 +313,7 @@ class _MetasSectionState extends State<_MetasSection> {
               const SizedBox(height: 6),
               Text(
                 meta.descripcion!,
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
             ],
             const SizedBox(height: 12),
@@ -333,7 +333,7 @@ class _MetasSectionState extends State<_MetasSection> {
                 children: [
                   Text(
                     'Inicial: ${meta.valorInicial}',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                   ),
                   Text(
                     'Actual: ${meta.valorActual}',
@@ -341,7 +341,7 @@ class _MetasSectionState extends State<_MetasSection> {
                   ),
                   Text(
                     'Meta: ${meta.valorObjetivo}',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                   ),
                 ],
               ),
@@ -350,17 +350,17 @@ class _MetasSectionState extends State<_MetasSection> {
             if (meta.fechaObjetivo != null)
               Row(
                 children: [
-                  const Icon(Icons.event_outlined, size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.event_outlined, size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: 6),
                   Text(
                     'Objetivo: ${meta.fechaObjetivo}',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                   ),
                 ],
               ),
             if (esActiva) ...[
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Toca para actualizar tu avance',
                 style: TextStyle(color: AppColors.accent, fontSize: 11, fontStyle: FontStyle.italic),
               ),
@@ -447,7 +447,7 @@ class _NuevaMetaSheetState extends State<_NuevaMetaSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.card,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -475,7 +475,7 @@ class _NuevaMetaSheetState extends State<_NuevaMetaSheet> {
                 ),
                 const SizedBox(height: 16),
                 if (_errorMessage != null) ...[
-                  Text(_errorMessage!, style: const TextStyle(color: AppColors.danger)),
+                  Text(_errorMessage!, style: TextStyle(color: AppColors.danger)),
                   const SizedBox(height: 12),
                 ],
                 TextFormField(
@@ -619,7 +619,7 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
                   child: _progresos.isEmpty
                       ? ListView(
                           padding: const EdgeInsets.all(16),
-                          children: const [
+                          children: [
                             AppCard(
                               child: Text(
                                 'Aún no tienes mediciones registradas. Toca el botón "+" '
@@ -646,12 +646,12 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _cargarDatos, child: const Text('Reintentar')),
@@ -678,11 +678,11 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
         children: [
           Row(
             children: [
-              const Icon(Icons.monitor_weight_outlined, size: 18, color: AppColors.accent),
+              Icon(Icons.monitor_weight_outlined, size: 18, color: AppColors.accent),
               const SizedBox(width: 8),
               Text(
                 progreso.fecha,
-                style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
             ],
           ),
@@ -700,7 +700,7 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
                       children: [
                         Text(
                           entry.key,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                         ),
                         Text(
                           entry.value!.toStringAsFixed(1),
@@ -718,7 +718,7 @@ class _ProgresosSectionState extends State<_ProgresosSection> {
             const SizedBox(height: 8),
             Text(
               progreso.observaciones!,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
           ],
         ],
@@ -823,7 +823,7 @@ class _NuevoProgresoSheetState extends State<_NuevoProgresoSheet> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.card,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
@@ -850,13 +850,13 @@ class _NuevoProgresoSheetState extends State<_NuevoProgresoSheet> {
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Todos los campos son opcionales, pero llena al menos uno.',
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 if (_errorMessage != null) ...[
-                  Text(_errorMessage!, style: const TextStyle(color: AppColors.danger)),
+                  Text(_errorMessage!, style: TextStyle(color: AppColors.danger)),
                   const SizedBox(height: 12),
                 ],
                 Row(

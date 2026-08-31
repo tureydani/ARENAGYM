@@ -90,12 +90,12 @@ class _AsistenciasCalendarioTabState extends State<AsistenciasCalendarioTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: _cargarDatos, child: const Text('Reintentar')),
@@ -110,14 +110,14 @@ class _AsistenciasCalendarioTabState extends State<AsistenciasCalendarioTab> {
     return AppCard(
       child: Column(
         children: [
-          const Text(
+          Text(
             'Asistencias totales',
             style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
           const SizedBox(height: 12),
           Text(
             '$total',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 56,
               fontWeight: FontWeight.w800,
               height: 1,
@@ -127,7 +127,7 @@ class _AsistenciasCalendarioTabState extends State<AsistenciasCalendarioTab> {
           const SizedBox(height: 4),
           Text(
             total == 1 ? 'visita registrada' : 'visitas registradas',
-            style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -173,7 +173,7 @@ class _AsistenciasCalendarioTabState extends State<AsistenciasCalendarioTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Última visita',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
@@ -211,7 +211,7 @@ class _AsistenciasCalendarioTabState extends State<AsistenciasCalendarioTab> {
             ),
             Text(
               label,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),

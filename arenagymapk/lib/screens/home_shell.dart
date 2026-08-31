@@ -19,7 +19,13 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
+  // Estático: sobrevive a que HomeShell se remonte por completo dentro del
+  // mismo proceso (ej. al cambiar el modo oscuro, que fuerza un remontaje
+  // desde la raíz de la app) para que el cliente no "regrese" a Inicio cada
+  // vez que cambia el tema, sino que se quede en la pestaña donde estaba.
+  static int _ultimoIndice = 0;
+
+  int _index = _ultimoIndice;
   int _noLeidas = 0;
   Timer? _timer;
 
@@ -53,9 +59,14 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  void _cambiarIndice(int value) {
+    setState(() => _index = value);
+    _ultimoIndice = value;
+  }
+
   void _onDestinationSelected(int value) {
     final veniaDeNotificaciones = _index == 2;
-    setState(() => _index = value);
+    _cambiarIndice(value);
     // Si el cliente sale de la pestaña de notificaciones, refresca el
     // contador por si marcó/eliminó algo mientras estaba ahí.
     if (veniaDeNotificaciones && value != 2) {
@@ -70,7 +81,7 @@ class _HomeShellState extends State<HomeShell> {
       const ProgresoTab(),
       NotificacionesTab(
         onNotificacionesActualizadas: _actualizarContadorNoLeidas,
-        onNavegarAPestana: (index) => setState(() => _index = index),
+        onNavegarAPestana: _cambiarIndice,
       ),
       const PerfilTab(),
     ];
@@ -85,12 +96,12 @@ class _HomeShellState extends State<HomeShell> {
         backgroundColor: AppColors.card,
         indicatorColor: AppColors.accent.withValues(alpha: 0.12),
         destinations: [
-          const NavigationDestination(
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home, color: AppColors.accent),
             label: 'Inicio',
           ),
-          const NavigationDestination(
+          NavigationDestination(
             icon: Icon(Icons.trending_up_outlined),
             selectedIcon: Icon(Icons.trending_up, color: AppColors.accent),
             label: 'Progreso',
@@ -104,11 +115,11 @@ class _HomeShellState extends State<HomeShell> {
             selectedIcon: Badge(
               label: Text('$_noLeidas'),
               isLabelVisible: _noLeidas > 0,
-              child: const Icon(Icons.notifications, color: AppColors.accent),
+              child: Icon(Icons.notifications, color: AppColors.accent),
             ),
             label: 'Notificaciones',
           ),
-          const NavigationDestination(
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person, color: AppColors.accent),
             label: 'Perfil',

@@ -97,7 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
+                    Text(
                       'Arena Gym',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Inicia sesión para ver tu actividad',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textSecondary),
@@ -125,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.error_outline,
                               color: AppColors.danger,
                               size: 20,
@@ -134,7 +134,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(color: AppColors.danger),
+                                style: TextStyle(color: AppColors.danger),
                               ),
                             ),
                           ],

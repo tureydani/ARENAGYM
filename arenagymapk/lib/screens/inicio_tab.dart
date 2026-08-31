@@ -104,12 +104,12 @@ class _InicioTabState extends State<InicioTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -128,7 +128,7 @@ class _InicioTabState extends State<InicioTab> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         'Hola, ${usuario?.nombre ?? ''} ${usuario?.apellido ?? ''} 👋',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w800,
           color: AppColors.textPrimary,
@@ -163,10 +163,10 @@ class _InicioTabState extends State<InicioTab> {
                 color: AppColors.danger.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.card_membership, color: AppColors.danger),
+              child: Icon(Icons.card_membership, color: AppColors.danger),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -211,13 +211,13 @@ class _InicioTabState extends State<InicioTab> {
                   color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.card_membership, color: AppColors.accent),
+                child: Icon(Icons.card_membership, color: AppColors.accent),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   membresia.membresia.tipo,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
                     color: AppColors.textPrimary,
@@ -247,7 +247,7 @@ class _InicioTabState extends State<InicioTab> {
                       : dias == 1
                           ? 'día restante'
                           : 'días restantes',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -273,7 +273,7 @@ class _InicioTabState extends State<InicioTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Inicio',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
@@ -289,7 +289,7 @@ class _InicioTabState extends State<InicioTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
+                    Text(
                       'Vence',
                       style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
@@ -340,7 +340,7 @@ class _InicioTabState extends State<InicioTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Actividad',
             style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
@@ -366,7 +366,7 @@ class _InicioTabState extends State<InicioTab> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Última visita',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
@@ -404,7 +404,7 @@ class _InicioTabState extends State<InicioTab> {
             ),
             Text(
               label,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
             ),
           ],
         ),

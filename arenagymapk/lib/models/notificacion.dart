@@ -81,24 +81,24 @@ class TipoNotificacionInfo {
 TipoNotificacionInfo infoParaTipo(String? tipo) {
   switch (tipo) {
     case 'pago':
-      return const TipoNotificacionInfo(Icons.payments_outlined, AppColors.success);
+      return TipoNotificacionInfo(Icons.payments_outlined, AppColors.success);
     case 'asistencia':
-      return const TipoNotificacionInfo(Icons.qr_code_2, AppColors.accent);
+      return TipoNotificacionInfo(Icons.qr_code_2, AppColors.accent);
     case 'membresia':
       return const TipoNotificacionInfo(Icons.card_membership, _NotificacionColors.amber);
     case 'inactividad':
-      return const TipoNotificacionInfo(Icons.bedtime_outlined, AppColors.danger);
+      return TipoNotificacionInfo(Icons.bedtime_outlined, AppColors.danger);
     case 'progreso':
-      return const TipoNotificacionInfo(Icons.trending_up, AppColors.accent);
+      return TipoNotificacionInfo(Icons.trending_up, AppColors.accent);
     case 'motivacion':
       return const TipoNotificacionInfo(Icons.emoji_events_outlined, _NotificacionColors.gold);
     case 'aviso':
       return const TipoNotificacionInfo(Icons.campaign_outlined, _NotificacionColors.slate);
     case 'rutina':
-      return const TipoNotificacionInfo(Icons.fitness_center, AppColors.accent);
+      return TipoNotificacionInfo(Icons.fitness_center, AppColors.accent);
     case 'info':
     default:
-      return const TipoNotificacionInfo(Icons.info_outline, AppColors.textSecondary);
+      return TipoNotificacionInfo(Icons.info_outline, AppColors.textSecondary);
   }
 }
 

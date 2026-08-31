@@ -194,7 +194,7 @@ class _NotificacionesTabState extends State<NotificacionesTab> {
                           : _notificacionesFiltradas.isEmpty
                               ? ListView(
                                   padding: const EdgeInsets.all(16),
-                                  children: const [
+                                  children: [
                                     AppCard(
                                       child: Text(
                                         'No hay notificaciones de este tipo.',
@@ -263,18 +263,18 @@ class _NotificacionesTabState extends State<NotificacionesTab> {
           padding: const EdgeInsets.symmetric(vertical: 48),
           child: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.notifications_none,
                 size: 56,
                 color: AppColors.textSecondary,
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'No tienes notificaciones por ahora',
                 style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Aquí verás avisos sobre tus pagos, asistencias, membresía y progreso.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
@@ -293,12 +293,12 @@ class _NotificacionesTabState extends State<NotificacionesTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
+            Icon(Icons.wifi_off, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -371,7 +371,7 @@ class _NotificacionesTabState extends State<NotificacionesTab> {
                             Container(
                               width: 8,
                               height: 8,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.accent,
                               ),
@@ -384,12 +384,12 @@ class _NotificacionesTabState extends State<NotificacionesTab> {
                         notificacion.mensaje,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         formatearFechaRelativa(notificacion.fechaCreacion),
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                       ),
                     ],
                   ),

@@ -76,7 +76,7 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
+                  Text(
                     'Si el gimnasio ya te registró, activa tu cuenta con tu '
                     'número de teléfono o correo (lo que tengas registrado) '
                     'y crea una contraseña para acceder desde la app.',
@@ -95,7 +95,7 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.error_outline,
                             color: AppColors.danger,
                             size: 20,
@@ -104,7 +104,7 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: const TextStyle(color: AppColors.danger),
+                              style: TextStyle(color: AppColors.danger),
                             ),
                           ),
                         ],
