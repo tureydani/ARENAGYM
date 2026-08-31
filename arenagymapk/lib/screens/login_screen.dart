@@ -16,7 +16,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _identificadorController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _loading = false;
@@ -25,7 +25,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _identificadorController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final result = await ApiService.instance.login(
-        email: _emailController.text.trim(),
+        identificador: _identificadorController.text.trim(),
         password: _passwordController.text,
       );
       await AuthStorage.instance.saveToken(result.token);
@@ -57,11 +57,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _goToActivarCuenta() async {
-    final email = await Navigator.of(context).push<String>(
+    final identificador = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const ActivarCuentaScreen()),
     );
-    if (email != null && mounted) {
-      _emailController.text = email;
+    if (identificador != null && mounted) {
+      _identificadorController.text = identificador;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cuenta activada. Ya puedes iniciar sesión.'),
@@ -147,19 +147,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
                     ],
                     TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _identificadorController,
+                      keyboardType: TextInputType.text,
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
-                        labelText: 'Correo electrónico',
-                        prefixIcon: Icon(Icons.email_outlined),
+                        labelText: 'Teléfono o correo',
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Ingresa tu correo';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Correo inválido';
+                          return 'Ingresa tu teléfono o correo';
                         }
                         return null;
                       },

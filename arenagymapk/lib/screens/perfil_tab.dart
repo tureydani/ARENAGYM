@@ -25,7 +25,9 @@ class _PerfilTabState extends State<PerfilTab> {
   Usuario? _usuario;
 
   final _telefonoController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _editandoTelefono = false;
+  bool _editandoEmail = false;
 
   @override
   void initState() {
@@ -36,6 +38,7 @@ class _PerfilTabState extends State<PerfilTab> {
   @override
   void dispose() {
     _telefonoController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -51,6 +54,7 @@ class _PerfilTabState extends State<PerfilTab> {
       setState(() {
         _usuario = perfil.usuario;
         _telefonoController.text = perfil.usuario.telefono ?? '';
+        _emailController.text = perfil.usuario.email;
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -59,6 +63,28 @@ class _PerfilTabState extends State<PerfilTab> {
         _errorMessage = e.message;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _guardarEmail() async {
+    setState(() => _guardando = true);
+    try {
+      final actualizado = await ApiService.instance.actualizarPerfil(
+        email: _emailController.text.trim(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _usuario = actualizado;
+        _editandoEmail = false;
+        _guardando = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Correo actualizado correctamente.')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _guardando = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
   }
 
@@ -187,11 +213,7 @@ class _PerfilTabState extends State<PerfilTab> {
             value: usuario?.nombreCompleto ?? '-',
           ),
           const Divider(height: 24),
-          _buildDatoFila(
-            icon: Icons.email_outlined,
-            label: 'Email',
-            value: usuario?.email ?? '-',
-          ),
+          _buildEmailFila(),
           const Divider(height: 24),
           _buildTelefonoFila(),
           const Divider(height: 24),
@@ -227,6 +249,76 @@ class _PerfilTabState extends State<PerfilTab> {
             ],
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildEmailFila() {
+    if (!_editandoEmail) {
+      return Row(
+        children: [
+          const Icon(Icons.email_outlined, size: 20, color: AppColors.textSecondary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Email',
+                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  (_usuario?.email.isEmpty ?? true) ? 'No registrado' : _usuario!.email,
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Editar correo',
+            icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.accent),
+            onPressed: () => setState(() => _editandoEmail = true),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: 'Email'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _guardando
+            ? const Padding(
+                padding: EdgeInsets.all(8),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              )
+            : IconButton(
+                tooltip: 'Guardar',
+                icon: const Icon(Icons.check, color: AppColors.success),
+                onPressed: _guardarEmail,
+              ),
+        if (!_guardando)
+          IconButton(
+            tooltip: 'Cancelar',
+            icon: const Icon(Icons.close, color: AppColors.danger),
+            onPressed: () {
+              setState(() {
+                _editandoEmail = false;
+                _emailController.text = _usuario?.email ?? '';
+              });
+            },
+          ),
       ],
     );
   }

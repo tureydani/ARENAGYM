@@ -79,15 +79,18 @@ class ApiService {
   }
 
   /// POST /login -> { token, usuario }
+  /// [identificador] puede ser el teléfono o el correo del cliente,
+  /// lo que tenga registrado (el panel web todavía no siempre captura
+  /// el correo al dar de alta a un cliente).
   Future<({String token, Usuario usuario})> login({
-    required String email,
+    required String identificador,
     required String password,
   }) {
     return _guarded(() async {
       final response = await http.post(
         _uri('/login'),
         headers: _jsonHeaders,
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({'identificador': identificador, 'password': password}),
       );
       final json = _decodeOrThrow(response);
       final token = json['token'] as String;
@@ -97,15 +100,23 @@ class ApiService {
   }
 
   /// POST /activar-cuenta -> { message }
+  /// [identificador]: teléfono o correo ya registrado por el gimnasio.
+  /// [email]: opcional, para agregar el correo de una vez si el cliente
+  /// se está activando solo con su teléfono y todavía no tiene uno.
   Future<String> activarCuenta({
-    required String email,
+    required String identificador,
     required String password,
+    String? email,
   }) {
     return _guarded(() async {
       final response = await http.post(
         _uri('/activar-cuenta'),
         headers: _jsonHeaders,
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({
+          'identificador': identificador,
+          'password': password,
+          if (email != null && email.isNotEmpty) 'email': email,
+        }),
       );
       final json = _decodeOrThrow(response);
       return json['message']?.toString() ?? 'Cuenta activada correctamente.';
@@ -169,7 +180,7 @@ class ApiService {
   }
 
   /// PATCH /perfil -> { usuario }
-  Future<Usuario> actualizarPerfil({String? telefono, String? fotoPerfil}) {
+  Future<Usuario> actualizarPerfil({String? telefono, String? fotoPerfil, String? email}) {
     return _guarded(() async {
       final response = await http.patch(
         _uri('/perfil'),
@@ -177,6 +188,7 @@ class ApiService {
         body: jsonEncode({
           if (telefono != null) 'telefono': telefono,
           if (fotoPerfil != null) 'foto_perfil': fotoPerfil,
+          if (email != null) 'email': email,
         }),
       );
       final json = _decodeOrThrow(response);

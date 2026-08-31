@@ -6,6 +6,11 @@ import '../theme/app_theme.dart';
 
 /// Pantalla de activación de cuenta para clientes que el gimnasio ya
 /// registró en el sistema web, pero que todavía no tienen contraseña de app.
+///
+/// El panel web todavía no siempre captura el correo al dar de alta a un
+/// cliente, así que la activación acepta el teléfono o el correo que el
+/// gimnasio le haya asignado. Si se activa con teléfono y todavía no tiene
+/// correo, puede agregarlo aquí mismo (opcional).
 class ActivarCuentaScreen extends StatefulWidget {
   const ActivarCuentaScreen({super.key});
 
@@ -15,6 +20,7 @@ class ActivarCuentaScreen extends StatefulWidget {
 
 class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _identificadorController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -24,6 +30,7 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
 
   @override
   void dispose() {
+    _identificadorController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -40,11 +47,14 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
 
     try {
       await ApiService.instance.activarCuenta(
-        email: _emailController.text.trim(),
+        identificador: _identificadorController.text.trim(),
         password: _passwordController.text,
+        email: _emailController.text.trim().isEmpty
+            ? null
+            : _emailController.text.trim(),
       );
       if (!mounted) return;
-      Navigator.of(context).pop(_emailController.text.trim());
+      Navigator.of(context).pop(_identificadorController.text.trim());
     } on ApiException catch (e) {
       setState(() => _errorMessage = e.message);
     } finally {
@@ -67,9 +77,9 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    'Si el gimnasio ya te registró, activa tu cuenta con el '
-                    'mismo correo y crea una contraseña para acceder desde '
-                    'la app.',
+                    'Si el gimnasio ya te registró, activa tu cuenta con tu '
+                    'número de teléfono o correo (lo que tengas registrado) '
+                    'y crea una contraseña para acceder desde la app.',
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 24),
@@ -103,17 +113,37 @@ class _ActivarCuentaScreenState extends State<ActivarCuentaScreen> {
                     const SizedBox(height: 16),
                   ],
                   TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
+                    controller: _identificadorController,
+                    keyboardType: TextInputType.text,
                     decoration: const InputDecoration(
-                      labelText: 'Correo electrónico',
-                      prefixIcon: Icon(Icons.email_outlined),
+                      labelText: 'Teléfono o correo registrado',
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Ingresa tu correo';
+                        return 'Ingresa tu teléfono o correo';
                       }
-                      if (!value.contains('@')) return 'Correo inválido';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo (opcional, si aún no tienes uno)',
+                      prefixIcon: Icon(Icons.email_outlined),
+                      helperText:
+                          'Si te activas con tu teléfono, puedes agregar '
+                          'tu correo aquí para poder usarlo también.',
+                      helperMaxLines: 2,
+                    ),
+                    validator: (value) {
+                      if (value != null &&
+                          value.trim().isNotEmpty &&
+                          !value.contains('@')) {
+                        return 'Correo inválido';
+                      }
                       return null;
                     },
                   ),
