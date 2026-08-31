@@ -138,7 +138,7 @@ export default function TablaAsistencias() {
       return true;
     } catch (err) {
       const mensaje = err.response?.data?.error || 'Error al registrar la asistencia';
-      setResultado({ tipo: 'error', mensaje });
+      setResultado({ tipo: 'error', mensaje, usuario: err.response?.data?.usuario });
       return false;
     }
   };

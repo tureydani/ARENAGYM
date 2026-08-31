@@ -1,7 +1,23 @@
 import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
-import { Asistencia, Usuario } from '@/lib/db/models';
+import { Asistencia, Usuario, RegistroMembresia } from '@/lib/db/models';
 import { verificarTokenAsistencia } from '@/lib/auth/clienteAuth';
+
+// "Hoy" en la zona horaria del gimnasio (Bolivia, UTC-4 fijo, sin horario de
+// verano), no la del servidor (Vercel corre en UTC). Sin esto, entre
+// aproximadamente las 20:00 y medianoche hora Bolivia el servidor ya "cree"
+// que es el día siguiente en UTC, y una membresía que vence justo hoy
+// aparecería vencida unas horas antes de que en realidad termine el día —
+// exactamente el tipo de cliente activo que no debe quedar afuera.
+function fechaHoyBolivia() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date());
+}
+
+// Convierte "YYYY-MM-DD" a "DD/MM/YYYY" sin pasar por Date/timezone.
+function formatearFechaLegible(fechaISO) {
+  const [anio, mes, dia] = fechaISO.split('-');
+  return `${dia}/${mes}/${anio}`;
+}
 
 // Usado desde el panel administrativo: registra la asistencia de un
 // cliente, ya sea escaneando su código QR (qrToken) o marcándola
@@ -28,6 +44,38 @@ export async function POST(request) {
     const usuario = await Usuario.findOne({ where: { id_usuario: idUsuario, activo: true } });
     if (!usuario) {
       return NextResponse.json({ error: 'Cliente no encontrado o inactivo' }, { status: 404 });
+    }
+
+    // Misma definición de "membresía activa" que ya usa el resto del panel
+    // (registro activo=true y fecha_fin todavía no pasó, o sin fecha_fin):
+    // no se registra la asistencia de un cliente con la membresía vencida.
+    const hoy = fechaHoyBolivia();
+    const membresiaVigente = await RegistroMembresia.findOne({
+      where: {
+        id_usuario: idUsuario,
+        activo: true,
+        [Op.or]: [
+          { fecha_fin: null },
+          { fecha_fin: { [Op.gte]: hoy } }
+        ]
+      }
+    });
+
+    if (!membresiaVigente) {
+      const ultimaMembresia = await RegistroMembresia.scope('withInactive').findOne({
+        where: { id_usuario: idUsuario },
+        order: [['fecha_fin', 'DESC']]
+      });
+
+      const mensaje = ultimaMembresia?.fecha_fin
+        ? `Membresía vencida el ${formatearFechaLegible(ultimaMembresia.fecha_fin)}. No se puede registrar el ingreso.`
+        : 'Este cliente no tiene una membresía activa registrada. No se puede registrar el ingreso.';
+
+      return NextResponse.json({
+        error: mensaje,
+        usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
+        membresiaVencida: true
+      }, { status: 403 });
     }
 
     // Evitar duplicados si el mismo QR/click se procesa dos veces seguidas
