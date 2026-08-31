@@ -38,10 +38,13 @@ export async function GET(request) {
   }
 }
 
-// Edición limitada a datos de contacto/app. nombre, apellido y email no
-// son editables por el cliente porque identifican su membresía física
-// en el sistema del gimnasio; esos cambios los sigue haciendo el
-// administrativo desde el panel web.
+// Edición limitada a datos de contacto/app. nombre y apellido no son
+// editables por el cliente porque identifican su membresía física en el
+// sistema del gimnasio; esos cambios los sigue haciendo el administrativo
+// desde el panel web. El email sí es editable aquí: como el panel web
+// todavía no tiene un campo para capturarlo al crear un cliente, muchos
+// usuarios se activan solo con teléfono y agregan su correo después,
+// desde la app.
 export async function PATCH(request) {
   const auth = verificarAuth(request);
   if (!auth) {
@@ -54,10 +57,11 @@ export async function PATCH(request) {
       return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
-    const { telefono, foto_perfil } = await request.json();
+    const { telefono, foto_perfil, email } = await request.json();
     const updateData = {};
     if (telefono !== undefined) updateData.telefono = telefono;
     if (foto_perfil !== undefined) updateData.foto_perfil = foto_perfil;
+    if (email !== undefined) updateData.email = email ? email.trim() : null;
 
     await usuario.update(updateData);
 
@@ -66,6 +70,9 @@ export async function PATCH(request) {
 
     return NextResponse.json({ usuario: usuarioActualizado });
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return NextResponse.json({ error: 'Ese correo ya está en uso por otra cuenta' }, { status: 409 });
+    }
     console.error('Error al actualizar perfil de cliente:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
