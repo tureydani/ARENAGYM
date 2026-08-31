@@ -45,6 +45,25 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  // Campos para autenticación desde la futura app móvil de clientes.
+  // No los usa (todavía) ningún endpoint del sistema web actual.
+  password_hash: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  foto_perfil: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  ultimo_acceso: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  email_verificado: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'usuarios',
