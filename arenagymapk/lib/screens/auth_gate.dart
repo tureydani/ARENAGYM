@@ -4,7 +4,7 @@ import '../services/api_exception.dart';
 import '../services/api_service.dart';
 import '../services/auth_storage.dart';
 import '../theme/app_theme.dart';
-import 'dashboard_screen.dart';
+import 'home_shell.dart';
 import 'login_screen.dart';
 
 /// Pantalla inicial: si hay un token guardado, lo valida contra GET /perfil.
@@ -34,7 +34,7 @@ class _AuthGateState extends State<AuthGate> {
     try {
       // Si el token es válido, esta llamada tendrá éxito.
       await ApiService.instance.obtenerPerfil();
-      _irADashboard();
+      _irAHome();
     } on ApiException catch (e) {
       if (e.isUnauthorized) {
         await AuthStorage.instance.clearToken();
@@ -52,10 +52,10 @@ class _AuthGateState extends State<AuthGate> {
     );
   }
 
-  void _irADashboard() {
+  void _irAHome() {
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      MaterialPageRoute(builder: (_) => const HomeShell()),
     );
   }
 

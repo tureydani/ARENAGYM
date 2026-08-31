@@ -4,8 +4,10 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
+import '../models/meta.dart';
 import '../models/notificacion.dart';
 import '../models/perfil_response.dart';
+import '../models/progreso.dart';
 import '../models/resumen_asistencias.dart';
 import '../models/usuario.dart';
 import 'api_exception.dart';
@@ -150,6 +152,155 @@ class ApiService {
       // Reutiliza el manejo de errores estándar (lanza ApiException).
       _decodeOrThrow(response);
       return <Notificacion>[];
+    });
+  }
+
+  /// PATCH /notificaciones/{id} -> notificación actualizada
+  Future<Notificacion> marcarNotificacionLeida(int idNotificacion, {bool leida = true}) {
+    return _guarded(() async {
+      final response = await http.patch(
+        _uri('/notificaciones/$idNotificacion'),
+        headers: await _authHeaders(),
+        body: jsonEncode({'leida': leida}),
+      );
+      final json = _decodeOrThrow(response);
+      return Notificacion.fromJson(json);
+    });
+  }
+
+  /// PATCH /perfil -> { usuario }
+  Future<Usuario> actualizarPerfil({String? telefono, String? fotoPerfil}) {
+    return _guarded(() async {
+      final response = await http.patch(
+        _uri('/perfil'),
+        headers: await _authHeaders(),
+        body: jsonEncode({
+          if (telefono != null) 'telefono': telefono,
+          if (fotoPerfil != null) 'foto_perfil': fotoPerfil,
+        }),
+      );
+      final json = _decodeOrThrow(response);
+      return Usuario.fromJson(json['usuario'] as Map<String, dynamic>);
+    });
+  }
+
+  /// GET /metas -> [ {...}, ... ]
+  Future<List<Meta>> getMetas() {
+    return _guarded(() async {
+      final response = await http.get(_uri('/metas'), headers: await _authHeaders());
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return decoded.map((e) => Meta.fromJson(e as Map<String, dynamic>)).toList();
+        }
+        return <Meta>[];
+      }
+
+      _decodeOrThrow(response);
+      return <Meta>[];
+    });
+  }
+
+  /// POST /metas -> meta creada (201)
+  Future<Meta> crearMeta({
+    required String tipoMeta,
+    double? valorInicial,
+    double? valorObjetivo,
+    double? valorActual,
+    String? fechaObjetivo,
+    String? descripcion,
+  }) {
+    return _guarded(() async {
+      final response = await http.post(
+        _uri('/metas'),
+        headers: await _authHeaders(),
+        body: jsonEncode({
+          'tipo_meta': tipoMeta,
+          if (valorInicial != null) 'valor_inicial': valorInicial,
+          if (valorObjetivo != null) 'valor_objetivo': valorObjetivo,
+          if (valorActual != null) 'valor_actual': valorActual,
+          if (fechaObjetivo != null) 'fecha_objetivo': fechaObjetivo,
+          if (descripcion != null) 'descripcion': descripcion,
+        }),
+      );
+      final json = _decodeOrThrow(response);
+      return Meta.fromJson(json);
+    });
+  }
+
+  /// PATCH /metas/{id} -> meta actualizada
+  Future<Meta> actualizarMeta(
+    int idMeta, {
+    double? valorActual,
+    double? valorObjetivo,
+    String? estado,
+    String? descripcion,
+    String? fechaObjetivo,
+  }) {
+    return _guarded(() async {
+      final response = await http.patch(
+        _uri('/metas/$idMeta'),
+        headers: await _authHeaders(),
+        body: jsonEncode({
+          if (valorActual != null) 'valor_actual': valorActual,
+          if (valorObjetivo != null) 'valor_objetivo': valorObjetivo,
+          if (estado != null) 'estado': estado,
+          if (descripcion != null) 'descripcion': descripcion,
+          if (fechaObjetivo != null) 'fecha_objetivo': fechaObjetivo,
+        }),
+      );
+      final json = _decodeOrThrow(response);
+      return Meta.fromJson(json);
+    });
+  }
+
+  /// GET /progresos -> [ {...}, ... ]
+  Future<List<Progreso>> getProgresos() {
+    return _guarded(() async {
+      final response = await http.get(_uri('/progresos'), headers: await _authHeaders());
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return decoded.map((e) => Progreso.fromJson(e as Map<String, dynamic>)).toList();
+        }
+        return <Progreso>[];
+      }
+
+      _decodeOrThrow(response);
+      return <Progreso>[];
+    });
+  }
+
+  /// POST /progresos -> progreso creado (201)
+  Future<Progreso> crearProgreso({
+    double? peso,
+    double? porcentajeGrasa,
+    double? pecho,
+    double? cintura,
+    double? brazo,
+    double? pierna,
+    double? cadera,
+    String? observaciones,
+  }) {
+    return _guarded(() async {
+      final response = await http.post(
+        _uri('/progresos'),
+        headers: await _authHeaders(),
+        body: jsonEncode({
+          if (peso != null) 'peso': peso,
+          if (porcentajeGrasa != null) 'porcentaje_grasa': porcentajeGrasa,
+          if (pecho != null) 'pecho': pecho,
+          if (cintura != null) 'cintura': cintura,
+          if (brazo != null) 'brazo': brazo,
+          if (pierna != null) 'pierna': pierna,
+          if (cadera != null) 'cadera': cadera,
+          if (observaciones != null) 'observaciones': observaciones,
+        }),
+      );
+      final json = _decodeOrThrow(response);
+      return Progreso.fromJson(json);
     });
   }
 }

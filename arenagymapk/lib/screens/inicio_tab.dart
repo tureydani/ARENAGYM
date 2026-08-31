@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/membresia_activa.dart';
-import '../models/notificacion.dart';
 import '../models/perfil_response.dart';
 import '../models/resumen_asistencias.dart';
 import '../services/api_exception.dart';
@@ -12,20 +11,20 @@ import '../utils/date_utils.dart';
 import '../widgets/app_card.dart';
 import 'login_screen.dart';
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+/// Pestaña "Inicio": saludo, membresía activa y resumen de asistencias.
+class InicioTab extends StatefulWidget {
+  const InicioTab({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<InicioTab> createState() => _InicioTabState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _InicioTabState extends State<InicioTab> {
   bool _loading = true;
   String? _errorMessage;
 
   PerfilResponse? _perfil;
   ResumenAsistencias? _asistencias;
-  List<Notificacion> _notificaciones = [];
 
   @override
   void initState() {
@@ -42,18 +41,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final perfil = await ApiService.instance.obtenerPerfil();
       final asistencias = await ApiService.instance.obtenerAsistencias();
-      final notificaciones = await ApiService.instance.obtenerNotificaciones();
 
       if (!mounted) return;
       setState(() {
         _perfil = perfil;
         _asistencias = asistencias;
-        _notificaciones = notificaciones;
         _loading = false;
       });
     } on ApiException catch (e) {
       if (e.isUnauthorized) {
-        await _cerrarSesion(expirado: true);
+        await _sesionExpirada();
         return;
       }
       if (!mounted) return;
@@ -64,57 +61,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _cerrarSesion({bool expirado = false}) async {
+  Future<void> _sesionExpirada() async {
     await AuthStorage.instance.clearToken();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
       (route) => false,
     );
-    if (expirado) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tu sesión expiró. Inicia sesión de nuevo.'),
-        ),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tu sesión expiró. Inicia sesión de nuevo.')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi Arena Gym'),
-        actions: [
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: () => _cerrarSesion(),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _errorMessage != null
-                ? _buildError()
-                : RefreshIndicator(
-                    onRefresh: _cargarDatos,
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        _buildSaludo(),
-                        const SizedBox(height: 16),
-                        _buildMembresiaCard(),
-                        const SizedBox(height: 16),
-                        _buildActividadCard(),
-                        const SizedBox(height: 16),
-                        _buildNotificacionesSection(),
-                      ],
-                    ),
-                  ),
-      ),
-    );
+    return _loading
+        ? const Center(child: CircularProgressIndicator())
+        : _errorMessage != null
+            ? _buildError()
+            : RefreshIndicator(
+                onRefresh: _cargarDatos,
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    _buildSaludo(),
+                    const SizedBox(height: 16),
+                    _buildMembresiaCard(),
+                    const SizedBox(height: 16),
+                    _buildActividadCard(),
+                  ],
+                ),
+              );
   }
 
   Widget _buildError() {
@@ -339,81 +316,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildNotificacionesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(bottom: 8, left: 4),
-          child: Text(
-            'Notificaciones',
-            style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-          ),
-        ),
-        if (_notificaciones.isEmpty)
-          const AppCard(
-            child: Text(
-              'No tienes notificaciones por ahora.',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          )
-        else
-          Column(
-            children: [
-              for (final notificacion in _notificaciones) ...[
-                _buildNotificacionTile(notificacion),
-                const SizedBox(height: 10),
-              ],
-            ],
-          ),
-      ],
-    );
-  }
-
-  Widget _buildNotificacionTile(Notificacion notificacion) {
-    return AppCard(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: const EdgeInsets.only(top: 4),
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: notificacion.leida ? Colors.transparent : AppColors.accent,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  notificacion.titulo,
-                  style: TextStyle(
-                    fontWeight: notificacion.leida ? FontWeight.w600 : FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  notificacion.mensaje,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  formatearFechaRelativa(notificacion.fechaCreacion),
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
