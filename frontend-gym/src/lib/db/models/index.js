@@ -11,6 +11,8 @@ const DetalleVenta = require('./detalleVenta');
 const MovimientoCaja = require('./movimientoCaja');
 const Asistencia = require('./asistencia');
 const Notificacion = require('./notificacion');
+const Meta = require('./meta');
+const Progreso = require('./progreso');
 
 // Definir todas las relaciones
 
@@ -159,6 +161,24 @@ Usuario.hasMany(Notificacion, {
   foreignKey: 'id_usuario'
 });
 
+// Meta - Usuario
+Meta.belongsTo(Usuario, {
+  foreignKey: 'id_usuario',
+  as: 'Usuario'
+});
+Usuario.hasMany(Meta, {
+  foreignKey: 'id_usuario'
+});
+
+// Progreso - Usuario
+Progreso.belongsTo(Usuario, {
+  foreignKey: 'id_usuario',
+  as: 'Usuario'
+});
+Usuario.hasMany(Progreso, {
+  foreignKey: 'id_usuario'
+});
+
 module.exports = {
   Usuario,
   Administrativo,
@@ -171,5 +191,7 @@ module.exports = {
   DetalleVenta,
   MovimientoCaja,
   Asistencia,
-  Notificacion
+  Notificacion,
+  Meta,
+  Progreso
 };

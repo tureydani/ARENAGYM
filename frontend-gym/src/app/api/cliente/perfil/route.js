@@ -37,3 +37,36 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
+// Edición limitada a datos de contacto/app. nombre, apellido y email no
+// son editables por el cliente porque identifican su membresía física
+// en el sistema del gimnasio; esos cambios los sigue haciendo el
+// administrativo desde el panel web.
+export async function PATCH(request) {
+  const auth = verificarAuth(request);
+  if (!auth) {
+    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  }
+
+  try {
+    const usuario = await Usuario.findOne({ where: { id_usuario: auth.id_usuario, activo: true } });
+    if (!usuario) {
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
+    }
+
+    const { telefono, foto_perfil } = await request.json();
+    const updateData = {};
+    if (telefono !== undefined) updateData.telefono = telefono;
+    if (foto_perfil !== undefined) updateData.foto_perfil = foto_perfil;
+
+    await usuario.update(updateData);
+
+    const usuarioActualizado = usuario.toJSON();
+    delete usuarioActualizado.password_hash;
+
+    return NextResponse.json({ usuario: usuarioActualizado });
+  } catch (error) {
+    console.error('Error al actualizar perfil de cliente:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
+}
