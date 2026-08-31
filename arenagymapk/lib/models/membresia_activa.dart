@@ -46,6 +46,26 @@ class MembresiaActiva {
     return finSinHora.difference(hoySinHora).inDays;
   }
 
+  /// Duración total del periodo (inicio -> fin) en días, para calcular
+  /// qué porcentaje ya se consumió. Si las fechas no son válidas, cae de
+  /// vuelta a la duración nominal de la membresía.
+  int get duracionTotalDias {
+    final inicio = DateTime.tryParse(fechaInicio);
+    final fin = DateTime.tryParse(fechaFin);
+    if (inicio == null || fin == null) return membresia.duracionDias;
+    final dias = fin.difference(inicio).inDays;
+    return dias > 0 ? dias : membresia.duracionDias;
+  }
+
+  /// Fracción del periodo ya transcurrida, entre 0.0 (recién empezada) y
+  /// 1.0 (vencida o más).
+  double get progresoTranscurrido {
+    final total = duracionTotalDias;
+    if (total <= 0) return 1.0;
+    final restantes = diasRestantes.clamp(0, total);
+    return 1.0 - (restantes / total);
+  }
+
   factory MembresiaActiva.fromJson(Map<String, dynamic> json) {
     return MembresiaActiva(
       idRegistro: json['id_registro'] as int,

@@ -176,9 +176,10 @@ class _InicioTabState extends State<InicioTab> {
 
     final dias = membresia.diasRestantes;
     final vencida = dias < 0;
+    final porVencer = !vencida && dias <= 5;
     final estadoColor = vencida
         ? AppColors.danger
-        : dias <= 5
+        : porVencer
             ? const Color(0xFFD97706)
             : AppColors.success;
 
@@ -198,45 +199,114 @@ class _InicioTabState extends State<InicioTab> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      membresia.membresia.tipo,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Vence el ${formatearFechaLegible(membresia.fechaFin)}',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  membresia.membresia.tipo,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
+          // Días restantes como elemento principal de la tarjeta.
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  vencida ? '0' : '$dias',
+                  style: TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    color: estadoColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  vencida
+                      ? 'Membresía vencida'
+                      : dias == 1
+                          ? 'día restante'
+                          : 'días restantes',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: membresia.progresoTranscurrido.clamp(0.0, 1.0),
+              minHeight: 8,
+              backgroundColor: AppColors.border,
+              color: estadoColor,
+            ),
+          ),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Días restantes',
-                style: TextStyle(color: AppColors.textSecondary),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Inicio',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  Text(
+                    formatearFechaLegible(membresia.fechaInicio),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
-              Text(
-                vencida ? 'Vencida' : '$dias día${dias == 1 ? '' : 's'}',
-                style: TextStyle(fontWeight: FontWeight.w700, color: estadoColor),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Vence',
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  Text(
+                    formatearFechaLegible(membresia.fechaFin),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
               ),
             ],
           ),
+          if (vencida || porVencer) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: estadoColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: estadoColor.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: estadoColor, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      vencida
+                          ? 'Tu membresía venció. Renuévala en recepción para seguir entrenando.'
+                          : 'Tu membresía vence pronto. Renuévala para no perder continuidad.',
+                      style: TextStyle(color: estadoColor, fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
