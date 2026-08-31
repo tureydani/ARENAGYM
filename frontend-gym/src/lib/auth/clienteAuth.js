@@ -38,3 +38,29 @@ export function verificarAuth(request) {
     return null;
   }
 }
+
+// Token de vida muy corta (2 minutos) que la app codifica en el QR para
+// marcar asistencia. Vida corta a propósito: limita la ventana en la que
+// una captura de pantalla del QR de otra persona podría reutilizarse.
+// Se distingue de un token de sesión normal con "tipo: asistencia" para
+// que el endpoint de registro no acepte por error un token de sesión de
+// 30 días como si fuera un QR de asistencia.
+export function firmarTokenAsistencia(usuario) {
+  return jwt.sign(
+    { id_usuario: usuario.id_usuario, tipo: 'asistencia' },
+    getSecret(),
+    { expiresIn: '2m' }
+  );
+}
+
+// Verifica un token de QR de asistencia. Devuelve el id_usuario si es
+// válido, no expiró y es realmente un token de este tipo; null si no.
+export function verificarTokenAsistencia(token) {
+  try {
+    const payload = jwt.verify(token, getSecret());
+    if (payload.tipo !== 'asistencia') return null;
+    return payload.id_usuario;
+  } catch {
+    return null;
+  }
+}
