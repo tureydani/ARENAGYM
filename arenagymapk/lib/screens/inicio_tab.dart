@@ -267,33 +267,39 @@ class _InicioTabState extends State<InicioTab> {
           ),
           const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Inicio',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                  ),
-                  Text(
-                    formatearFechaLegible(membresia.fechaInicio),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Inicio',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                    Text(
+                      formatearFechaLegible(membresia.fechaInicio),
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Vence',
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                  ),
-                  Text(
-                    formatearFechaLegible(membresia.fechaFin),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Vence',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                    Text(
+                      formatearFechaLegible(membresia.fechaFin),
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
