@@ -27,6 +27,18 @@ function createSequelize() {
       dialectOptions: process.env.DB_SSL === 'true'
         ? { ssl: { require: true, rejectUnauthorized: false } }
         : {},
+      // Cada invocación serverless es su propio proceso: no necesita (ni debe)
+      // mantener un pool grande de conexiones propio. Con el Session Pooler de
+      // Supabase (límite bajo, ej. 15 conexiones totales) muchas invocaciones
+      // concurrentes agotaban ese límite ("max clients reached in session
+      // mode"). Se recomienda además usar el Transaction Pooler (puerto 6543)
+      // en vez del Session Pooler (5432) para este tipo de carga.
+      pool: {
+        max: 2,
+        min: 0,
+        acquire: 30000,
+        idle: 5000,
+      },
     }
   );
 }
