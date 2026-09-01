@@ -7,7 +7,8 @@ export async function GET(request) {
     const scope = includeInactive ? 'withInactive' : 'defaultScope';
 
     const usuarios = await Usuario.scope(scope).findAll({
-      include: [{ model: Administrativo, as: 'Administrativo' }]
+      include: [{ model: Administrativo, as: 'Administrativo' }],
+      order: [['fecha_registro', 'DESC'], ['id_usuario', 'DESC']]
     });
     return NextResponse.json(usuarios);
   } catch (error) {

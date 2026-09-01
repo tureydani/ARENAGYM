@@ -6,7 +6,9 @@ export async function GET(request) {
     const includeInactive = request.nextUrl.searchParams.get('includeInactive') === 'true';
     const scope = includeInactive ? 'withInactive' : 'defaultScope';
 
-    const membresias = await Membresia.scope(scope).findAll();
+    const membresias = await Membresia.scope(scope).findAll({
+      order: [['id_membresia', 'DESC']]
+    });
     return NextResponse.json(membresias);
   } catch (error) {
     console.error('Error al obtener membresías:', error);

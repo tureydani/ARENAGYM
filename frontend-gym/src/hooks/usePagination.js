@@ -30,13 +30,17 @@ export const usePagination = (data, itemsPerPage = 10, customSearchFunction = nu
   }, [data, searchTerm, customSearchFunction]);
 
   // Calcular datos paginados
+  //
+  // El orden de "más reciente primero" ya lo decide cada endpoint del
+  // backend (ORDER BY ... DESC), así que acá solo se pagina tal cual llega.
+  // Antes esto invertía (.reverse()) el arreglo sin importar cómo venía
+  // ordenado del servidor: para tablas que el backend YA devolvía con lo
+  // más nuevo primero (pagos, ventas, administrativos) el reverse() las
+  // dejaba con lo más viejo primero -- justo al revés de lo esperado.
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    
-    // Mostrar los registros más recientes primero
-    const sortedData = [...filteredData].reverse();
-    return sortedData.slice(startIndex, endIndex);
+    return filteredData.slice(startIndex, endIndex);
   }, [filteredData, currentPage, itemsPerPage]);
 
   // Calcular información de paginación

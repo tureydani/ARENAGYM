@@ -23,7 +23,8 @@ export async function GET(request) {
           as: 'Administrativo',
           required: false
         }
-      ]
+      ],
+      order: [['fecha_inicio', 'DESC'], ['id_registro', 'DESC']]
     });
     return NextResponse.json(registros);
   } catch (error) {

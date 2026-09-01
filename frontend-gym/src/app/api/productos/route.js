@@ -7,7 +7,7 @@ export async function GET(request) {
     const scope = includeInactive ? 'withInactive' : 'defaultScope';
 
     const productos = await Producto.scope(scope).findAll({
-      order: [['id_producto', 'ASC']]
+      order: [['id_producto', 'DESC']]
     });
     return NextResponse.json(productos);
   } catch (error) {
