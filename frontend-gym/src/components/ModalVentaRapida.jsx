@@ -16,7 +16,13 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
   
   // Estados para el carrito de productos
   const [carrito, setCarrito] = useState([]);
-  
+
+  // El modal se divide en 3 pasos en vez de mostrar todo junto: en pantallas
+  // chicas, dos paneles con scroll independiente (productos + carrito) no
+  // entraban a la vez y el carrito/botón de procesar quedaban cortados.
+  // Un paso a la vez siempre entra completo, sin importar el tamaño de pantalla.
+  const [paso, setPaso] = useState(1); // 1: Cliente y caja, 2: Productos, 3: Carrito
+
   // Estados para feedback de venta
   const [ventaExitosa, setVentaExitosa] = useState(false);
   const [ventaRealizada, setVentaRealizada] = useState(null);
@@ -40,6 +46,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
       setVentaRealizada(null);
       setCountdown(3);
       setCarrito([]);
+      setPaso(1);
       setSearchUsuarios('');
       setSelectedUserText('');
       setFormData({
@@ -314,6 +321,14 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  const puedeAvanzarAPaso2 = Boolean(formData.id_usuario) && Boolean(formData.id_caja);
+
+  const irAlPaso = (destino) => setPaso(destino);
+  const pasoSiguiente = () => setPaso((p) => Math.min(p + 1, 3));
+  const pasoAnterior = () => setPaso((p) => Math.max(p - 1, 1));
+
+  const NOMBRES_PASO = { 1: 'Cliente y caja', 2: 'Productos', 3: 'Carrito' };
+
   if (!isOpen) return null;
 
   return (
@@ -326,193 +341,248 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
 
         <div className="modal-body-minimal">
           {!ventaExitosa ? (
-            <form onSubmit={handleSubmit}>
-              {/* Header con Cliente y Caja */}
-              <div className="form-header-minimal">
-                {/* Cliente */}
-                <div className="input-group-minimal">
-                  <label>Cliente</label>
-                  <div className="user-search-minimal" ref={userInputRef}>
-                    <input
-                      type="text"
-                      value={searchUsuarios}
-                      onChange={(e) => setSearchUsuarios(e.target.value)}
-                      placeholder="Buscar cliente..."
-                      className="input-minimal"
-                      autoComplete="off"
-                    />
-                    {selectedUserText && (
-                      <button 
-                        type="button" 
-                        className="clear-btn"
-                        onClick={clearUserSelection}
-                      >
-                        ✕
-                      </button>
-                    )}
-                    
-                    {showUserDropdown && (
-                      <div className="dropdown-minimal">
-                        {filteredUsuarios.map(usuario => (
-                          <div
-                            key={usuario.id_usuario}
-                            className="dropdown-item-minimal"
-                            onClick={() => seleccionarUsuario(usuario)}
+            <form onSubmit={handleSubmit} className="venta-rapida-form-minimal">
+              {/* Indicador de pasos: reemplaza la vista de "todo junto" (dos
+                  paneles con scroll independiente) que en móvil no entraba
+                  completa. Un paso a la vez siempre entra en pantalla. */}
+              <div className="pasos-indicador-minimal">
+                {[1, 2, 3].map((n) => (
+                  <React.Fragment key={n}>
+                    <button
+                      type="button"
+                      className={`paso-dot-minimal ${paso === n ? 'activo' : ''} ${paso > n ? 'completado' : ''}`}
+                      onClick={() => (n === 1 || puedeAvanzarAPaso2) && irAlPaso(n)}
+                      disabled={n > 1 && !puedeAvanzarAPaso2}
+                    >
+                      <span className="paso-numero-minimal">{paso > n ? '✓' : n}</span>
+                      <span className="paso-nombre-minimal">{NOMBRES_PASO[n]}</span>
+                    </button>
+                    {n < 3 && <div className={`paso-linea-minimal ${paso > n ? 'completado' : ''}`} />}
+                  </React.Fragment>
+                ))}
+              </div>
+
+              <div className="paso-contenido-minimal">
+                {/* PASO 1: Cliente y Caja */}
+                {paso === 1 && (
+                  <div className="paso-panel-minimal">
+                    <div className="input-group-minimal">
+                      <label>Cliente</label>
+                      <div className="user-search-minimal" ref={userInputRef}>
+                        <input
+                          type="text"
+                          value={searchUsuarios}
+                          onChange={(e) => setSearchUsuarios(e.target.value)}
+                          placeholder="Buscar cliente..."
+                          className="input-minimal"
+                          autoComplete="off"
+                        />
+                        {selectedUserText && (
+                          <button
+                            type="button"
+                            className="clear-btn"
+                            onClick={clearUserSelection}
                           >
-                            <span className="user-name-minimal">{usuario.nombre} {usuario.apellido}</span>
-                            <small>{usuario.email} • {usuario.telefono}</small>
-                          </div>
-                        ))}
-                        {filteredUsuarios.length === 0 && searchUsuarios.length > 0 && (
-                          <div className="dropdown-item-minimal no-results">
-                            No se encontraron usuarios
+                            ✕
+                          </button>
+                        )}
+
+                        {showUserDropdown && (
+                          <div className="dropdown-minimal">
+                            {filteredUsuarios.map(usuario => (
+                              <div
+                                key={usuario.id_usuario}
+                                className="dropdown-item-minimal"
+                                onClick={() => seleccionarUsuario(usuario)}
+                              >
+                                <span className="user-name-minimal">{usuario.nombre} {usuario.apellido}</span>
+                                <small>{usuario.email} • {usuario.telefono}</small>
+                              </div>
+                            ))}
+                            {filteredUsuarios.length === 0 && searchUsuarios.length > 0 && (
+                              <div className="dropdown-item-minimal no-results">
+                                No se encontraron usuarios
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Caja */}
-                <div className="input-group-minimal">
-                  <label>Caja</label>
-                  <div className="caja-selector-minimal">
-                    {cajas.length > 0 ? (
-                      cajas.map(caja => (
-                        <button
-                          key={caja.id_caja}
-                          type="button"
-                          className={`caja-btn-minimal ${formData.id_caja === caja.id_caja ? 'active' : ''} ${!caja.abierta ? 'cerrada' : ''}`}
-                          onClick={() => {
-                            console.log('Seleccionando caja:', caja.id_caja);
-                            setFormData(prev => ({...prev, id_caja: caja.id_caja}));
-                          }}
-                          disabled={!caja.abierta}
-                        >
-                          <span className="caja-nombre">{caja.descripcion}</span>
-                          <span className="caja-saldo-minimal">Bs. {parseFloat(caja.saldo_actual || 0).toFixed(2)}</span>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="no-cajas-minimal">
-                        No hay cajas disponibles
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Contenido Principal - Dos Columnas */}
-              <div className="form-content-minimal">
-                {/* Panel de Productos */}
-                <div className="productos-panel-minimal">
-                  <div className="panel-header-minimal">
-                    <label>Productos Disponibles</label>
-                  </div>
-                  
-                  <div className="productos-grid-minimal">
-                    {productos.length > 0 ? (
-                      productos.map(producto => (
-                        <div key={producto.id_producto} className="producto-card-minimal">
-                          <div className="producto-info-minimal">
-                            <span className="nombre-minimal">{producto.nombre}</span>
-                            <div className="precio-stock-minimal">
-                              <span className="precio-minimal">Bs. {parseFloat(producto.precio).toFixed(2)}</span>
-                              <span className={`stock-minimal ${producto.stock <= 5 ? 'low-stock' : ''}`}>
-                                {producto.stock}
-                              </span>
-                            </div>
+                    <div className="input-group-minimal">
+                      <label>Caja</label>
+                      <div className="caja-selector-minimal">
+                        {cajas.length > 0 ? (
+                          cajas.map(caja => (
+                            <button
+                              key={caja.id_caja}
+                              type="button"
+                              className={`caja-btn-minimal ${formData.id_caja === caja.id_caja ? 'active' : ''} ${!caja.abierta ? 'cerrada' : ''}`}
+                              onClick={() => setFormData(prev => ({ ...prev, id_caja: caja.id_caja }))}
+                              disabled={!caja.abierta}
+                            >
+                              <span className="caja-nombre">{caja.descripcion}</span>
+                              <span className="caja-saldo-minimal">Bs. {parseFloat(caja.saldo_actual || 0).toFixed(2)}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="no-cajas-minimal">
+                            No hay cajas disponibles
                           </div>
-                          <button
-                            type="button"
-                            className="add-btn-minimal"
-                            onClick={() => agregarProducto(producto)}
-                            disabled={producto.stock <= 0}
-                          >
-                            +
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-productos">
-                        No hay productos disponibles
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Panel de Carrito */}
-                <div className="carrito-panel-minimal">
-                  <div className="panel-header-minimal">
-                    <label>Carrito ({carrito.length})</label>
-                  </div>
-                  
-                  <div className="carrito-content-minimal">
-                    {carrito.length > 0 ? (
-                      <>
-                        <div className="carrito-items-minimal">
-                          {carrito.map(item => (
-                            <div key={item.id_producto} className="carrito-item-minimal">
-                              <div className="item-info-minimal">
-                                <span className="item-nombre">{item.nombre}</span>
-                                <span className="item-precio">Bs. {item.precio.toFixed(2)} c/u</span>
+                {/* PASO 2: Productos */}
+                {paso === 2 && (
+                  <div className="paso-panel-minimal productos-panel-minimal">
+                    <div className="panel-header-minimal">
+                      <label>Productos Disponibles</label>
+                    </div>
+
+                    <div className="productos-grid-minimal">
+                      {productos.length > 0 ? (
+                        productos.map(producto => (
+                          <div key={producto.id_producto} className="producto-card-minimal">
+                            <div className="producto-info-minimal">
+                              <span className="nombre-minimal">{producto.nombre}</span>
+                              <div className="precio-stock-minimal">
+                                <span className="precio-minimal">Bs. {parseFloat(producto.precio).toFixed(2)}</span>
+                                <span className={`stock-minimal ${producto.stock <= 5 ? 'low-stock' : ''}`}>
+                                  {producto.stock}
+                                </span>
                               </div>
-                              <div className="item-controls-minimal">
-                                <div className="cantidad-controls">
-                                  <button
-                                    type="button"
-                                    className="qty-btn"
-                                    onClick={() => actualizarCantidad(item.id_producto, item.cantidad - 1)}
-                                  >
-                                    -
-                                  </button>
-                                  <span className="qty-display">{item.cantidad}</span>
-                                  <button
-                                    type="button"
-                                    className="qty-btn"
-                                    onClick={() => actualizarCantidad(item.id_producto, item.cantidad + 1)}
-                                  >
-                                    +
-                                  </button>
+                            </div>
+                            <button
+                              type="button"
+                              className="add-btn-minimal"
+                              onClick={() => agregarProducto(producto)}
+                              disabled={producto.stock <= 0}
+                            >
+                              +
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-productos">
+                          No hay productos disponibles
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* PASO 3: Carrito y confirmación */}
+                {paso === 3 && (
+                  <div className="paso-panel-minimal carrito-panel-minimal">
+                    <div className="panel-header-minimal">
+                      <label>Carrito ({carrito.length})</label>
+                    </div>
+
+                    <div className="carrito-content-minimal">
+                      {carrito.length > 0 ? (
+                        <>
+                          <div className="carrito-items-minimal">
+                            {carrito.map(item => (
+                              <div key={item.id_producto} className="carrito-item-minimal">
+                                <div className="item-info-minimal">
+                                  <span className="item-nombre">{item.nombre}</span>
+                                  <span className="item-precio">Bs. {item.precio.toFixed(2)} c/u</span>
                                 </div>
-                                <span className="item-subtotal">Bs. {(item.precio * item.cantidad).toFixed(2)}</span>
+                                <div className="item-controls-minimal">
+                                  <div className="cantidad-controls">
+                                    <button
+                                      type="button"
+                                      className="qty-btn"
+                                      onClick={() => actualizarCantidad(item.id_producto, item.cantidad - 1)}
+                                    >
+                                      -
+                                    </button>
+                                    <span className="qty-display">{item.cantidad}</span>
+                                    <button
+                                      type="button"
+                                      className="qty-btn"
+                                      onClick={() => actualizarCantidad(item.id_producto, item.cantidad + 1)}
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                  <span className="item-subtotal">Bs. {(item.precio * item.cantidad).toFixed(2)}</span>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        <div className="checkout-section-minimal">
-                          <div className="total-display-minimal">
-                            <span className="total-label">TOTAL:</span>
-                            <span className="total-amount-minimal">Bs. {calcularTotal().toFixed(2)}</span>
+                            ))}
                           </div>
-                          
-                          <button
-                            type="submit"
-                            className="submit-btn-minimal"
-                            disabled={loading || !formData.id_usuario || carrito.length === 0}
-                          >
-                            {loading ? (
-                              <>
-                                <span className="spinner-minimal"></span>
-                                Procesando...
-                              </>
-                            ) : (
-                              <>Procesar Venta</>
-                            )}
-                          </button>
+
+                          <div className="checkout-section-minimal">
+                            <div className="total-display-minimal">
+                              <span className="total-label">TOTAL:</span>
+                              <span className="total-amount-minimal">Bs. {calcularTotal().toFixed(2)}</span>
+                            </div>
+
+                            <button
+                              type="submit"
+                              className="submit-btn-minimal"
+                              disabled={loading || !formData.id_usuario || carrito.length === 0}
+                            >
+                              {loading ? (
+                                <>
+                                  <span className="spinner-minimal"></span>
+                                  Procesando...
+                                </>
+                              ) : (
+                                <>Procesar Venta</>
+                              )}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="carrito-vacio-minimal">
+                          <div className="empty-icon"></div>
+                          <span>Sin productos seleccionados</span>
+                          <small>Vuelve al paso anterior para agregar productos</small>
                         </div>
-                      </>
-                    ) : (
-                      <div className="carrito-vacio-minimal">
-                        <div className="empty-icon"></div>
-                        <span>Sin productos seleccionados</span>
-                        <small>Agrega productos para continuar</small>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Navegación entre pasos */}
+              {paso < 3 && (
+                <div className="paso-navegacion-minimal">
+                  {paso > 1 ? (
+                    <button type="button" className="nav-btn-minimal atras" onClick={pasoAnterior}>
+                      ← Atrás
+                    </button>
+                  ) : <span />}
+
+                  <div className="paso-navegacion-derecha">
+                    {paso === 2 && carrito.length > 0 && (
+                      <div className="mini-resumen-carrito-minimal">
+                        <span>{carrito.length} producto{carrito.length !== 1 ? 's' : ''}</span>
+                        <span>Bs. {calcularTotal().toFixed(2)}</span>
                       </div>
                     )}
+                    <button
+                      type="button"
+                      className="nav-btn-minimal siguiente"
+                      onClick={pasoSiguiente}
+                      disabled={paso === 1 && !puedeAvanzarAPaso2}
+                    >
+                      {paso === 1 ? 'Siguiente →' : `Ir al carrito (${carrito.length}) →`}
+                    </button>
                   </div>
                 </div>
-              </div>
+              )}
+              {paso === 3 && (
+                <div className="paso-navegacion-minimal">
+                  <button type="button" className="nav-btn-minimal atras" onClick={pasoAnterior}>
+                    ← Agregar más productos
+                  </button>
+                </div>
+              )}
             </form>
           ) : (
             // Vista de éxito

@@ -77,15 +77,188 @@
   overflow: hidden !important;
 }
 
-/* Form Header */
-.form-header-minimal {
-  padding: 16px 20px !important;
-  background: white !important;
+/* ===================================================================== */
+/* PASOS: el formulario se divide en 3 pasos (Cliente/Caja, Productos,
+   Carrito) que se muestran de a uno. Antes se mostraban dos paneles con
+   scroll independiente al mismo tiempo (productos + carrito) y en pantallas
+   chicas no entraban completos -- el carrito y el botón de procesar
+   quedaban cortados. Un paso a la vez siempre entra, sin importar el
+   tamaño de pantalla. */
+/* ===================================================================== */
+
+.pasos-indicador-minimal {
+  display: flex !important;
+  align-items: flex-start !important;
+  padding: 14px 20px 10px !important;
+  background: #f9fafb !important;
   border-bottom: 1px solid #e5e7eb !important;
-  display: grid !important;
-  grid-template-columns: 1fr 1fr !important;
-  gap: 16px !important;
   flex-shrink: 0 !important;
+}
+
+.paso-dot-minimal {
+  background: none !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  padding: 2px !important;
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.paso-dot-minimal:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+.paso-numero-minimal {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.paso-dot-minimal.activo .paso-numero-minimal {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.paso-dot-minimal.completado .paso-numero-minimal {
+  background: #059669 !important;
+  color: white !important;
+}
+
+.paso-nombre-minimal {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.paso-dot-minimal.activo .paso-nombre-minimal {
+  color: #1f2937 !important;
+}
+
+.paso-linea-minimal {
+  height: 2px !important;
+  flex: 0 0 20px !important;
+  background: #e5e7eb !important;
+  margin-top: 13px !important;
+}
+
+.paso-linea-minimal.completado {
+  background: #059669 !important;
+}
+
+/* Contenido del paso activo */
+.paso-contenido-minimal {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.paso-panel-minimal {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  padding: 20px !important;
+}
+
+/* Productos y Carrito manejan su propio scroll interno (grid/lista con
+   footer fijo debajo), así que el panel en sí no debe scrollear ni tener
+   padding propio -- si no, se duplicaría el espaciado. */
+.paso-panel-minimal.productos-panel-minimal,
+.paso-panel-minimal.carrito-panel-minimal {
+  padding: 0 !important;
+  overflow: hidden !important;
+  gap: 0 !important;
+}
+
+/* Navegación entre pasos */
+.paso-navegacion-minimal {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 12px 20px !important;
+  background: white !important;
+  border-top: 1px solid #e5e7eb !important;
+  flex-shrink: 0 !important;
+}
+
+.paso-navegacion-derecha {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-left: auto !important;
+}
+
+.mini-resumen-carrito-minimal {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  font-size: 12px !important;
+  color: #374151 !important;
+  line-height: 1.3 !important;
+}
+
+.mini-resumen-carrito-minimal span:last-child {
+  font-weight: 700 !important;
+  color: #059669 !important;
+}
+
+.nav-btn-minimal {
+  padding: 10px 18px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.nav-btn-minimal.atras {
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+}
+
+.nav-btn-minimal.atras:hover {
+  background: #e5e7eb !important;
+}
+
+.nav-btn-minimal.siguiente {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+.nav-btn-minimal.siguiente:hover:not(:disabled) {
+  background: #2563eb !important;
+}
+
+.nav-btn-minimal.siguiente:disabled {
+  background: #9ca3af !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
 }
 
 .input-group-minimal {
@@ -252,19 +425,9 @@
   display: inline-block !important;
 }
 
-/* Main Content */
-.form-content-minimal {
-  display: grid !important;
-  grid-template-columns: 1fr 350px !important;
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}
-
-/* Productos Panel */
+/* Productos Panel (ocupa todo el paso 2, ya no comparte fila con el carrito) */
 .productos-panel-minimal {
   background: white !important;
-  border-right: 1px solid #e5e7eb !important;
   display: flex !important;
   flex-direction: column !important;
   min-height: 0 !important;
@@ -651,34 +814,39 @@
     width: 95% !important;
     max-height: 90vh !important;
   }
-  
-  .form-header-minimal {
-    grid-template-columns: 1fr !important;
+
+  .paso-panel-minimal {
+    padding: 16px !important;
     gap: 12px !important;
   }
-  
-  .form-content-minimal {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: 1fr auto !important;
+
+  .pasos-indicador-minimal {
+    padding: 12px 12px 8px !important;
   }
-  
+
+  .paso-nombre-minimal {
+    font-size: 10px !important;
+  }
+
   .productos-grid-minimal {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
     gap: 8px !important;
     padding: 12px !important;
   }
-  
-  .carrito-panel-minimal {
-    max-height: 300px !important;
-    border-top: 1px solid #e5e7eb !important;
-    border-right: none !important;
-  }
-  
+
   .carrito-items-minimal {
     padding: 12px !important;
     gap: 8px !important;
   }
-  
+
+  .paso-navegacion-minimal {
+    padding: 10px 12px !important;
+  }
+
+  .mini-resumen-carrito-minimal {
+    display: none !important;
+  }
+
   .checkout-section-minimal {
     padding: 12px !important;
     gap: 8px !important;
@@ -690,13 +858,24 @@
     grid-template-columns: 1fr !important;
     gap: 6px !important;
   }
-  
+
   .caja-selector-minimal {
     flex-direction: column !important;
   }
-  
+
   .caja-btn-minimal {
     min-width: auto !important;
+  }
+
+  /* Con nombres de paso + líneas conectoras no entran cómodos en pantallas
+     muy chicas: se dejan solo los círculos numerados. */
+  .paso-nombre-minimal {
+    display: none !important;
+  }
+
+  .nav-btn-minimal {
+    padding: 10px 12px !important;
+    font-size: 13px !important;
   }
 }
 
