@@ -59,6 +59,24 @@
   overflow: hidden !important;
 }
 
+/* El <form> es el único hijo de .modal-body-minimal, pero no tenía NINGÚN
+ * estilo propio: al no ser un contenedor flex, el "flex: 1" de
+ * .form-content-minimal no tenía efecto (solo aplica dentro de un padre
+ * flex), así que el formulario crecía a su alto de contenido real en vez de
+ * quedarse dentro del alto disponible. El overflow:hidden de más arriba
+ * entonces recortaba lo que sobraba por abajo -- en móvil eso era
+ * justamente el carrito y el botón "Procesar Venta". Convertir el <form>
+ * en el contenedor flex que el resto del CSS ya asumía que era arregla
+ * toda la cadena de una vez.
+ */
+.modal-body-minimal > form {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
 /* Form Header */
 .form-header-minimal {
   padding: 16px 20px !important;
@@ -67,6 +85,7 @@
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
   gap: 16px !important;
+  flex-shrink: 0 !important;
 }
 
 .input-group-minimal {
@@ -238,6 +257,7 @@
   display: grid !important;
   grid-template-columns: 1fr 350px !important;
   flex: 1 !important;
+  min-height: 0 !important;
   overflow: hidden !important;
 }
 
@@ -247,6 +267,7 @@
   border-right: 1px solid #e5e7eb !important;
   display: flex !important;
   flex-direction: column !important;
+  min-height: 0 !important;
   overflow: hidden !important;
 }
 
@@ -368,6 +389,7 @@
   background: #f8fafc !important;
   display: flex !important;
   flex-direction: column !important;
+  min-height: 0 !important;
   overflow: hidden !important;
 }
 
@@ -375,11 +397,13 @@
   flex: 1 !important;
   display: flex !important;
   flex-direction: column !important;
+  min-height: 0 !important;
   overflow: hidden !important;
 }
 
 .carrito-items-minimal {
   flex: 1 !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
   padding: 16px !important;
   display: flex !important;
