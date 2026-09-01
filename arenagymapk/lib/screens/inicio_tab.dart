@@ -20,7 +20,7 @@ class InicioTab extends StatefulWidget {
   State<InicioTab> createState() => _InicioTabState();
 }
 
-class _InicioTabState extends State<InicioTab> {
+class _InicioTabState extends State<InicioTab> with WidgetsBindingObserver {
   bool _loading = true;
   String? _errorMessage;
 
@@ -30,12 +30,36 @@ class _InicioTabState extends State<InicioTab> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _cargarDatos();
   }
 
-  Future<void> _cargarDatos() async {
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  // Esta pantalla se monta una sola vez (vive dentro de un IndexedStack que
+  // mantiene las 4 pestañas siempre vivas), así que _cargarDatos() de
+  // initState() solo corre al abrir la app. Si el administrativo registra
+  // la membresía DESPUÉS de que el cliente ya entró, este último se
+  // quedaba viendo "sin membresía activa" hasta cerrar la app del todo y
+  // volver a abrirla. Refrescar al volver de segundo plano cubre el caso
+  // real: el cliente minimiza la app, el administrativo termina de
+  // registrar el pago, el cliente vuelve a la app y ya ve su membresía.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      // Sin mostrarCargando: si ya había datos en pantalla, no los tapa con
+      // el spinner de carga completa por un simple ir-y-volver de la app.
+      _cargarDatos(mostrarCargando: _perfil == null);
+    }
+  }
+
+  Future<void> _cargarDatos({bool mostrarCargando = true}) async {
     setState(() {
-      _loading = true;
+      _loading = mostrarCargando;
       _errorMessage = null;
     });
 

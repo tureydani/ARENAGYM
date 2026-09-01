@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
 import { Usuario, RegistroMembresia, Membresia } from '@/lib/db/models';
 import { verificarAuth } from '@/lib/auth/clienteAuth';
+import { fechaHoyBolivia } from '@/lib/fecha';
 
 export async function GET(request) {
   const auth = verificarAuth(request);
@@ -20,7 +21,7 @@ export async function GET(request) {
     }
 
     // Membresía activa más reciente (por fecha_fin) que no haya vencido
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = fechaHoyBolivia();
     const membresiaActiva = await RegistroMembresia.findOne({
       where: {
         id_usuario: auth.id_usuario,

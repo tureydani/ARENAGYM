@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
 import { Asistencia, Usuario } from '@/lib/db/models';
-
-function aClaveDelDia(fecha) {
-  const d = new Date(fecha);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+import { ahoraBolivia, claveDiaBolivia, medianocheBoliviaUTC } from '@/lib/fecha';
 
 // Usado desde el panel administrativo: calendario y total histórico de
 // asistencias de un cliente puntual (para revisar su constancia, ej. al
@@ -21,7 +17,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
     }
 
-    const ahora = new Date();
+    const ahora = ahoraBolivia();
     const mesParam = request.nextUrl.searchParams.get('mes'); // "YYYY-MM" opcional
 
     let anio = ahora.getFullYear();
@@ -32,8 +28,8 @@ export async function GET(request, { params }) {
       mesIndice = m - 1;
     }
 
-    const inicioMes = new Date(anio, mesIndice, 1);
-    const inicioMesSiguiente = new Date(anio, mesIndice + 1, 1);
+    const inicioMes = medianocheBoliviaUTC(anio, mesIndice, 1);
+    const inicioMesSiguiente = medianocheBoliviaUTC(anio, mesIndice + 1, 1);
 
     const registrosDelMes = await Asistencia.findAll({
       where: {
@@ -42,7 +38,7 @@ export async function GET(request, { params }) {
       },
       order: [['fecha_hora', 'ASC']]
     });
-    const diasDelMes = [...new Set(registrosDelMes.map(a => aClaveDelDia(a.fecha_hora)))];
+    const diasDelMes = [...new Set(registrosDelMes.map(a => claveDiaBolivia(a.fecha_hora)))];
 
     const totalHistorico = await Asistencia.count({ where: { id_usuario: id } });
     const ultima = await Asistencia.findOne({

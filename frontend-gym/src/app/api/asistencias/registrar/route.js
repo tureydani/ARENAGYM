@@ -2,16 +2,7 @@ import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
 import { Asistencia, Usuario, RegistroMembresia } from '@/lib/db/models';
 import { verificarTokenAsistencia } from '@/lib/auth/clienteAuth';
-
-// "Hoy" en la zona horaria del gimnasio (Bolivia, UTC-4 fijo, sin horario de
-// verano), no la del servidor (Vercel corre en UTC). Sin esto, entre
-// aproximadamente las 20:00 y medianoche hora Bolivia el servidor ya "cree"
-// que es el día siguiente en UTC, y una membresía que vence justo hoy
-// aparecería vencida unas horas antes de que en realidad termine el día —
-// exactamente el tipo de cliente activo que no debe quedar afuera.
-function fechaHoyBolivia() {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date());
-}
+import { fechaHoyBolivia } from '@/lib/fecha';
 
 // Convierte "YYYY-MM-DD" a "DD/MM/YYYY" sin pasar por Date/timezone.
 function formatearFechaLegible(fechaISO) {
