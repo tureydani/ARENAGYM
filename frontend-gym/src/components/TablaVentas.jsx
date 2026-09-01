@@ -5,6 +5,7 @@ import SearchBar from './ui/SearchBar';
 import Pagination from './ui/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import TablaPagos from './TablaPagos';
+import ModalVentaRapida from './ModalVentaRapida';
 import { IconDocumentDownload, IconPencil, IconTrash, IconEye, IconUser, IconShoppingCart, IconArchiveBox, IconCalendar, IconChartBar, IconCheckCircle, IconSave, IconBanknotes } from './ui/Icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -21,6 +22,11 @@ const TablaVentas = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showVentaModal, setShowVentaModal] = useState(false);
+  // Crear una venta nueva usa el mismo flujo de pasos (Cliente/Caja ->
+  // Productos -> Carrito) que "Venta Rápida" en Registros, en vez del
+  // formulario de un solo producto de más abajo -- ese se deja solo para
+  // editar una venta existente.
+  const [showNuevaVentaModal, setShowNuevaVentaModal] = useState(false);
   const [showDetalleModal, setShowDetalleModal] = useState(false);
   const [editingVenta, setEditingVenta] = useState(null);
   const [selectedVenta, setSelectedVenta] = useState(null);
@@ -279,6 +285,12 @@ const TablaVentas = () => {
     }
   };
 
+  const handleNuevaVentaSuccess = async () => {
+    await loadVentas();
+    setShowSuccessCheck(true);
+    setTimeout(() => setShowSuccessCheck(false), 3000);
+  };
+
   const loadSelectData = async () => {
     try {
       const [usuariosRes, adminsRes, cajasRes, productosRes] = await Promise.all([
@@ -300,27 +312,6 @@ const TablaVentas = () => {
   const handleSearch = (term) => {
     setSearchTerm(term);
     goToPage(1);
-  };
-
-  const openCreateModal = () => {
-    setEditingVenta(null);
-    setSearchProducto('');
-    setSelectedProducto(null);
-    setIsProductSelected(false);
-    setSearchCliente('');
-    setSelectedCliente(null);
-    setIsClienteSelected(false);
-    setShowProductList(false);
-    const fechaHoy = getFechaHoyLocal();
-    setFormData({
-      id_usuario: '',
-      id_admin: '1', // Auto-seleccionar admin logueado
-      id_caja: '1', // Caja por defecto
-      fecha_venta: fechaHoy, // Fecha local segura
-      total: '',
-      estado: 'Completada'
-    });
-    setShowVentaModal(true);
   };
 
   const openEditModal = (venta) => {
@@ -476,7 +467,7 @@ const TablaVentas = () => {
             <span className="btn-icon"><IconDocumentDownload /></span>
             Exportar
           </Button>
-          <Button onClick={openCreateModal} className="btn-primary enhanced-btn">
+          <Button onClick={() => setShowNuevaVentaModal(true)} className="btn-primary enhanced-btn">
             <span className="btn-icon">+</span>
             Nueva Venta
           </Button>
@@ -644,7 +635,14 @@ const TablaVentas = () => {
         </div>
       </div>
 
-      {/* Modal de Venta Moderno */}
+      {/* Modal de Nueva Venta: mismo flujo por pasos de "Venta Rápida" */}
+      <ModalVentaRapida
+        isOpen={showNuevaVentaModal}
+        onClose={() => setShowNuevaVentaModal(false)}
+        onSuccess={handleNuevaVentaSuccess}
+      />
+
+      {/* Modal de Edición de Venta (un solo producto, se mantiene tal cual para editar una venta ya existente) */}
       {showVentaModal && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeVentaModal()}>
           <div className="modal-container enhanced-modal compact-modal">
