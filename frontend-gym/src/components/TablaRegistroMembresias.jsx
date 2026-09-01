@@ -8,6 +8,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { parsearFechaLocal } from '../utils/fechas';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -51,7 +52,7 @@ export default function TablaRegistroMembresias() {
   // Filtro rápido: mostrar solo membresías activas (no vencidas)
   const [soloActivos, setSoloActivos] = useState(false);
   const registrosParaTabla = soloActivos
-    ? registros.filter(registro => registro.activo && new Date(registro.fecha_fin) > new Date())
+    ? registros.filter(registro => registro.activo && parsearFechaLocal(registro.fecha_fin) > new Date())
     : registros;
 
   // Filas expandidas ("Ver más") para mostrar ID, administrativo y fechas exactas
@@ -73,7 +74,7 @@ export default function TablaRegistroMembresias() {
         const semanaAtras = new Date();
         semanaAtras.setDate(semanaAtras.getDate() - 7);
         registrosFiltrados = registros.filter(registro => {
-          const fechaInicio = new Date(registro.fecha_inicio);
+          const fechaInicio = parsearFechaLocal(registro.fecha_inicio);
           return fechaInicio >= semanaAtras;
         });
         break;
@@ -81,15 +82,15 @@ export default function TablaRegistroMembresias() {
         const mesAtras = new Date();
         mesAtras.setMonth(mesAtras.getMonth() - 1);
         registrosFiltrados = registros.filter(registro => {
-          const fechaInicio = new Date(registro.fecha_inicio);
+          const fechaInicio = parsearFechaLocal(registro.fecha_inicio);
           return fechaInicio >= mesAtras;
         });
         break;
       case 'personalizado':
         if (fechaInicio && fechaFin) {
           registrosFiltrados = registros.filter(registro => {
-            const fechaRegistro = new Date(registro.fecha_inicio);
-            return fechaRegistro >= new Date(fechaInicio) && fechaRegistro <= new Date(fechaFin);
+            const fechaRegistro = parsearFechaLocal(registro.fecha_inicio);
+            return fechaRegistro >= parsearFechaLocal(fechaInicio) && fechaRegistro <= parsearFechaLocal(fechaFin);
           });
         }
         break;
@@ -845,16 +846,16 @@ export default function TablaRegistroMembresias() {
   };
 
   const getRegistrosActivos = () => {
-    return registros.filter(registro => 
-      registro.activo && 
-      new Date(registro.fecha_fin) > new Date()
+    return registros.filter(registro =>
+      registro.activo &&
+      parsearFechaLocal(registro.fecha_fin) > new Date()
     ).length;
   };
 
   const getRegistrosVencidos = () => {
-    return registros.filter(registro => 
-      registro.activo && 
-      new Date(registro.fecha_fin) <= new Date()
+    return registros.filter(registro =>
+      registro.activo &&
+      parsearFechaLocal(registro.fecha_fin) <= new Date()
     ).length;
   };
 

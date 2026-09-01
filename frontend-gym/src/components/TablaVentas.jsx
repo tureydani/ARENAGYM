@@ -11,6 +11,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
 import '../styles/tables.css';
 import '../styles/modals.css';
 import '../styles/modern-modals.css';
@@ -114,7 +115,7 @@ const TablaVentas = () => {
         const semanaAtras = new Date();
         semanaAtras.setDate(semanaAtras.getDate() - 7);
         ventasFiltradas = ventas.filter(venta => {
-          const fechaVenta = new Date(venta.fecha_venta);
+          const fechaVenta = parsearFechaLocal(venta.fecha_venta);
           return fechaVenta >= semanaAtras;
         });
         break;
@@ -122,15 +123,15 @@ const TablaVentas = () => {
         const mesAtras = new Date();
         mesAtras.setMonth(mesAtras.getMonth() - 1);
         ventasFiltradas = ventas.filter(venta => {
-          const fechaVenta = new Date(venta.fecha_venta);
+          const fechaVenta = parsearFechaLocal(venta.fecha_venta);
           return fechaVenta >= mesAtras;
         });
         break;
       case 'personalizado':
         if (fechaInicio && fechaFin) {
           ventasFiltradas = ventas.filter(venta => {
-            const fechaVenta = new Date(venta.fecha_venta);
-            return fechaVenta >= new Date(fechaInicio) && fechaVenta <= new Date(fechaFin);
+            const fechaVenta = parsearFechaLocal(venta.fecha_venta);
+            return fechaVenta >= parsearFechaLocal(fechaInicio) && fechaVenta <= parsearFechaLocal(fechaFin);
           });
         }
         break;
@@ -172,7 +173,7 @@ const TablaVentas = () => {
       venta.id_venta,
       venta.Usuario ? `${venta.Usuario.nombre} ${venta.Usuario.apellido}` : 'Cliente no encontrado',
       venta.Administrativo ? `${venta.Administrativo.nombre} ${venta.Administrativo.apellido}` : `Admin ID: ${venta.id_admin}`,
-      new Date(venta.fecha_venta).toLocaleDateString(),
+      formatearFecha(venta.fecha_venta),
       `Bs. ${venta.total}`
     ]);
 
@@ -200,7 +201,7 @@ const TablaVentas = () => {
       'Teléfono Cliente': venta.Usuario?.telefono || 'N/A',
       'Vendedor': venta.Administrativo ? `${venta.Administrativo.nombre} ${venta.Administrativo.apellido}` : `Admin ID: ${venta.id_admin}`,
       'Caja': venta.Caja ? venta.Caja.descripcion : `Caja ID: ${venta.id_caja}`,
-      'Fecha Venta': new Date(venta.fecha_venta).toLocaleDateString(),
+      'Fecha Venta': formatearFecha(venta.fecha_venta),
       'Total': `Bs. ${venta.total}`,
       'ID Admin': venta.id_admin,
       'ID Caja': venta.id_caja
@@ -349,7 +350,7 @@ const TablaVentas = () => {
       id_usuario: '',
       id_admin: '',
       id_caja: '1',
-      fecha_venta: new Date().toISOString().split('T')[0],
+      fecha_venta: getFechaHoyLocal(),
       total: '',
       estado: 'Completada'
     });
@@ -602,7 +603,7 @@ const TablaVentas = () => {
                               <span className="font-semibold text-slate-600">Caja:</span>{' '}
                               {venta.Caja ? venta.Caja.descripcion || `Caja ${venta.id_caja}` : `Caja ${venta.id_caja}`}
                             </div>
-                            <div><span className="font-semibold text-slate-600">Fecha:</span> {new Date(venta.fecha_venta).toLocaleDateString()}</div>
+                            <div><span className="font-semibold text-slate-600">Fecha:</span> {formatearFecha(venta.fecha_venta)}</div>
                           </div>
                         </td>
                       </tr>
@@ -796,7 +797,7 @@ const TablaVentas = () => {
                             <div style={{ marginTop: '12px', padding: '12px', background: '#f8fafc', borderRadius: '8px' }}>
                               <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Fecha de registro:</span>
                               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#374151' }}>
-                                {new Date(selectedCliente.fecha_registro).toLocaleDateString('es-ES')}
+                                {formatearFecha(selectedCliente.fecha_registro)}
                               </p>
                             </div>
                           )}
@@ -1036,7 +1037,7 @@ const TablaVentas = () => {
                   <div><strong>Cliente:</strong> {selectedVenta.Usuario ? `${selectedVenta.Usuario.nombre} ${selectedVenta.Usuario.apellido}` : 'N/A'}</div>
                   <div><strong>Administrativo:</strong> {selectedVenta.Administrativo ? `${selectedVenta.Administrativo.nombre} ${selectedVenta.Administrativo.apellido}` : 'N/A'}</div>
                   <div><strong>Caja:</strong> {selectedVenta.Caja ? selectedVenta.Caja.descripcion || `Caja ${selectedVenta.id_caja}` : 'N/A'}</div>
-                  <div><strong>Fecha:</strong> {new Date(selectedVenta.fecha_venta).toLocaleDateString('es-ES')}</div>
+                  <div><strong>Fecha:</strong> {formatearFecha(selectedVenta.fecha_venta)}</div>
                   <div><strong>Estado:</strong>
                     <span className={selectedVenta.estado === 'Completada' ? 'text-emerald-600' : selectedVenta.estado === 'Pendiente' ? 'text-amber-600' : 'text-red-600'}>
                       {' '}{selectedVenta.estado}

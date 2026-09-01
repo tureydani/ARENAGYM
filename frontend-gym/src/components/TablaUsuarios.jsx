@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { usePagination } from '../hooks/usePagination';
 import { SearchBar, Pagination, IconExclamationTriangle } from './ui';
+import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -49,8 +50,8 @@ export default function TablaUsuarios() {
         usuario.apellido || '',
         usuario.telefono || '',
         `${usuario.nombre || ''} ${usuario.apellido || ''}`.trim(),
-        new Date(usuario.fecha_nacimiento).toLocaleDateString() || '',
-        new Date(usuario.fecha_registro).toLocaleDateString() || ''
+        formatearFecha(usuario.fecha_nacimiento),
+        formatearFecha(usuario.fecha_registro)
       ].map(field => field.toString().toLowerCase());
       
       const searchableText = searchableFields.join(' ');
@@ -233,21 +234,21 @@ export default function TablaUsuarios() {
     switch (filtroFecha) {
       case 'semana':
         const semanaAtras = new Date(hoy.getTime() - 7 * 24 * 60 * 60 * 1000);
-        usuariosFiltrados = usuarios.filter(usuario => 
-          new Date(usuario.fecha_registro) >= semanaAtras && new Date(usuario.fecha_registro) <= hoy
+        usuariosFiltrados = usuarios.filter(usuario =>
+          parsearFechaLocal(usuario.fecha_registro) >= semanaAtras && parsearFechaLocal(usuario.fecha_registro) <= hoy
         );
         break;
       case 'mes':
         const mesAtras = new Date(hoy.getFullYear(), hoy.getMonth() - 1, hoy.getDate());
-        usuariosFiltrados = usuarios.filter(usuario => 
-          new Date(usuario.fecha_registro) >= mesAtras && new Date(usuario.fecha_registro) <= hoy
+        usuariosFiltrados = usuarios.filter(usuario =>
+          parsearFechaLocal(usuario.fecha_registro) >= mesAtras && parsearFechaLocal(usuario.fecha_registro) <= hoy
         );
         break;
       case 'personalizado':
         if (fechaInicio && fechaFin) {
           usuariosFiltrados = usuarios.filter(usuario => {
-            const fechaRegistro = new Date(usuario.fecha_registro);
-            return fechaRegistro >= new Date(fechaInicio) && fechaRegistro <= new Date(fechaFin);
+            const fechaRegistro = parsearFechaLocal(usuario.fecha_registro);
+            return fechaRegistro >= parsearFechaLocal(fechaInicio) && fechaRegistro <= parsearFechaLocal(fechaFin);
           });
         }
         break;
@@ -289,8 +290,8 @@ export default function TablaUsuarios() {
       user.nombre,
       user.apellido,
       user.telefono,
-      user.fecha_nacimiento ? new Date(user.fecha_nacimiento).toLocaleDateString() : 'N/A',
-      new Date(user.fecha_registro).toLocaleDateString(),
+      user.fecha_nacimiento ? formatearFecha(user.fecha_nacimiento) : 'N/A',
+      formatearFecha(user.fecha_registro),
       user.Administrativo ? user.Administrativo.nombre : `Admin ID: ${user.registrado_por}`
     ]);
 
@@ -318,8 +319,8 @@ export default function TablaUsuarios() {
       'Nombre': user.nombre,
       'Apellido': user.apellido,
       'Teléfono': user.telefono,
-      'Fecha de Nacimiento': user.fecha_nacimiento ? new Date(user.fecha_nacimiento).toLocaleDateString() : 'N/A',
-      'Fecha de Registro': new Date(user.fecha_registro).toLocaleDateString(),
+      'Fecha de Nacimiento': user.fecha_nacimiento ? formatearFecha(user.fecha_nacimiento) : 'N/A',
+      'Fecha de Registro': formatearFecha(user.fecha_registro),
       'Registrado Por': user.Administrativo ? user.Administrativo.nombre : `Admin ID: ${user.registrado_por}`,
       'ID Admin': user.registrado_por // Mantener también el ID para referencia
     }));
@@ -511,11 +512,11 @@ export default function TablaUsuarios() {
                               <div><span className="font-semibold text-slate-600">ID:</span> {usuario.id_usuario}</div>
                               <div>
                                 <span className="font-semibold text-slate-600">F. Nacimiento:</span>{' '}
-                                {usuario.fecha_nacimiento ? new Date(usuario.fecha_nacimiento).toLocaleDateString() : 'N/A'}
+                                {usuario.fecha_nacimiento ? formatearFecha(usuario.fecha_nacimiento) : 'N/A'}
                               </div>
                               <div>
                                 <span className="font-semibold text-slate-600">F. Registro:</span>{' '}
-                                {new Date(usuario.fecha_registro).toLocaleDateString()}
+                                {formatearFecha(usuario.fecha_registro)}
                               </div>
                             </div>
                           </td>

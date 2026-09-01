@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import api from '../utils/api';
 import { usePagination } from '../hooks/usePagination';
 import { SearchBar, Pagination } from './ui';
+import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -34,7 +35,7 @@ export default function TablaAdministrativos() {
         admin.apellido || '',
         admin.usuario || '',
         `${admin.nombre || ''} ${admin.apellido || ''}`.trim(),
-        new Date(admin.fecha_contratacion).toLocaleDateString() || ''
+        formatearFecha(admin.fecha_contratacion)
       ].map(field => field.toString().toLowerCase());
       
       const searchableText = searchableFields.join(' ');
@@ -200,19 +201,12 @@ export default function TablaAdministrativos() {
     resetForm();
   };
 
-  const formatFecha = (fecha) => {
-    if (!fecha) return 'N/A';
-    return new Date(fecha).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
+  const formatFecha = (fecha) => formatearFecha(fecha, { year: 'numeric', month: 'long', day: 'numeric' });
 
   const calcularAntiguedad = (fecha) => {
     if (!fecha) return 'N/A';
     const hoy = new Date();
-    const fechaContratacion = new Date(fecha);
+    const fechaContratacion = parsearFechaLocal(fecha);
     const diferencia = hoy - fechaContratacion;
     const años = Math.floor(diferencia / (1000 * 60 * 60 * 24 * 365));
     const meses = Math.floor((diferencia % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24 * 30));

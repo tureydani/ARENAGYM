@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -104,7 +105,7 @@ const TablaPagos = () => {
         const semanaAtras = new Date();
         semanaAtras.setDate(semanaAtras.getDate() - 7);
         pagosFiltrados = pagos.filter(pago => {
-          const fechaPago = new Date(pago.fecha_pago);
+          const fechaPago = parsearFechaLocal(pago.fecha_pago);
           return fechaPago >= semanaAtras;
         });
         break;
@@ -112,15 +113,15 @@ const TablaPagos = () => {
         const mesAtras = new Date();
         mesAtras.setMonth(mesAtras.getMonth() - 1);
         pagosFiltrados = pagos.filter(pago => {
-          const fechaPago = new Date(pago.fecha_pago);
+          const fechaPago = parsearFechaLocal(pago.fecha_pago);
           return fechaPago >= mesAtras;
         });
         break;
       case 'personalizado':
         if (fechaInicio && fechaFin) {
           pagosFiltrados = pagos.filter(pago => {
-            const fechaPago = new Date(pago.fecha_pago);
-            return fechaPago >= new Date(fechaInicio) && fechaPago <= new Date(fechaFin);
+            const fechaPago = parsearFechaLocal(pago.fecha_pago);
+            return fechaPago >= parsearFechaLocal(fechaInicio) && fechaPago <= parsearFechaLocal(fechaFin);
           });
         }
         break;
@@ -166,7 +167,7 @@ const TablaPagos = () => {
         pago.id_pago,
         registroInfo.usuario,
         registroInfo.membresia,
-        new Date(pago.fecha_pago).toLocaleDateString(),
+        formatearFecha(pago.fecha_pago),
         `Bs. ${pago.monto_pagado}`,
         pago.estado_pago,
         admin ? `${admin.nombre} ${admin.apellido}` : `Admin ID: ${pago.id_admin}`
@@ -203,7 +204,7 @@ const TablaPagos = () => {
         'Duración': registroInfo.duracion,
         'Precio Membresía': `Bs. ${registroInfo.precio}`,
         'Monto Pagado': `Bs. ${pago.monto_pagado}`,
-        'Fecha Pago': new Date(pago.fecha_pago).toLocaleDateString(),
+        'Fecha Pago': formatearFecha(pago.fecha_pago),
         'Estado': pago.estado_pago,
         'Registrado Por': admin ? `${admin.nombre} ${admin.apellido}` : `Admin ID: ${pago.id_admin}`,
         'Caja': caja ? caja.descripcion : `Caja ID: ${pago.id_caja}`,
@@ -380,7 +381,7 @@ const TablaPagos = () => {
       id_admin: '1',
       id_caja: '1',
       monto_pagado: '',
-      fecha_pago: new Date().toISOString().split('T')[0],
+      fecha_pago: getFechaHoyLocal(),
       estado_pago: 'Completo'
     });
   };
@@ -614,7 +615,7 @@ const TablaPagos = () => {
                               <span className="font-semibold text-slate-600">Caja:</span>{' '}
                               {pago.Caja ? pago.Caja.descripcion || `Caja ${pago.id_caja}` : `Caja ${pago.id_caja}`}
                             </div>
-                            <div><span className="font-semibold text-slate-600">Fecha Pago:</span> {new Date(pago.fecha_pago).toLocaleDateString()}</div>
+                            <div><span className="font-semibold text-slate-600">Fecha Pago:</span> {formatearFecha(pago.fecha_pago)}</div>
                           </div>
                         </td>
                       </tr>

@@ -13,6 +13,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -250,10 +251,7 @@ export default function TablaCajas() {
     return numPrice.toFixed(2);
   };
 
-  const formatFecha = (fecha) => {
-    if (!fecha) return 'N/A';
-    return new Date(fecha).toLocaleDateString('es-ES');
-  };
+  const formatFecha = (fecha) => formatearFecha(fecha, { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   const exportToCSV = () => {
     const headers = ['ID', 'Descripción', 'Fecha Apertura', 'Saldo Inicial', 'Saldo Actual', 'Estado'];
@@ -300,10 +298,10 @@ export default function TablaCajas() {
           break;
         case 'personalizado':
           if (fechaInicioExport && fechaFinExport) {
-            fechaInicio = new Date(fechaInicioExport);
-            const fechaFin = new Date(fechaFinExport);
+            fechaInicio = parsearFechaLocal(fechaInicioExport);
+            const fechaFin = parsearFechaLocal(fechaFinExport);
             movimientosFiltrados = movimientosFiltrados.filter(mov => {
-              const fechaMov = new Date(mov.fecha_movimiento);
+              const fechaMov = parsearFechaLocal(mov.fecha_movimiento);
               return fechaMov >= fechaInicio && fechaMov <= fechaFin;
             });
           }
@@ -314,7 +312,7 @@ export default function TablaCajas() {
 
       if (fechaInicio && filtroFechaExport !== 'personalizado') {
         movimientosFiltrados = movimientosFiltrados.filter(mov => {
-          const fechaMov = new Date(mov.fecha_movimiento);
+          const fechaMov = parsearFechaLocal(mov.fecha_movimiento);
           return fechaMov >= fechaInicio;
         });
       }
@@ -348,7 +346,7 @@ export default function TablaCajas() {
     const cajasData = cajasAExportar.map(caja => [
       caja.id_caja,
       caja.descripcion || 'Sin descripción',
-      formatDate(caja.fecha_apertura),
+      formatFecha(caja.fecha_apertura),
       `Bs. ${formatPrice(caja.saldo_inicial)}`,
       `Bs. ${formatPrice(caja.saldo_actual)}`,
       caja.abierta ? 'Abierta' : 'Cerrada'
@@ -384,7 +382,7 @@ export default function TablaCajas() {
           mov.origen || 'N/A',
           mov.descripcion || 'Sin descripción',
           `Bs. ${formatPrice(mov.monto)}`,
-          formatDate(mov.fecha_movimiento)
+          formatFecha(mov.fecha_movimiento)
         ];
       });
 
@@ -444,7 +442,7 @@ export default function TablaCajas() {
       ...cajasAExportar.map(caja => [
         caja.id_caja,
         caja.descripcion || 'Sin descripción',
-        formatDate(caja.fecha_apertura),
+        formatFecha(caja.fecha_apertura),
         parseFloat(caja.saldo_inicial) || 0,
         parseFloat(caja.saldo_actual) || 0,
         caja.abierta ? 'Abierta' : 'Cerrada'
@@ -472,7 +470,7 @@ export default function TablaCajas() {
             mov.origen || 'N/A',
             mov.descripcion || 'Sin descripción',
             parseFloat(mov.monto) || 0,
-            formatDate(mov.fecha_movimiento)
+            formatFecha(mov.fecha_movimiento)
           ];
         })
       ];
@@ -599,14 +597,14 @@ export default function TablaCajas() {
     }
 
     if (historialFechaInicio) {
-      movimientosFiltrados = movimientosFiltrados.filter(mov => 
-        new Date(mov.fecha_movimiento) >= new Date(historialFechaInicio)
+      movimientosFiltrados = movimientosFiltrados.filter(mov =>
+        parsearFechaLocal(mov.fecha_movimiento) >= parsearFechaLocal(historialFechaInicio)
       );
     }
 
     if (historialFechaFin) {
-      movimientosFiltrados = movimientosFiltrados.filter(mov => 
-        new Date(mov.fecha_movimiento) <= new Date(historialFechaFin)
+      movimientosFiltrados = movimientosFiltrados.filter(mov =>
+        parsearFechaLocal(mov.fecha_movimiento) <= parsearFechaLocal(historialFechaFin)
       );
     }
 
@@ -628,7 +626,7 @@ export default function TablaCajas() {
       );
     }
 
-    return movimientosFiltrados.sort((a, b) => new Date(b.fecha_movimiento) - new Date(a.fecha_movimiento));
+    return movimientosFiltrados.sort((a, b) => parsearFechaLocal(b.fecha_movimiento) - parsearFechaLocal(a.fecha_movimiento));
   };
 
   // Función para limpiar filtros del historial
