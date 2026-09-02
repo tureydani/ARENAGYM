@@ -547,9 +547,11 @@ export default function TablaCajas() {
   // Funciones para movimientos de caja
   const openMovimientoModal = (caja) => {
     setSelectedCaja(caja);
+    const adminData = sessionStorage.getItem('admin');
+    const admin = adminData ? JSON.parse(adminData) : null;
     setMovimientoFormData({
       id_caja: caja.id_caja,
-      id_admin: '1',
+      id_admin: admin?.id_admin || '1',
       tipo_movimiento: 'Ingreso',
       descripcion: '',
       monto: '',
