@@ -497,10 +497,16 @@
 
 /* Contenedores específicos responsive */
 @media (max-width: 768px) {
-  .pagos-container, .ventas-container {
-    height: 100vh;
-  }
-  
+  /* IMPORTANTE: no forzar height (ni min-height: 100vh) acá. El padre
+     ".dashboard-card" en dashboard/page.tsx tiene overflow-hidden, así
+     que si este contenedor reclama una altura fija de exactamente
+     100vh (mayor a lo que realmente queda visible bajo el header/tabs
+     del dashboard), todo lo que no entre en esa caja -- la paginación
+     al final, y a veces también las últimas filas de la tabla -- queda
+     recortado y no hay forma de hacerlo aparecer con scroll. La altura
+     tiene que salir del contenido, como ya indica el comentario en la
+     regla base de .pagos-container más abajo. */
+
   .pagos-content-wrapper, .ventas-content-wrapper {
     padding: 0 0.5rem;
   }
