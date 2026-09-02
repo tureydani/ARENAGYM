@@ -13,7 +13,7 @@ export async function GET(request, { params }) {
       where: { id_caja: id },
       include: [{
         model: Administrativo,
-        as: 'administrativo',
+        as: 'Administrativo',
         attributes: ['nombre', 'apellido']
       }],
       order: [['fecha_movimiento', 'DESC'], ['id_movimiento', 'DESC']]

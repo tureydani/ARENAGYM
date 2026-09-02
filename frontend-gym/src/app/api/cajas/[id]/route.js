@@ -7,10 +7,9 @@ export async function GET(request, { params }) {
     const caja = await Caja.findByPk(id, {
       include: [{
         model: MovimientoCaja,
-        as: 'movimientos',
         include: [{
           model: Administrativo,
-          as: 'administrativo',
+          as: 'Administrativo',
           attributes: ['nombre', 'apellido']
         }]
       }]
