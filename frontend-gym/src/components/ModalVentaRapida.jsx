@@ -30,7 +30,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
   
   const [formData, setFormData] = useState({
     id_usuario: '',
-    id_admin: 1, // Administrador por defecto
+    id_admin: 1, // Se reemplaza por el admin real de la sesión al abrir el modal
     id_caja: 1 // Primera caja por defecto
   });
 
@@ -49,9 +49,13 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
       setPaso(1);
       setSearchUsuarios('');
       setSelectedUserText('');
+
+      const adminData = sessionStorage.getItem('admin');
+      const admin = adminData ? JSON.parse(adminData) : null;
+
       setFormData({
         id_usuario: '',
-        id_admin: 1,
+        id_admin: admin?.id_admin || 1,
         id_caja: 1
       });
     }
