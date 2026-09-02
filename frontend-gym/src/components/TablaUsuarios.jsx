@@ -698,9 +698,47 @@ export default function TablaUsuarios() {
                     value={formData.telefono}
                     onChange={(e) => setFormData({...formData, telefono: e.target.value})}
                     className="form-input"
-                    required
+                    placeholder="78965412"
                   />
                 </div>
+
+                {editingUser && (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Correo (app de cliente)</label>
+                      <input
+                        type="email"
+                        value={formData.email || ''}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        className="form-input"
+                        placeholder="correo@ejemplo.com"
+                      />
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-md space-y-2">
+                      <p className="text-xs font-semibold text-slate-600">Cuenta de la app móvil</p>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-slate-500">
+                        <span>Cuenta: {editingUser.password_hash ? 'Activada' : 'No activada'}</span>
+                        <span>Correo verificado: {editingUser.email_verificado ? 'Sí' : 'No'}</span>
+                        <span>
+                          Último acceso: {editingUser.ultimo_acceso
+                            ? new Date(editingUser.ultimo_acceso).toLocaleString('es-ES', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                            : 'Nunca'}
+                        </span>
+                      </div>
+                      {editingUser.foto_perfil && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500">Foto de perfil:</span>
+                          <img
+                            src={editingUser.foto_perfil}
+                            alt="Foto de perfil"
+                            className="w-12 h-12 rounded-full object-cover border"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-group">
