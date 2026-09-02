@@ -483,6 +483,7 @@ const TablaVentas = () => {
       />
 
       {/* Tabla de Ventas */}
+      <div className="mobile-scroll-hint">Desliza la tabla para ver más →</div>
       <div className="table-container modern-table">
         <div className="overflow-x-auto">
           <table className="table enhanced-table">

@@ -520,6 +520,7 @@ const TablaPagos = () => {
           </div>
 
           {/* Tabla de Pagos */}
+          <div className="mobile-scroll-hint">Desliza la tabla para ver más →</div>
           <div className="table-container modern-table">
             <div className="overflow-x-auto">
               <table className="table enhanced-table">
@@ -527,8 +528,8 @@ const TablaPagos = () => {
               <tr>
                 <th className="w-8"></th>
                 <th>Cliente</th>
-                <th>Tipo de Servicio</th>
-                <th>Monto Pagado (Bs)</th>
+                <th>Servicio</th>
+                <th>Monto (Bs)</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>

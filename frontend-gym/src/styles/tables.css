@@ -235,6 +235,15 @@
   font-size: 0.875rem;
 }
 
+/* El scroll horizontal (.overflow-x-auto) ya deja ver la tabla completa
+   en cualquier ancho, pero en el borde no se nota que hay más columnas
+   a la derecha (Estado, Acciones) — este aviso solo aparece en pantallas
+   angostas (ver @media más abajo) para que quede claro que hay que
+   deslizar. */
+.mobile-scroll-hint {
+  display: none;
+}
+
 /* Responsive design para tablas */
 @media (max-width: 1024px) {
   .table-container {
@@ -503,6 +512,19 @@
   .pagos-pagination, .ventas-pagination {
     padding: 0.5rem;
   }
+
+  .mobile-scroll-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #64748B;
+    padding: 0 0.25rem 0.5rem;
+  }
+
+  .table-container .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (max-width: 480px) {
@@ -541,6 +563,11 @@
   text-align: left;
   font-size: 0.875rem;
   border: none;
+  /* Sin esto, en pantallas angostas el texto del header se parte en
+     varias líneas y el ancho de columna calculado ya no coincide con
+     el de los datos, dejando celdas (sobre todo la última) cortadas
+     a la mitad en vez de simplemente quedar fuera del scroll. */
+  white-space: nowrap;
 }
 
 .enhanced-table th:first-child {
