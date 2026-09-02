@@ -1516,6 +1516,21 @@
   font-weight: 500;
 }
 
+/* Base para los modales de Cajas (Nuevo Movimiento / Historial), que usan
+   .modal-content en vez de .modal-container. Sin esto la caja del modal no
+   tenía fondo ni borde propio: quedaba transparente sobre el overlay
+   oscuro, dejando ilegible cualquier texto que no tuviera su propio fondo
+   claro puesto a mano. */
+.modal-content {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
 /* Estilos específicos para modales de movimientos */
 .movimiento-modal .modal-content {
   max-width: 800px;

@@ -569,20 +569,48 @@ export default function TablaCajas() {
 
   const handleMovimientoSubmit = async (e) => {
     e.preventDefault();
-    
+
     try {
       await api.post('/movimientos-caja', movimientoFormData);
       await fetchCajas(); // Actualizar saldos
       await fetchMovimientos(); // Actualizar movimientos
       setShowMovimientoModal(false);
-      
+
       // Mostrar check de éxito
       setShowSuccessCheck(true);
       setTimeout(() => setShowSuccessCheck(false), 3000);
-      
+
     } catch (error) {
       console.error('Error al crear movimiento:', error);
       alert('Error al registrar el movimiento');
+    }
+  };
+
+  // Solo los movimientos manuales (sin id_referencia) se pueden eliminar
+  // desde acá. Los que vienen de un pago o una venta (id_referencia
+  // apunta a ese registro) hay que borrarlos desde su propia sección,
+  // para no desincronizar el saldo de la caja con el pago/venta que
+  // sigue activo.
+  const puedeEliminarMovimiento = (mov) => mov.id_referencia === null || mov.id_referencia === undefined;
+
+  const handleDeleteMovimiento = async (mov) => {
+    if (!confirm(
+      `¿Eliminar este movimiento?\n\n${mov.tipo_movimiento} de Bs. ${formatPrice(mov.monto)} - ${mov.descripcion || 'Sin descripción'}\n\n` +
+      'Esto revertirá el monto en el saldo de la caja.'
+    )) return;
+
+    try {
+      const response = await api.delete(`/movimientos-caja/${mov.id_movimiento}`);
+      await fetchMovimientos();
+      await fetchCajas();
+
+      // Reflejar el saldo actualizado en el modal de historial, que sigue abierto
+      if (response.data?.cajaAfectada && selectedCaja?.id_caja === response.data.cajaAfectada.id) {
+        setSelectedCaja(prev => ({ ...prev, saldo_actual: response.data.cajaAfectada.saldoActual }));
+      }
+    } catch (error) {
+      console.error('Error al eliminar movimiento:', error);
+      alert(error.response?.data?.error || 'Error al eliminar el movimiento');
     }
   };
 
@@ -955,7 +983,7 @@ export default function TablaCajas() {
             <div className="modal-body">
               <form onSubmit={handleMovimientoSubmit}>
                 <div className="form-group">
-                  <label className="text-gray-200 font-medium">Tipo de Movimiento</label>
+                  <label className="text-slate-700 font-medium">Tipo de Movimiento</label>
                   <select
                     value={movimientoFormData.tipo_movimiento}
                     onChange={(e) => setMovimientoFormData({
@@ -971,7 +999,7 @@ export default function TablaCajas() {
                 </div>
 
                 <div className="form-group">
-                  <label className="text-gray-200 font-medium">Origen</label>
+                  <label className="text-slate-700 font-medium">Origen</label>
                   <select
                     value={movimientoFormData.origen}
                     onChange={(e) => setMovimientoFormData({
@@ -988,7 +1016,7 @@ export default function TablaCajas() {
                 </div>
 
                 <div className="form-group">
-                  <label className="text-gray-200 font-medium">Monto (Bs.)</label>
+                  <label className="text-slate-700 font-medium">Monto (Bs.)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1004,7 +1032,7 @@ export default function TablaCajas() {
                 </div>
 
                 <div className="form-group">
-                  <label className="text-gray-200 font-medium">Descripción</label>
+                  <label className="text-slate-700 font-medium">Descripción</label>
                   <textarea
                     value={movimientoFormData.descripcion}
                     onChange={(e) => setMovimientoFormData({
@@ -1165,35 +1193,36 @@ export default function TablaCajas() {
                 <table className="w-full text-sm">
                   <thead className="bg-white">
                     <tr>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Fecha</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Tipo</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Origen</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Descripción</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Monto</th>
-                      <th className="px-4 py-3 text-left text-gray-200 font-semibold border-b border-slate-300">Admin</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Fecha</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Tipo</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Origen</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Descripción</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Monto</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Admin</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 bg-slate-50">
                     {getMovimientosByCaja(selectedCaja.id_caja).map((mov) => (
-                      <tr key={mov.id_movimiento} className="hover:bg-slate-50 transition-colors">
+                      <tr key={mov.id_movimiento} className="hover:bg-slate-100 transition-colors">
                         <td className="px-4 py-3 text-slate-600 font-medium">
                           {formatFecha(mov.fecha_movimiento)}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`font-semibold px-2 py-1 rounded-md ${
-                            mov.tipo_movimiento === 'Ingreso' 
-                              ? 'text-green-100 bg-green-700/80' 
-                              : 'text-red-100 bg-red-700/80'
+                            mov.tipo_movimiento === 'Ingreso'
+                              ? 'text-emerald-800 bg-emerald-100'
+                              : 'text-red-800 bg-red-100'
                           }`}>
-                            {mov.tipo_movimiento === 'Ingreso' ? '' : ''} {mov.tipo_movimiento}
+                            {mov.tipo_movimiento}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sky-700 font-medium">{mov.origen}</td>
-                        <td className="px-4 py-3 text-gray-100">{mov.descripcion}</td>
+                        <td className="px-4 py-3 text-slate-700">{mov.descripcion}</td>
                         <td className="px-4 py-3">
                           <span className={`font-bold text-lg ${
-                            mov.tipo_movimiento === 'Ingreso' 
-                              ? 'text-emerald-600' 
+                            mov.tipo_movimiento === 'Ingreso'
+                              ? 'text-emerald-600'
                               : 'text-red-600'
                           }`}>
                             {mov.tipo_movimiento === 'Ingreso' ? '+' : '-'}Bs. {formatPrice(mov.monto)}
@@ -1201,6 +1230,26 @@ export default function TablaCajas() {
                         </td>
                         <td className="px-4 py-3 text-indigo-600 font-medium">
                           {mov.Administrativo?.nombre || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {puedeEliminarMovimiento(mov) ? (
+                            <button
+                              onClick={() => handleDeleteMovimiento(mov)}
+                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                              title="Eliminar movimiento"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <span
+                              className="text-xs text-slate-400"
+                              title={`Este movimiento viene de ${mov.origen === 'Pago' ? 'un pago' : mov.origen === 'Venta' ? 'una venta' : 'otro registro'}. Elimínalo desde su propia sección.`}
+                            >
+                              No editable
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}

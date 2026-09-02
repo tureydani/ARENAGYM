@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import sequelize from '@/lib/db/sequelize';
 import { MovimientoCaja, Caja, Administrativo } from '@/lib/db/models';
 
 export async function GET(request, { params }) {
@@ -47,8 +48,48 @@ export async function DELETE(request, { params }) {
     const movimiento = await MovimientoCaja.findByPk(id);
     if (!movimiento) return NextResponse.json({ error: "Movimiento no encontrado" }, { status: 404 });
 
-    await movimiento.destroy();
-    return NextResponse.json({ message: "Movimiento eliminado correctamente" });
+    // Los movimientos con id_referencia vienen de un pago o una venta (el
+    // trigger de la BD los crea automáticamente, o los crean las rutas de
+    // eliminación de pagos/ventas como reversión). Borrarlos acá dejaría el
+    // saldo de la caja desincronizado del pago/venta que sigue activo, o
+    // borraría el rastro de una reversión ya hecha. Para esos casos hay que
+    // eliminar el pago o la venta original, no el movimiento.
+    if (movimiento.id_referencia !== null) {
+      return NextResponse.json({
+        error: `Este movimiento viene de ${movimiento.origen === 'Pago' ? 'un pago' : movimiento.origen === 'Venta' ? 'una venta' : 'otro registro'} y no se puede eliminar directamente. Elimina el ${movimiento.origen === 'Pago' ? 'pago' : 'registro'} original desde su propia sección.`
+      }, { status: 400 });
+    }
+
+    const transaction = await sequelize.transaction();
+    try {
+      // Revertir el efecto del movimiento en el saldo de la caja: un
+      // Ingreso se resta, un Egreso se vuelve a sumar.
+      const ajuste = movimiento.tipo_movimiento === 'Ingreso'
+        ? -parseFloat(movimiento.monto)
+        : parseFloat(movimiento.monto);
+
+      await Caja.update(
+        { saldo_actual: sequelize.literal(`saldo_actual + (${ajuste})`) },
+        { where: { id_caja: movimiento.id_caja }, transaction }
+      );
+
+      await movimiento.destroy({ transaction });
+      await transaction.commit();
+
+      const cajaActualizada = await Caja.findByPk(movimiento.id_caja);
+
+      return NextResponse.json({
+        message: "Movimiento eliminado correctamente",
+        cajaAfectada: {
+          id: cajaActualizada.id_caja,
+          descripcion: cajaActualizada.descripcion,
+          saldoActual: parseFloat(cajaActualizada.saldo_actual)
+        }
+      });
+    } catch (error) {
+      if (!transaction.finished) await transaction.rollback();
+      throw error;
+    }
   } catch (error) {
     console.error('Error al eliminar movimiento:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
