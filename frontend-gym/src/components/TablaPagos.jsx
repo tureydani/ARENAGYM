@@ -349,9 +349,11 @@ const TablaPagos = () => {
   const openCreateModal = () => {
     setEditingPago(null);
     const fechaHoy = getFechaHoyLocal();
+    const adminData = sessionStorage.getItem('admin');
+    const admin = adminData ? JSON.parse(adminData) : null;
     setFormData({
       id_registro: '',
-      id_admin: '1', // Administrativo por defecto 
+      id_admin: admin?.id_admin || '1',
       id_caja: '1', // Caja principal por defecto
       monto_pagado: '',
       fecha_pago: fechaHoy, // Fecha local segura
