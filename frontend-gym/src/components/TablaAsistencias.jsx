@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import api from '../utils/api';
-import { SearchBar } from './ui';
+import { SearchBar, Pagination } from './ui';
+import { usePagination } from '../hooks/usePagination';
 import ModalCalendarioAsistencias from './ModalCalendarioAsistencias';
 import '../styles/tables.css';
 import '../styles/modals.css';
@@ -75,7 +76,7 @@ export default function TablaAsistencias() {
   const fetchRecientes = useCallback(async () => {
     setLoadingRecientes(true);
     try {
-      const res = await api.get('/asistencias/recientes?limite=20');
+      const res = await api.get('/asistencias/recientes?limite=100');
       setRecientes(Array.isArray(res.data) ? res.data : []);
       setErrorRecientes('');
     } catch (err) {
@@ -195,6 +196,21 @@ export default function TablaAsistencias() {
       setIsScanning(false);
     }
   };
+
+  // --- Paginación de asistencias recientes ---
+  const {
+    paginatedData: recientesPaginadas,
+    currentPage: paginaRecientes,
+    totalPages: totalPaginasRecientes,
+    totalItems: totalRecientes,
+    startItem: inicioRecientes,
+    endItem: finRecientes,
+    goToPage: irAPaginaRecientes,
+    nextPage: siguientePaginaRecientes,
+    prevPage: paginaAnteriorRecientes,
+    hasNextPage: hayPaginaSiguienteRecientes,
+    hasPrevPage: hayPaginaAnteriorRecientes
+  } = usePagination(recientes, 8);
 
   // --- Marcado manual ---
   const filteredUsuarios = searchTerm.trim()
@@ -455,6 +471,7 @@ export default function TablaAsistencias() {
             <p className="text-slate-500">Cargando asistencias...</p>
           </div>
         ) : (
+          <>
           <div className="table-wrapper flex-1">
             <table className="data-table">
               <thead>
@@ -471,7 +488,7 @@ export default function TablaAsistencias() {
                     </td>
                   </tr>
                 ) : (
-                  recientes.map((asistencia) => (
+                  recientesPaginadas.map((asistencia) => (
                     <tr
                       key={asistencia.id_asistencia}
                       onClick={() =>
@@ -496,6 +513,22 @@ export default function TablaAsistencias() {
               </tbody>
             </table>
           </div>
+          {recientes.length > 0 && (
+            <Pagination
+              currentPage={paginaRecientes}
+              totalPages={totalPaginasRecientes}
+              totalItems={totalRecientes}
+              startItem={inicioRecientes}
+              endItem={finRecientes}
+              itemsPerPage={8}
+              onPageChange={irAPaginaRecientes}
+              onNextPage={siguientePaginaRecientes}
+              onPrevPage={paginaAnteriorRecientes}
+              hasNextPage={hayPaginaSiguienteRecientes}
+              hasPrevPage={hayPaginaAnteriorRecientes}
+            />
+          )}
+          </>
         )}
       </div>
 
