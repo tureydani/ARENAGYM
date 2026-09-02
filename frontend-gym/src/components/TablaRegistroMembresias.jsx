@@ -17,6 +17,7 @@ export default function TablaRegistroMembresias() {
   const [usuarios, setUsuarios] = useState([]);
   const [usuariosCompletos, setUsuariosCompletos] = useState([]); // Para información histórica
   const [membresias, setMembresias] = useState([]);
+  const [cajas, setCajas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -288,7 +289,8 @@ export default function TablaRegistroMembresias() {
     // Nuevos campos para pago directo
     registrarPago: true,
     montoPago: '',
-    estadoPago: 'Completo'
+    estadoPago: 'Completo',
+    id_caja: ''
   });
 
   useEffect(() => {
@@ -296,7 +298,15 @@ export default function TablaRegistroMembresias() {
     fetchUsuarios();
     fetchUsuariosCompletos();
     fetchMembresias();
+    fetchCajas();
   }, []);
+
+  // Caja por defecto: la primera que esté abierta (o la primera de la lista si ninguna lo está)
+  const getCajaPorDefecto = (listaCajas) => {
+    if (!listaCajas || listaCajas.length === 0) return '';
+    const cajaAbierta = listaCajas.find(caja => caja.abierta);
+    return cajaAbierta ? cajaAbierta.id_caja : listaCajas[0].id_caja;
+  };
 
   // Efecto para filtrar usuarios según búsqueda
   useEffect(() => {
@@ -400,6 +410,16 @@ export default function TablaRegistroMembresias() {
     }
   };
 
+  const fetchCajas = async () => {
+    try {
+      const res = await api.get('/cajas');
+      setCajas(res.data);
+      setFormData(prev => ({ ...prev, id_caja: prev.id_caja || getCajaPorDefecto(res.data) }));
+    } catch (err) {
+      console.error('Error al cargar cajas');
+    }
+  };
+
   const getUsuarioNombre = (id) => {
     // Buscar primero en usuarios activos, luego en la lista completa
     let usuario = usuarios.find(u => u.id_usuario === id);
@@ -464,6 +484,7 @@ export default function TablaRegistroMembresias() {
             await api.post('/pagos', {
               id_registro: registroResponse.data.id_registro,
               id_admin: admin.id_admin,
+              id_caja: formData.id_caja,
               monto_pagado: parseFloat(formData.montoPago),
               estado_pago: formData.estadoPago
             });
@@ -635,7 +656,8 @@ export default function TablaRegistroMembresias() {
       activo: true,
       registrarPago: true,
       montoPago: '',
-      estadoPago: 'Completo'
+      estadoPago: 'Completo',
+      id_caja: getCajaPorDefecto(cajas)
     });
     setSearchUsuarios('');
     setSelectedUserText('');
@@ -671,7 +693,8 @@ export default function TablaRegistroMembresias() {
       activo: registro.activo,
       registrarPago: false,
       montoPago: '',
-      estadoPago: 'Completo'
+      estadoPago: 'Completo',
+      id_caja: getCajaPorDefecto(cajas)
     });
     setShowModal(true);
   };
@@ -1343,6 +1366,32 @@ export default function TablaRegistroMembresias() {
                             <option value="Pendiente">Pendiente</option>
                           </select>
                         </div>
+                      </div>
+                    )}
+
+                    {formData.registrarPago && (
+                      <div className="form-group mt-3">
+                        <label className="form-label">Caja</label>
+                        <select
+                          value={formData.id_caja}
+                          onChange={(e) => setFormData({...formData, id_caja: e.target.value ? parseInt(e.target.value) : ''})}
+                          className="form-select"
+                          required={formData.registrarPago}
+                        >
+                          <option value="">Selecciona una caja</option>
+                          {cajas.map(caja => (
+                            <option
+                              key={caja.id_caja}
+                              value={caja.id_caja}
+                              disabled={!caja.abierta}
+                            >
+                              {caja.descripcion} — Bs. {parseFloat(caja.saldo_actual || 0).toFixed(2)}{!caja.abierta ? ' (cerrada)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                        {cajas.length === 0 && (
+                          <p className="text-xs text-slate-500 mt-1">No hay cajas disponibles</p>
+                        )}
                       </div>
                     )}
                   </div>
