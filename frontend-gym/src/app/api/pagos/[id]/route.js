@@ -36,7 +36,94 @@ export async function PUT(request, { params }) {
     if (!pago) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
 
     const body = await request.json();
-    await pago.update(body);
+
+    // Si cambia la caja y/o el monto, hay que mover el dinero de verdad:
+    // el pago original ya sumó su monto a la caja con la que se creó, así
+    // que un simple pago.update(body) dejaba el registro apuntando a la
+    // caja nueva pero el saldo seguía reflejado en la caja vieja -- y al
+    // eliminar el pago después, se restaba de la caja nueva (que nunca
+    // recibió ese dinero), dejándola en negativo.
+    const oldCajaId = pago.id_caja;
+    const oldMonto = parseFloat(pago.monto_pagado);
+    const newCajaId = body.id_caja !== undefined ? parseInt(body.id_caja) : oldCajaId;
+    const newMonto = body.monto_pagado !== undefined ? parseFloat(body.monto_pagado) : oldMonto;
+    const huboCambioDeDinero = newCajaId !== oldCajaId || newMonto !== oldMonto;
+
+    if (huboCambioDeDinero) {
+      const transaction = await sequelize.transaction();
+      try {
+        if (newCajaId !== oldCajaId) {
+          const cajaAnterior = await Caja.findByPk(oldCajaId, { transaction });
+          if (cajaAnterior && parseFloat(cajaAnterior.saldo_actual) - oldMonto < 0) {
+            await transaction.rollback();
+            return NextResponse.json({
+              error: `No se puede cambiar de caja: el saldo de ${cajaAnterior.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(cajaAnterior.saldo_actual).toFixed(2)}, este pago era de Bs. ${oldMonto.toFixed(2)}). Ese dinero ya se usó en otros movimientos de esa caja.`
+            }, { status: 400 });
+          }
+
+          await Caja.update(
+            { saldo_actual: sequelize.literal(`saldo_actual - (${oldMonto})`) },
+            { where: { id_caja: oldCajaId }, transaction }
+          );
+          await MovimientoCaja.create({
+            id_caja: oldCajaId,
+            id_admin: pago.id_admin,
+            tipo_movimiento: 'Egreso',
+            descripcion: `Corrección: pago movido a otra caja (ID Pago: ${pago.id_pago})`,
+            monto: oldMonto,
+            origen: 'Reembolso',
+            id_referencia: pago.id_pago
+          }, { transaction });
+
+          await Caja.update(
+            { saldo_actual: sequelize.literal(`saldo_actual + (${newMonto})`) },
+            { where: { id_caja: newCajaId }, transaction }
+          );
+          await MovimientoCaja.create({
+            id_caja: newCajaId,
+            id_admin: pago.id_admin,
+            tipo_movimiento: 'Ingreso',
+            descripcion: `Corrección: pago movido desde otra caja (ID Pago: ${pago.id_pago})`,
+            monto: newMonto,
+            origen: 'Pago',
+            id_referencia: pago.id_pago
+          }, { transaction });
+        } else {
+          // Misma caja, solo cambió el monto
+          const delta = newMonto - oldMonto;
+          if (delta !== 0) {
+            const caja = await Caja.findByPk(oldCajaId, { transaction });
+            if (delta < 0 && caja && parseFloat(caja.saldo_actual) + delta < 0) {
+              await transaction.rollback();
+              return NextResponse.json({
+                error: `No se puede reducir el monto: el saldo de ${caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(caja.saldo_actual).toFixed(2)}).`
+              }, { status: 400 });
+            }
+            await Caja.update(
+              { saldo_actual: sequelize.literal(`saldo_actual + (${delta})`) },
+              { where: { id_caja: oldCajaId }, transaction }
+            );
+            await MovimientoCaja.create({
+              id_caja: oldCajaId,
+              id_admin: pago.id_admin,
+              tipo_movimiento: delta > 0 ? 'Ingreso' : 'Egreso',
+              descripcion: `Corrección de monto de pago (ID Pago: ${pago.id_pago})`,
+              monto: Math.abs(delta),
+              origen: delta > 0 ? 'Pago' : 'Reembolso',
+              id_referencia: pago.id_pago
+            }, { transaction });
+          }
+        }
+
+        await pago.update(body, { transaction });
+        await transaction.commit();
+      } catch (error) {
+        if (!transaction.finished) await transaction.rollback();
+        throw error;
+      }
+    } else {
+      await pago.update(body);
+    }
 
     const pagoActualizado = await Pago.scope('withInactive').findByPk(id, {
       include: [

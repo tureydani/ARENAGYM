@@ -414,7 +414,7 @@ const TablaPagos = () => {
       
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al guardar el pago');
+      alert(error.response?.data?.error || 'Error al guardar el pago');
     }
   };
 

@@ -32,7 +32,90 @@ export async function PUT(request, { params }) {
     if (!venta) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
 
     const body = await request.json();
-    await venta.update(body);
+
+    // Mismo caso que en pagos: si cambia la caja y/o el total, hay que
+    // mover el dinero de verdad, si no el saldo queda reflejado en la
+    // caja vieja mientras el registro apunta a la nueva.
+    const oldCajaId = venta.id_caja;
+    const oldTotal = parseFloat(venta.total);
+    const newCajaId = body.id_caja !== undefined ? parseInt(body.id_caja) : oldCajaId;
+    const newTotal = body.total !== undefined ? parseFloat(body.total) : oldTotal;
+    const huboCambioDeDinero = newCajaId !== oldCajaId || newTotal !== oldTotal;
+
+    if (huboCambioDeDinero) {
+      const transaction = await sequelize.transaction();
+      try {
+        if (newCajaId !== oldCajaId) {
+          const cajaAnterior = await Caja.findByPk(oldCajaId, { transaction });
+          if (cajaAnterior && parseFloat(cajaAnterior.saldo_actual) - oldTotal < 0) {
+            await transaction.rollback();
+            return NextResponse.json({
+              error: `No se puede cambiar de caja: el saldo de ${cajaAnterior.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(cajaAnterior.saldo_actual).toFixed(2)}, esta venta era de Bs. ${oldTotal.toFixed(2)}). Ese dinero ya se usó en otros movimientos de esa caja.`
+            }, { status: 400 });
+          }
+
+          await Caja.update(
+            { saldo_actual: sequelize.literal(`saldo_actual - (${oldTotal})`) },
+            { where: { id_caja: oldCajaId }, transaction }
+          );
+          await MovimientoCaja.create({
+            id_caja: oldCajaId,
+            id_admin: venta.id_admin,
+            tipo_movimiento: 'Egreso',
+            descripcion: `Corrección: venta movida a otra caja (ID Venta: ${venta.id_venta})`,
+            monto: oldTotal,
+            origen: 'Reembolso',
+            id_referencia: venta.id_venta
+          }, { transaction });
+
+          await Caja.update(
+            { saldo_actual: sequelize.literal(`saldo_actual + (${newTotal})`) },
+            { where: { id_caja: newCajaId }, transaction }
+          );
+          await MovimientoCaja.create({
+            id_caja: newCajaId,
+            id_admin: venta.id_admin,
+            tipo_movimiento: 'Ingreso',
+            descripcion: `Corrección: venta movida desde otra caja (ID Venta: ${venta.id_venta})`,
+            monto: newTotal,
+            origen: 'Venta',
+            id_referencia: venta.id_venta
+          }, { transaction });
+        } else {
+          const delta = newTotal - oldTotal;
+          if (delta !== 0) {
+            const caja = await Caja.findByPk(oldCajaId, { transaction });
+            if (delta < 0 && caja && parseFloat(caja.saldo_actual) + delta < 0) {
+              await transaction.rollback();
+              return NextResponse.json({
+                error: `No se puede reducir el total: el saldo de ${caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(caja.saldo_actual).toFixed(2)}).`
+              }, { status: 400 });
+            }
+            await Caja.update(
+              { saldo_actual: sequelize.literal(`saldo_actual + (${delta})`) },
+              { where: { id_caja: oldCajaId }, transaction }
+            );
+            await MovimientoCaja.create({
+              id_caja: oldCajaId,
+              id_admin: venta.id_admin,
+              tipo_movimiento: delta > 0 ? 'Ingreso' : 'Egreso',
+              descripcion: `Corrección de total de venta (ID Venta: ${venta.id_venta})`,
+              monto: Math.abs(delta),
+              origen: delta > 0 ? 'Venta' : 'Reembolso',
+              id_referencia: venta.id_venta
+            }, { transaction });
+          }
+        }
+
+        await venta.update(body, { transaction });
+        await transaction.commit();
+      } catch (error) {
+        if (!transaction.finished) await transaction.rollback();
+        throw error;
+      }
+    } else {
+      await venta.update(body);
+    }
 
     const ventaActualizada = await Venta.findByPk(id, {
       include: [

@@ -382,7 +382,7 @@ const TablaVentas = () => {
       
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al guardar la venta');
+      alert(error.response?.data?.error || 'Error al guardar la venta');
     }
   };
 
