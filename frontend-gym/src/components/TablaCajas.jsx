@@ -570,6 +570,19 @@ export default function TablaCajas() {
   const handleMovimientoSubmit = async (e) => {
     e.preventDefault();
 
+    // Aviso inmediato antes de llamar a la API: un Egreso no puede dejar la
+    // caja en negativo. El backend es quien realmente lo bloquea (por si el
+    // saldo cambió desde que se abrió el modal); esto es solo para no
+    // hacerle esperar el viaje de ida y vuelta al servidor.
+    if (movimientoFormData.tipo_movimiento === 'Egreso') {
+      const saldoDisponible = parseFloat(selectedCaja?.saldo_actual) || 0;
+      const montoSolicitado = parseFloat(movimientoFormData.monto) || 0;
+      if (montoSolicitado > saldoDisponible) {
+        alert(`Saldo insuficiente. Saldo disponible: Bs. ${saldoDisponible.toFixed(2)}, monto solicitado: Bs. ${montoSolicitado.toFixed(2)}`);
+        return;
+      }
+    }
+
     try {
       await api.post('/movimientos-caja', movimientoFormData);
       await fetchCajas(); // Actualizar saldos
@@ -582,7 +595,7 @@ export default function TablaCajas() {
 
     } catch (error) {
       console.error('Error al crear movimiento:', error);
-      alert('Error al registrar el movimiento');
+      alert(error.response?.data?.error || 'Error al registrar el movimiento');
     }
   };
 
@@ -981,6 +994,9 @@ export default function TablaCajas() {
               <button onClick={() => setShowMovimientoModal(false)}>✕</button>
             </div>
             <div className="modal-body">
+              <div className="mb-4 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-600">
+                Saldo disponible: <span className="font-bold text-emerald-600">Bs. {formatPrice(selectedCaja?.saldo_actual)}</span>
+              </div>
               <form onSubmit={handleMovimientoSubmit}>
                 <div className="form-group">
                   <label className="text-slate-700 font-medium">Tipo de Movimiento</label>
@@ -1020,6 +1036,8 @@ export default function TablaCajas() {
                   <input
                     type="number"
                     step="0.01"
+                    min="0.01"
+                    max={movimientoFormData.tipo_movimiento === 'Egreso' ? (selectedCaja?.saldo_actual || 0) : undefined}
                     value={movimientoFormData.monto}
                     onChange={(e) => setMovimientoFormData({
                       ...movimientoFormData,

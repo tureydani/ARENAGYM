@@ -67,6 +67,13 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Venta no encontrada" }, { status: 404 });
     }
 
+    if (venta.Caja && parseFloat(venta.Caja.saldo_actual) - parseFloat(venta.total) < 0) {
+      await transaction.rollback();
+      return NextResponse.json({
+        error: `No se puede eliminar: el saldo de ${venta.Caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(venta.Caja.saldo_actual).toFixed(2)}, esta venta era de Bs. ${parseFloat(venta.total).toFixed(2)}). Ese dinero ya se usó en otros movimientos de la caja.`
+      }, { status: 400 });
+    }
+
     // Obtener información del cliente para el movimiento
     const nombreCliente = venta.Usuario ? `${venta.Usuario.nombre} ${venta.Usuario.apellido}` : 'Cliente desconocido';
 

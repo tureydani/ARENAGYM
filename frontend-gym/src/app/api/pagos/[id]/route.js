@@ -74,6 +74,12 @@ export async function DELETE(request, { params }) {
 
     if (!pago) return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
 
+    if (pago.Caja && parseFloat(pago.Caja.saldo_actual) - parseFloat(pago.monto_pagado) < 0) {
+      return NextResponse.json({
+        error: `No se puede eliminar: el saldo de ${pago.Caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(pago.Caja.saldo_actual).toFixed(2)}, este pago era de Bs. ${parseFloat(pago.monto_pagado).toFixed(2)}). Ese dinero ya se usó en otros movimientos de la caja.`
+      }, { status: 400 });
+    }
+
     // Iniciar transacción para asegurar consistencia
     const transaction = await sequelize.transaction();
 

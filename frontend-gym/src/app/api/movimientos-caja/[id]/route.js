@@ -60,14 +60,27 @@ export async function DELETE(request, { params }) {
       }, { status: 400 });
     }
 
+    // Revertir el efecto del movimiento en el saldo de la caja: un
+    // Ingreso se resta, un Egreso se vuelve a sumar.
+    const ajuste = movimiento.tipo_movimiento === 'Ingreso'
+      ? -parseFloat(movimiento.monto)
+      : parseFloat(movimiento.monto);
+
+    // Solo un Ingreso puede dejar el saldo en negativo al revertirse (un
+    // Egreso siempre lo aumenta). Si ese dinero ya se gastó con Egresos
+    // posteriores, no se puede deshacer el Ingreso sin dejar la caja
+    // negativa.
+    if (ajuste < 0) {
+      const caja = await Caja.findByPk(movimiento.id_caja);
+      if (caja && parseFloat(caja.saldo_actual) + ajuste < 0) {
+        return NextResponse.json({
+          error: `No se puede eliminar: el saldo de ${caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(caja.saldo_actual).toFixed(2)}, este ingreso era de Bs. ${parseFloat(movimiento.monto).toFixed(2)}). Ese dinero ya se usó en otros movimientos.`
+        }, { status: 400 });
+      }
+    }
+
     const transaction = await sequelize.transaction();
     try {
-      // Revertir el efecto del movimiento en el saldo de la caja: un
-      // Ingreso se resta, un Egreso se vuelve a sumar.
-      const ajuste = movimiento.tipo_movimiento === 'Ingreso'
-        ? -parseFloat(movimiento.monto)
-        : parseFloat(movimiento.monto);
-
       await Caja.update(
         { saldo_actual: sequelize.literal(`saldo_actual + (${ajuste})`) },
         { where: { id_caja: movimiento.id_caja }, transaction }
