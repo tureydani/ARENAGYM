@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { Venta, DetalleVenta, Usuario, Administrativo, Caja, Producto, MovimientoCaja } from '@/lib/db/models';
+import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -40,13 +41,30 @@ export async function PUT(request, { params }) {
     const oldTotal = parseFloat(venta.total);
     const newCajaId = body.id_caja !== undefined ? parseInt(body.id_caja) : oldCajaId;
     const newTotal = body.total !== undefined ? parseFloat(body.total) : oldTotal;
+
+    if (body.total !== undefined && (Number.isNaN(newTotal) || newTotal <= 0)) {
+      return NextResponse.json({ error: 'El total debe ser mayor a 0' }, { status: 400 });
+    }
+
     const huboCambioDeDinero = newCajaId !== oldCajaId || newTotal !== oldTotal;
 
     if (huboCambioDeDinero) {
       const transaction = await sequelize.transaction();
       try {
         if (newCajaId !== oldCajaId) {
-          const cajaAnterior = await Caja.findByPk(oldCajaId, { transaction });
+          // Mismo patrón que en pagos: bloquear ambas cajas en orden de ID
+          // ascendente para evitar deadlocks entre ediciones concurrentes.
+          const idsOrdenados = [oldCajaId, newCajaId].sort((a, b) => a - b);
+          const [cajaA, cajaB] = await Promise.all(
+            idsOrdenados.map(cid => Caja.findByPk(cid, { transaction, lock: transaction.LOCK.UPDATE }))
+          );
+          const cajaAnterior = oldCajaId === idsOrdenados[0] ? cajaA : cajaB;
+          const cajaNueva = newCajaId === idsOrdenados[0] ? cajaA : cajaB;
+
+          if (!cajaNueva) {
+            await transaction.rollback();
+            return NextResponse.json({ error: 'La caja de destino no existe' }, { status: 404 });
+          }
           if (cajaAnterior && parseFloat(cajaAnterior.saldo_actual) - oldTotal < 0) {
             await transaction.rollback();
             return NextResponse.json({
@@ -84,7 +102,7 @@ export async function PUT(request, { params }) {
         } else {
           const delta = newTotal - oldTotal;
           if (delta !== 0) {
-            const caja = await Caja.findByPk(oldCajaId, { transaction });
+            const caja = await Caja.findByPk(oldCajaId, { transaction, lock: transaction.LOCK.UPDATE });
             if (delta < 0 && caja && parseFloat(caja.saldo_actual) + delta < 0) {
               await transaction.rollback();
               return NextResponse.json({
@@ -128,6 +146,8 @@ export async function PUT(request, { params }) {
     return NextResponse.json(ventaActualizada);
   } catch (error) {
     console.error('Error al actualizar venta:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -150,10 +170,14 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Venta no encontrada" }, { status: 404 });
     }
 
-    if (venta.Caja && parseFloat(venta.Caja.saldo_actual) - parseFloat(venta.total) < 0) {
+    // Bloquea la fila de la caja (separado del include de arriba, que no
+    // garantiza el lock) para que la validación y el descuento sean
+    // atómicos frente a otra operación concurrente sobre la misma caja.
+    const cajaBloqueada = await Caja.findByPk(venta.id_caja, { transaction, lock: transaction.LOCK.UPDATE });
+    if (cajaBloqueada && parseFloat(cajaBloqueada.saldo_actual) - parseFloat(venta.total) < 0) {
       await transaction.rollback();
       return NextResponse.json({
-        error: `No se puede eliminar: el saldo de ${venta.Caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(venta.Caja.saldo_actual).toFixed(2)}, esta venta era de Bs. ${parseFloat(venta.total).toFixed(2)}). Ese dinero ya se usó en otros movimientos de la caja.`
+        error: `No se puede eliminar: el saldo de ${cajaBloqueada.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(cajaBloqueada.saldo_actual).toFixed(2)}, esta venta era de Bs. ${parseFloat(venta.total).toFixed(2)}). Ese dinero ya se usó en otros movimientos de la caja.`
       }, { status: 400 });
     }
 
@@ -218,6 +242,8 @@ export async function DELETE(request, { params }) {
   } catch (error) {
     if (!transaction.finished) await transaction.rollback();
     console.error('Error al eliminar venta:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({
       error: "Error al eliminar venta: " + error.message,
       details: "No se pudo completar la eliminación de la venta, restauración de stock y actualización de caja"

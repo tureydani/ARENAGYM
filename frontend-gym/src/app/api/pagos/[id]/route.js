@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { Pago, RegistroMembresia, Administrativo, Caja, Usuario, MovimientoCaja } from '@/lib/db/models';
+import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -47,13 +48,32 @@ export async function PUT(request, { params }) {
     const oldMonto = parseFloat(pago.monto_pagado);
     const newCajaId = body.id_caja !== undefined ? parseInt(body.id_caja) : oldCajaId;
     const newMonto = body.monto_pagado !== undefined ? parseFloat(body.monto_pagado) : oldMonto;
+
+    if (body.monto_pagado !== undefined && (Number.isNaN(newMonto) || newMonto <= 0)) {
+      return NextResponse.json({ error: 'El monto pagado debe ser mayor a 0' }, { status: 400 });
+    }
+
     const huboCambioDeDinero = newCajaId !== oldCajaId || newMonto !== oldMonto;
 
     if (huboCambioDeDinero) {
       const transaction = await sequelize.transaction();
       try {
         if (newCajaId !== oldCajaId) {
-          const cajaAnterior = await Caja.findByPk(oldCajaId, { transaction });
+          // Se bloquean las dos filas de caja involucradas (en orden de ID
+          // ascendente, siempre igual, para que dos ediciones concurrentes
+          // que muevan dinero entre las mismas dos cajas no puedan
+          // bloquearse en un deadlock esperándose una a la otra).
+          const idsOrdenados = [oldCajaId, newCajaId].sort((a, b) => a - b);
+          const [cajaA, cajaB] = await Promise.all(
+            idsOrdenados.map(cid => Caja.findByPk(cid, { transaction, lock: transaction.LOCK.UPDATE }))
+          );
+          const cajaAnterior = oldCajaId === idsOrdenados[0] ? cajaA : cajaB;
+          const cajaNueva = newCajaId === idsOrdenados[0] ? cajaA : cajaB;
+
+          if (!cajaNueva) {
+            await transaction.rollback();
+            return NextResponse.json({ error: 'La caja de destino no existe' }, { status: 404 });
+          }
           if (cajaAnterior && parseFloat(cajaAnterior.saldo_actual) - oldMonto < 0) {
             await transaction.rollback();
             return NextResponse.json({
@@ -92,7 +112,7 @@ export async function PUT(request, { params }) {
           // Misma caja, solo cambió el monto
           const delta = newMonto - oldMonto;
           if (delta !== 0) {
-            const caja = await Caja.findByPk(oldCajaId, { transaction });
+            const caja = await Caja.findByPk(oldCajaId, { transaction, lock: transaction.LOCK.UPDATE });
             if (delta < 0 && caja && parseFloat(caja.saldo_actual) + delta < 0) {
               await transaction.rollback();
               return NextResponse.json({
@@ -136,6 +156,8 @@ export async function PUT(request, { params }) {
     return NextResponse.json(pagoActualizado);
   } catch (error) {
     console.error('Error al actualizar pago:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -161,16 +183,18 @@ export async function DELETE(request, { params }) {
 
     if (!pago) return NextResponse.json({ error: "Pago no encontrado" }, { status: 404 });
 
-    if (pago.Caja && parseFloat(pago.Caja.saldo_actual) - parseFloat(pago.monto_pagado) < 0) {
-      return NextResponse.json({
-        error: `No se puede eliminar: el saldo de ${pago.Caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(pago.Caja.saldo_actual).toFixed(2)}, este pago era de Bs. ${parseFloat(pago.monto_pagado).toFixed(2)}). Ese dinero ya se usó en otros movimientos de la caja.`
-      }, { status: 400 });
-    }
-
     // Iniciar transacción para asegurar consistencia
     const transaction = await sequelize.transaction();
 
     try {
+      const cajaBloqueada = await Caja.findByPk(pago.id_caja, { transaction, lock: transaction.LOCK.UPDATE });
+      if (cajaBloqueada && parseFloat(cajaBloqueada.saldo_actual) - parseFloat(pago.monto_pagado) < 0) {
+        await transaction.rollback();
+        return NextResponse.json({
+          error: `No se puede eliminar: el saldo de ${cajaBloqueada.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(cajaBloqueada.saldo_actual).toFixed(2)}, este pago era de Bs. ${parseFloat(pago.monto_pagado).toFixed(2)}). Ese dinero ya se usó en otros movimientos de la caja.`
+        }, { status: 400 });
+      }
+
       // Obtener información del cliente para el movimiento
       const nombreCliente = pago.RegistroMembresia?.Usuario ?
         `${pago.RegistroMembresia.Usuario.nombre} ${pago.RegistroMembresia.Usuario.apellido}` :
@@ -229,6 +253,8 @@ export async function DELETE(request, { params }) {
 
   } catch (error) {
     console.error('Error al eliminar pago:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({
       error: "Error al eliminar pago: " + error.message,
       details: "No se pudo completar la eliminación del pago y actualización de caja"

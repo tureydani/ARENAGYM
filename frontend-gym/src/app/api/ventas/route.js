@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { Venta, DetalleVenta, Usuario, Administrativo, Caja, Producto } from '@/lib/db/models';
+import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
 
 export async function GET(request) {
   try {
@@ -33,6 +34,17 @@ export async function POST(request) {
   try {
     const body = await request.json();
     const { id_usuario, id_admin, id_caja, fecha_venta, total, estado, productos } = body;
+
+    // El trigger de la BD suma total directo al saldo de la caja sin
+    // ninguna validación propia -- un total negativo se colaría como una
+    // forma de vaciar la caja sin pasar por ninguno de los controles de
+    // Egreso. (total puede venir 0/undefined en la venta rápida sin
+    // productos todavía seleccionados, así que solo se rechaza si es
+    // explícitamente negativo.)
+    if (total !== undefined && total !== null && parseFloat(total) < 0) {
+      await transaction.rollback();
+      return NextResponse.json({ error: 'El total no puede ser negativo' }, { status: 400 });
+    }
 
     // Función para obtener fecha local en formato YYYY-MM-DD
     const getFechaHoy = () => {
@@ -118,6 +130,8 @@ export async function POST(request) {
   } catch (error) {
     if (!transaction.finished) await transaction.rollback();
     console.error('Error al crear venta:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

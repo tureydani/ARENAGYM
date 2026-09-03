@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Pago, RegistroMembresia, Administrativo, Caja } from '@/lib/db/models';
+import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
 
 export async function GET(request) {
   try {
@@ -35,6 +36,14 @@ export async function POST(request) {
     const body = await request.json();
     const { id_registro, monto_pagado, fecha_pago, id_admin, id_caja, estado_pago } = body;
 
+    // El trigger de la BD suma monto_pagado directo al saldo de la caja sin
+    // ninguna validación propia -- un monto negativo (o 0) se colaría como
+    // una forma de vaciar la caja sin pasar por ninguno de los controles de
+    // Egreso.
+    if (parseFloat(monto_pagado) <= 0 || Number.isNaN(parseFloat(monto_pagado))) {
+      return NextResponse.json({ error: 'El monto pagado debe ser mayor a 0' }, { status: 400 });
+    }
+
     const nuevoPago = await Pago.create({
       id_registro,
       monto_pagado,
@@ -60,6 +69,8 @@ export async function POST(request) {
     return NextResponse.json(pagoConRelaciones, { status: 201 });
   } catch (error) {
     console.error('Error al crear pago:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

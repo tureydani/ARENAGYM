@@ -664,6 +664,17 @@ EXECUTE FUNCTION calcular_fecha_fin();
 
 -- ==========================================================
 -- TRIGGERS PARA REFLEJAR ELIMINACIONES EN CAJAS
+--
+-- ADVERTENCIA (2026-09): estos dos triggers NO están instalados en la
+-- base de datos real (verificado contra information_schema.triggers).
+-- La eliminación de pagos/ventas ya la maneja el código de la app
+-- (src/app/api/pagos/[id]/route.js y .../ventas/[id]/route.js: restan
+-- de la caja, crean el movimiento de egreso y marcan el registro como
+-- inactivo, todo dentro de una transacción con bloqueo de fila).
+-- NO ejecutar este bloque contra la base real: si se instalan estos
+-- triggers, cada eliminación de pago/venta pasaría a descontarse DOS
+-- VECES de la caja (una por el código de la app, otra por el trigger),
+-- dejando el saldo mal sin ningún error visible.
 -- ==========================================================
 
 -- Trigger para restar de caja cuando se elimina (soft delete) un pago

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { MovimientoCaja, Caja, Administrativo } from '@/lib/db/models';
+import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -26,7 +27,25 @@ export async function PUT(request, { params }) {
     if (!movimiento) return NextResponse.json({ error: "Movimiento no encontrado" }, { status: 404 });
 
     const body = await request.json();
-    await movimiento.update(body);
+
+    // Cambiar el monto, el tipo o la caja de un movimiento ya aplicado
+    // requeriría la misma lógica de reversión/re-aplicación (con su
+    // validación de saldo) que ya tienen pagos y ventas -- nadie usa este
+    // endpoint para eso hoy (el historial solo edita la descripción), así
+    // que en vez de dejar una puerta abierta para desincronizar el saldo
+    // en silencio, se bloquea explícitamente. Para corregir un monto/tipo/
+    // caja hay que eliminar el movimiento y crear uno nuevo.
+    const camposFinancieros = ['monto', 'tipo_movimiento', 'id_caja'];
+    const intentaCambiarFinanciero = camposFinancieros.some(
+      campo => body[campo] !== undefined && String(body[campo]) !== String(movimiento[campo])
+    );
+    if (intentaCambiarFinanciero) {
+      return NextResponse.json({
+        error: 'No se puede cambiar el monto, tipo o caja de un movimiento ya registrado. Elimínalo y crea uno nuevo con los datos correctos.'
+      }, { status: 400 });
+    }
+
+    await movimiento.update({ descripcion: body.descripcion });
 
     const movimientoActualizado = await MovimientoCaja.findByPk(id, {
       include: [
@@ -66,21 +85,24 @@ export async function DELETE(request, { params }) {
       ? -parseFloat(movimiento.monto)
       : parseFloat(movimiento.monto);
 
-    // Solo un Ingreso puede dejar el saldo en negativo al revertirse (un
-    // Egreso siempre lo aumenta). Si ese dinero ya se gastó con Egresos
-    // posteriores, no se puede deshacer el Ingreso sin dejar la caja
-    // negativa.
-    if (ajuste < 0) {
-      const caja = await Caja.findByPk(movimiento.id_caja);
-      if (caja && parseFloat(caja.saldo_actual) + ajuste < 0) {
+    const transaction = await sequelize.transaction();
+    try {
+      // Bloquea la fila de la caja (ver nota igual en POST de este mismo
+      // endpoint) para que la validación de saldo y el ajuste sean atómicos
+      // frente a otra operación concurrente sobre la misma caja.
+      const caja = await Caja.findByPk(movimiento.id_caja, { transaction, lock: transaction.LOCK.UPDATE });
+
+      // Solo un Ingreso puede dejar el saldo en negativo al revertirse (un
+      // Egreso siempre lo aumenta). Si ese dinero ya se gastó con Egresos
+      // posteriores, no se puede deshacer el Ingreso sin dejar la caja
+      // negativa.
+      if (ajuste < 0 && caja && parseFloat(caja.saldo_actual) + ajuste < 0) {
+        await transaction.rollback();
         return NextResponse.json({
           error: `No se puede eliminar: el saldo de ${caja.descripcion} quedaría en negativo (saldo actual Bs. ${parseFloat(caja.saldo_actual).toFixed(2)}, este ingreso era de Bs. ${parseFloat(movimiento.monto).toFixed(2)}). Ese dinero ya se usó en otros movimientos.`
         }, { status: 400 });
       }
-    }
 
-    const transaction = await sequelize.transaction();
-    try {
       await Caja.update(
         { saldo_actual: sequelize.literal(`saldo_actual + (${ajuste})`) },
         { where: { id_caja: movimiento.id_caja }, transaction }
@@ -105,6 +127,8 @@ export async function DELETE(request, { params }) {
     }
   } catch (error) {
     console.error('Error al eliminar movimiento:', error);
+    const mensajeSaldo = mensajeErrorSaldoNegativo(error);
+    if (mensajeSaldo) return NextResponse.json({ error: mensajeSaldo }, { status: 400 });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
