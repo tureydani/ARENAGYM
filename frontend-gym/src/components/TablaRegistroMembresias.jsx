@@ -220,6 +220,52 @@ export default function TablaRegistroMembresias() {
     }
   };
 
+  // formatFecha tiene que estar declarada antes de searchRegistros (que la
+  // usa) y no después: usePagination llama a searchRegistros dentro de un
+  // useMemo que se ejecuta EN EL MISMO RENDER, en el momento en que se
+  // invoca usePagination más abajo -- si formatFecha se declara después de
+  // ese punto en el código, esa llamada cae en su "temporal dead zone" y
+  // tira "Cannot access 'formatFecha' before initialization" apenas se
+  // escribe algo en el buscador (con el término vacío ni se llama a
+  // searchRegistros, así que el error no aparece hasta la primera letra).
+  const formatFecha = (fecha) => {
+    if (!fecha) return 'N/A';
+
+    // Extraer año, mes y día directamente de la cadena para evitar problemas de zona horaria
+    const fechaStr = fecha.toString();
+    let fechaParts;
+
+    if (fechaStr.includes('T')) {
+      // Si viene con hora, extraer solo la fecha
+      fechaParts = fechaStr.split('T')[0].split('-');
+    } else {
+      // Si es solo fecha
+      fechaParts = fechaStr.split('-');
+    }
+
+    if (fechaParts.length === 3) {
+      const año = parseInt(fechaParts[0]);
+      const mes = parseInt(fechaParts[1]) - 1; // Los meses en JavaScript son 0-indexados
+      const dia = parseInt(fechaParts[2]);
+
+      // Crear la fecha con zona horaria local
+      const fechaLocal = new Date(año, mes, dia);
+
+      return fechaLocal.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    // Fallback al método original si no se puede parsear
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   // Función de búsqueda específica para registro de membresías
   const searchRegistros = (data, searchTerm) => {
     if (!usuarios.length || !membresias.length) {
@@ -738,44 +784,6 @@ export default function TablaRegistroMembresias() {
   const handleVentaSuccess = (message) => {
     setSuccess(message || 'Venta registrada exitosamente');
     setTimeout(() => setSuccess(''), 3000);
-  };
-
-  const formatFecha = (fecha) => {
-    if (!fecha) return 'N/A';
-    
-    // Extraer año, mes y día directamente de la cadena para evitar problemas de zona horaria
-    const fechaStr = fecha.toString();
-    let fechaParts;
-    
-    if (fechaStr.includes('T')) {
-      // Si viene con hora, extraer solo la fecha
-      fechaParts = fechaStr.split('T')[0].split('-');
-    } else {
-      // Si es solo fecha
-      fechaParts = fechaStr.split('-');
-    }
-    
-    if (fechaParts.length === 3) {
-      const año = parseInt(fechaParts[0]);
-      const mes = parseInt(fechaParts[1]) - 1; // Los meses en JavaScript son 0-indexados
-      const dia = parseInt(fechaParts[2]);
-      
-      // Crear la fecha con zona horaria local
-      const fechaLocal = new Date(año, mes, dia);
-      
-      return fechaLocal.toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    }
-    
-    // Fallback al método original si no se puede parsear
-    return new Date(fecha).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   };
 
   const calcularDiasRestantes = (fechaFin) => {
