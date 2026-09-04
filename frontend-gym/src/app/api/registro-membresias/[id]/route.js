@@ -38,6 +38,14 @@ export async function PUT(request, { params }) {
     const registro = await RegistroMembresia.scope('withInactive').findByPk(id);
     if (!registro) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     const body = await request.json();
+
+    // Si se cambia de plan, refrescar la copia del límite de asistencias con
+    // la del nuevo plan (misma lógica que al crear el registro).
+    if (body.id_membresia && body.id_membresia !== registro.id_membresia) {
+      const membresia = await Membresia.scope('withInactive').findByPk(body.id_membresia);
+      body.limite_asistencias = membresia?.limite_asistencias ?? null;
+    }
+
     await registro.update(body);
     return NextResponse.json(registro);
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Op } from 'sequelize';
 import { Asistencia, Usuario, RegistroMembresia } from '@/lib/db/models';
 import { verificarTokenAsistencia } from '@/lib/auth/clienteAuth';
-import { fechaHoyBolivia } from '@/lib/fecha';
+import { fechaHoyBolivia, claveDiaBolivia } from '@/lib/fecha';
 
 // Convierte "YYYY-MM-DD" a "DD/MM/YYYY" sin pasar por Date/timezone.
 function formatearFechaLegible(fechaISO) {
@@ -89,14 +89,61 @@ export async function POST(request) {
       });
     }
 
-    const asistencia = await Asistencia.create({ id_usuario: idUsuario });
+    // Membresías con límite de asistencias (ej. "15 accesos en el mes"): el
+    // cliente tiene la membresía activa por toda su duración, pero solo
+    // puede ingresar un número fijo de veces. Se cuenta contra las
+    // asistencias ya vinculadas a ESTE registro (no todo el historial del
+    // usuario), para que renovar la membresía reinicie el contador.
+    if (membresiaVigente.limite_asistencias !== null) {
+      const hoyBolivia = fechaHoyBolivia();
+      const asistenciasDeHoy = await Asistencia.findAll({
+        where: { id_registro: membresiaVigente.id_registro },
+        order: [['fecha_hora', 'DESC']],
+        limit: 50
+      });
 
-    return NextResponse.json({
-      message: `Asistencia registrada: ${usuario.nombre} ${usuario.apellido}`,
+      const yaAsistioHoy = asistenciasDeHoy.some(a => claveDiaBolivia(a.fecha_hora) === hoyBolivia);
+      if (yaAsistioHoy) {
+        return NextResponse.json({
+          message: `${usuario.nombre} ${usuario.apellido} ya registró su ingreso hoy. Solo se cuenta una asistencia por día en esta membresía.`,
+          usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
+          duplicado: true
+        });
+      }
+
+      const asistenciasUsadas = await Asistencia.count({ where: { id_registro: membresiaVigente.id_registro } });
+      if (asistenciasUsadas >= membresiaVigente.limite_asistencias) {
+        return NextResponse.json({
+          error: `${usuario.nombre} ${usuario.apellido} ya utilizó las ${membresiaVigente.limite_asistencias} asistencias incluidas en su membresía actual.`,
+          usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
+          limiteAlcanzado: true
+        }, { status: 403 });
+      }
+    }
+
+    const asistencia = await Asistencia.create({
+      id_usuario: idUsuario,
+      id_registro: membresiaVigente.id_registro
+    });
+
+    let message = `Asistencia registrada: ${usuario.nombre} ${usuario.apellido}`;
+
+    const respuesta = {
       usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
       fecha_hora: asistencia.fecha_hora,
       duplicado: false
-    }, { status: 201 });
+    };
+
+    if (membresiaVigente.limite_asistencias !== null) {
+      const asistenciasUsadas = await Asistencia.count({ where: { id_registro: membresiaVigente.id_registro } });
+      respuesta.asistenciasUsadas = asistenciasUsadas;
+      respuesta.limiteAsistencias = membresiaVigente.limite_asistencias;
+      message += ` (${asistenciasUsadas}/${membresiaVigente.limite_asistencias} accesos usados)`;
+    }
+
+    respuesta.message = message;
+
+    return NextResponse.json(respuesta, { status: 201 });
   } catch (error) {
     console.error('Error al registrar asistencia:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

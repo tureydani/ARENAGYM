@@ -152,6 +152,15 @@ Usuario.hasMany(Asistencia, {
   foreignKey: 'id_usuario'
 });
 
+// Asistencia - RegistroMembresia
+Asistencia.belongsTo(RegistroMembresia, {
+  foreignKey: 'id_registro',
+  as: 'RegistroMembresia'
+});
+RegistroMembresia.hasMany(Asistencia, {
+  foreignKey: 'id_registro'
+});
+
 // Notificacion - Usuario
 Notificacion.belongsTo(Usuario, {
   foreignKey: 'id_usuario',

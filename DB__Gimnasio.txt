@@ -930,3 +930,37 @@ ADD COLUMN IF NOT EXISTS fecha_lectura TIMESTAMP;
 
 COMMENT ON COLUMN notificaciones.referencia_id IS 'ID de la fila que originó la notificación (asistencia, pago, registro_membresia, progreso, etc. segun "tipo"). Sin FK fija porque la tabla referenciada varía.';
 COMMENT ON COLUMN notificaciones.fecha_lectura IS 'Fecha y hora en que el cliente marcó la notificación como leída.';
+
+-- ==========================================================
+-- MEMBRESÍAS CON LÍMITE DE ASISTENCIAS (ej. "15 accesos en el mes")
+-- ==========================================================
+-- Permite que un plan tenga la duración normal (30 días) pero limite
+-- cuántas veces puede ingresar el cliente dentro de ese período. NULL en
+-- limite_asistencias siempre significa "ilimitado", igual que antes de
+-- este cambio.
+
+-- El plan define el límite por defecto para nuevas ventas.
+ALTER TABLE membresias
+ADD COLUMN IF NOT EXISTS limite_asistencias INT;
+
+COMMENT ON COLUMN membresias.limite_asistencias IS 'Máximo de asistencias permitidas durante la vigencia del plan. NULL = ilimitado.';
+
+-- Cada registro_membresias guarda su PROPIA copia del límite (tomada del
+-- plan al momento de la compra), para que si el admin cambia el plan
+-- después, los clientes que ya lo compraron no pierdan ni ganen accesos
+-- que no pagaron.
+ALTER TABLE registro_membresias
+ADD COLUMN IF NOT EXISTS limite_asistencias INT;
+
+COMMENT ON COLUMN registro_membresias.limite_asistencias IS 'Copia de membresias.limite_asistencias al momento de la compra. NULL = ilimitado. No cambia si luego se edita el plan.';
+
+-- Cada asistencia queda vinculada a la membresía del cliente que estaba
+-- vigente cuando ingresó, para poder contar "cuántas veces entró CON ESTA
+-- membresía" (y no con todo su historial), de forma que cada renovación
+-- reinicia el contador de forma natural.
+ALTER TABLE asistencias
+ADD COLUMN IF NOT EXISTS id_registro INT REFERENCES registro_membresias(id_registro);
+
+CREATE INDEX IF NOT EXISTS idx_asistencias_registro ON asistencias(id_registro);
+
+COMMENT ON COLUMN asistencias.id_registro IS 'Membresía del cliente (registro_membresias) vigente al momento de esta asistencia. Se usa para contar el consumo de membresías con límite de accesos.';

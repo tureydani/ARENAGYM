@@ -19,6 +19,14 @@ const Asistencia = sequelize.define('Asistencia', {
     type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW
+  },
+  id_registro: {
+    type: DataTypes.INTEGER,
+    allowNull: true, // la membresía vigente del usuario al momento de asistir; permite contar asistencias por membresía (para límites tipo "15 accesos")
+    references: {
+      model: 'registro_membresias',
+      key: 'id_registro'
+    }
   }
 }, {
   tableName: 'asistencias',

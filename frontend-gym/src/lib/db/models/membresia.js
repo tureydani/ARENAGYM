@@ -10,6 +10,10 @@ const Membresia = sequelize.define('Membresia', {
   tipo: { type: DataTypes.STRING(50), allowNull: false },
   duracion_dias: { type: DataTypes.INTEGER, allowNull: false },
   precio: { type: DataTypes.DECIMAL(10,2), allowNull: false },
+  limite_asistencias: {
+    type: DataTypes.INTEGER,
+    allowNull: true // NULL = asistencias ilimitadas durante la duración de la membresía
+  },
   activo: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

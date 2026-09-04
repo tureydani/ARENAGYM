@@ -42,12 +42,17 @@ export async function POST(request) {
 
     console.log('🔍 Datos extraídos:', { id_usuario, id_membresia, id_admin, fecha_inicio, activo });
 
+    // El límite de asistencias se copia del plan al momento de la compra, para
+    // que un cambio posterior en el plan no afecte a clientes que ya compraron.
+    const membresia = await Membresia.scope('withInactive').findByPk(id_membresia);
+
     const registro = await RegistroMembresia.create({
       id_usuario,
       id_membresia,
       id_admin: id_admin || 1, // Valor por defecto
       fecha_inicio,
-      activo
+      activo,
+      limite_asistencias: membresia?.limite_asistencias ?? null
       // fecha_fin se calculará automáticamente por trigger
     });
 

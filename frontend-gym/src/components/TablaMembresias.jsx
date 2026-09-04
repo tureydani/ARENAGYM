@@ -52,7 +52,8 @@ export default function TablaMembresias() {
   const [formData, setFormData] = useState({
     tipo: '',
     duracion_dias: '',
-    precio: ''
+    precio: '',
+    limite_asistencias: ''
   });
 
   useEffect(() => {
@@ -74,10 +75,18 @@ export default function TablaMembresias() {
     }
   };
 
+  // El input de límite queda vacío para "ilimitado"; hay que mandar null
+  // explícito en vez de la cadena vacía para que Sequelize no la intente
+  // convertir a un INTEGER inválido.
+  const datosParaEnviar = () => ({
+    ...formData,
+    limite_asistencias: formData.limite_asistencias === '' ? null : parseInt(formData.limite_asistencias, 10)
+  });
+
   const createMembresia = async () => {
     try {
       setLoading(true);
-      await api.post('/membresias', formData);
+      await api.post('/membresias', datosParaEnviar());
       await fetchMembresias();
       setShowModal(false);
       resetForm();
@@ -94,7 +103,7 @@ export default function TablaMembresias() {
   const updateMembresia = async () => {
     try {
       setLoading(true);
-      await api.put(`/membresias/${editingMembresia.id_membresia}`, formData);
+      await api.put(`/membresias/${editingMembresia.id_membresia}`, datosParaEnviar());
       await fetchMembresias();
       setShowModal(false);
       setEditingMembresia(null);
@@ -139,7 +148,8 @@ export default function TablaMembresias() {
     setFormData({
       tipo: '',
       duracion_dias: '',
-      precio: ''
+      precio: '',
+      limite_asistencias: ''
     });
   };
 
@@ -154,7 +164,8 @@ export default function TablaMembresias() {
     setFormData({
       tipo: membresia.tipo || '',
       duracion_dias: membresia.duracion_dias ? String(membresia.duracion_dias) : '',
-      precio: membresia.precio ? String(membresia.precio) : ''
+      precio: membresia.precio ? String(membresia.precio) : '',
+      limite_asistencias: membresia.limite_asistencias != null ? String(membresia.limite_asistencias) : ''
     });
     setShowModal(true);
   };
@@ -271,6 +282,7 @@ export default function TablaMembresias() {
                 <th>ID</th>
                 <th>Tipo de Membresía</th>
                 <th>Duración</th>
+                <th>Límite de accesos</th>
                 <th>Precio</th>
                 <th>Acciones</th>
               </tr>
@@ -278,7 +290,7 @@ export default function TablaMembresias() {
             <tbody>
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="text-center py-8">
+                  <td colSpan="6" className="text-center py-8">
                     <div className="text-slate-500">
                       {searchTerm ? (
                         <>No se encontraron membresías que coincidan con: "{searchTerm}"</>
@@ -309,6 +321,15 @@ export default function TablaMembresias() {
                       <div className="text-xs text-gray-500">
                         ({membresia.duracion_dias} días)
                       </div>
+                    </td>
+                    <td>
+                      {membresia.limite_asistencias != null ? (
+                        <span className="text-amber-600 font-medium">
+                          {membresia.limite_asistencias} {membresia.limite_asistencias === 1 ? 'acceso' : 'accesos'}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">Ilimitado</span>
+                      )}
                     </td>
                     <td className="font-bold text-emerald-600">
                       Bs. {parseFloat(membresia.precio).toFixed(2)}
@@ -406,6 +427,21 @@ export default function TablaMembresias() {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Límite de asistencias (opcional)</label>
+                  <input
+                    type="number"
+                    value={formData.limite_asistencias}
+                    onChange={(e) => setFormData({...formData, limite_asistencias: e.target.value})}
+                    className="form-input"
+                    placeholder="Dejar vacío = ilimitado"
+                    min="1"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Si se define, el cliente solo podrá ingresar esa cantidad de veces durante la duración de la membresía (ej. 15 accesos en 30 días), aunque le queden días vigentes.
+                  </p>
                 </div>
 
                 {formData.duracion_dias && (

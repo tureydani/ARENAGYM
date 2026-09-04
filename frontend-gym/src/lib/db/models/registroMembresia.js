@@ -41,6 +41,10 @@ const RegistroMembresia = sequelize.define('RegistroMembresia', {
     type: DataTypes.DATEONLY,
     allowNull: true // Se calculará automáticamente por trigger
   },
+  limite_asistencias: {
+    type: DataTypes.INTEGER,
+    allowNull: true // Copia del límite del plan al momento de la compra (NULL = ilimitado). Si luego se edita el plan, este registro conserva el límite que tenía el cliente.
+  },
   activo: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

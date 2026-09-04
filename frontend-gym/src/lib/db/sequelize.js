@@ -6,7 +6,19 @@ const { Sequelize } = require('sequelize');
 // el bundle de la función serverless ("Please install pg package manually").
 // Forzamos un require() estático y directo para que sí quede registrado
 // como dependencia real de este archivo.
-require('pg');
+const { types } = require('pg');
+
+// Columnas tipo "timestamp without time zone" (asistencias.fecha_hora,
+// notificaciones.fecha_creacion/fecha_lectura, usuarios.ultimo_acceso,
+// fotos_progreso.fecha_subida) siempre se ESCRIBEN en UTC (Sequelize usa
+// timezone '+00:00' por defecto). Pero al LEERLAS, el parser por defecto de
+// `pg` para el OID 1114 arma el Date interpretando esos mismos dígitos como
+// si fueran hora LOCAL del proceso de Node, no UTC. En un servidor corriendo
+// en hora de Bolivia (UTC-4) eso hace que cada fecha leída quede 4 horas
+// adelantada de la real (ej. una asistencia de las 00:29 aparecía como si
+// fuera a las 04:29). Se fuerza a interpretar el texto crudo como UTC, que
+// es como realmente se guardó.
+types.setTypeParser(1114, (value) => (value ? new Date(`${value.replace(' ', 'T')}Z`) : null));
 
 // En serverless (Vercel), cada invocación puede reutilizar el contenedor entre
 // llamadas "calientes". Cacheamos la instancia en globalThis para no crear una
