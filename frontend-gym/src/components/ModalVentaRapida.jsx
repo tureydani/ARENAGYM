@@ -210,10 +210,22 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
         id_producto: producto.id_producto,
         nombre: producto.nombre,
         precio: parseFloat(producto.precio),
+        precio_mayoreo: producto.precio_mayoreo != null ? parseFloat(producto.precio_mayoreo) : null,
+        cantidad_mayoreo: producto.cantidad_mayoreo || null,
         cantidad: 1,
         stock: producto.stock
       }]);
     }
+  };
+
+  // Precio por unidad realmente aplicado a un item del carrito: el de mayoreo
+  // si el producto tiene esa regla y la cantidad en el carrito ya la alcanza,
+  // si no el precio normal.
+  const precioEfectivo = (item) => {
+    if (item.cantidad_mayoreo && item.precio_mayoreo != null && item.cantidad >= item.cantidad_mayoreo) {
+      return item.precio_mayoreo;
+    }
+    return item.precio;
   };
 
   const actualizarCantidad = async (idProducto, nuevaCantidad) => {
@@ -238,7 +250,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
   };
 
   const calcularTotal = () => {
-    return carrito.reduce((total, item) => total + (item.precio * item.cantidad), 0);
+    return carrito.reduce((total, item) => total + (precioEfectivo(item) * item.cantidad), 0);
   };
 
   const handleSubmit = async (e) => {
@@ -289,7 +301,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
         productos: carrito.map(item => ({
           id_producto: item.id_producto,
           cantidad: item.cantidad,
-          precio_unitario: item.precio
+          precio_unitario: precioEfectivo(item)
         }))
       };
 
@@ -458,6 +470,11 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                                   {producto.stock}
                                 </span>
                               </div>
+                              {producto.cantidad_mayoreo && producto.precio_mayoreo != null && (
+                                <div className="precio-mayoreo-hint" style={{ fontSize: '0.7rem', color: '#b45309' }}>
+                                  {producto.cantidad_mayoreo}+ = Bs. {parseFloat(producto.precio_mayoreo).toFixed(2)} c/u
+                                </div>
+                              )}
                             </div>
                             <button
                               type="button"
@@ -489,34 +506,48 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                       {carrito.length > 0 ? (
                         <>
                           <div className="carrito-items-minimal">
-                            {carrito.map(item => (
-                              <div key={item.id_producto} className="carrito-item-minimal">
-                                <div className="item-info-minimal">
-                                  <span className="item-nombre">{item.nombre}</span>
-                                  <span className="item-precio">Bs. {item.precio.toFixed(2)} c/u</span>
-                                </div>
-                                <div className="item-controls-minimal">
-                                  <div className="cantidad-controls">
-                                    <button
-                                      type="button"
-                                      className="qty-btn"
-                                      onClick={() => actualizarCantidad(item.id_producto, item.cantidad - 1)}
-                                    >
-                                      -
-                                    </button>
-                                    <span className="qty-display">{item.cantidad}</span>
-                                    <button
-                                      type="button"
-                                      className="qty-btn"
-                                      onClick={() => actualizarCantidad(item.id_producto, item.cantidad + 1)}
-                                    >
-                                      +
-                                    </button>
+                            {carrito.map(item => {
+                              const precioUnitario = precioEfectivo(item);
+                              const mayoreoAplicado = precioUnitario !== item.precio;
+                              return (
+                                <div key={item.id_producto} className="carrito-item-minimal">
+                                  <div className="item-info-minimal">
+                                    <span className="item-nombre">{item.nombre}</span>
+                                    <span className="item-precio">
+                                      Bs. {precioUnitario.toFixed(2)} c/u
+                                      {mayoreoAplicado && (
+                                        <span style={{ color: '#b45309', marginLeft: '0.4rem' }}>(precio por mayor)</span>
+                                      )}
+                                    </span>
+                                    {!mayoreoAplicado && item.cantidad_mayoreo && (
+                                      <small style={{ color: '#94a3b8' }}>
+                                        Lleva {item.cantidad_mayoreo - item.cantidad} más y paga Bs. {item.precio_mayoreo.toFixed(2)} c/u
+                                      </small>
+                                    )}
                                   </div>
-                                  <span className="item-subtotal">Bs. {(item.precio * item.cantidad).toFixed(2)}</span>
+                                  <div className="item-controls-minimal">
+                                    <div className="cantidad-controls">
+                                      <button
+                                        type="button"
+                                        className="qty-btn"
+                                        onClick={() => actualizarCantidad(item.id_producto, item.cantidad - 1)}
+                                      >
+                                        -
+                                      </button>
+                                      <span className="qty-display">{item.cantidad}</span>
+                                      <button
+                                        type="button"
+                                        className="qty-btn"
+                                        onClick={() => actualizarCantidad(item.id_producto, item.cantidad + 1)}
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                    <span className="item-subtotal">Bs. {(precioUnitario * item.cantidad).toFixed(2)}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
 
                           <div className="checkout-section-minimal">

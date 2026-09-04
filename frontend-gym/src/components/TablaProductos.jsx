@@ -32,7 +32,9 @@ export default function TablaProductos() {
     nombre: '',
     descripcion: '',
     precio: '',
-    stock: ''
+    stock: '',
+    precio_mayoreo: '',
+    cantidad_mayoreo: ''
   });
 
   // Configuración de paginación
@@ -129,12 +131,29 @@ export default function TablaProductos() {
       return;
     }
 
+    const tieneMayoreo = formData.precio_mayoreo.trim() !== '';
+    const tieneCantidadMayoreo = formData.cantidad_mayoreo.trim() !== '';
+    if (tieneMayoreo !== tieneCantidadMayoreo) {
+      alert('Para definir un precio por mayor debes completar tanto el precio como la cantidad mínima');
+      return;
+    }
+    if (tieneCantidadMayoreo && parseInt(formData.cantidad_mayoreo) < 2) {
+      alert('La cantidad mínima para el precio por mayor debe ser al menos 2');
+      return;
+    }
+    if (tieneMayoreo && parseFloat(formData.precio_mayoreo) >= precio) {
+      alert('El precio por mayor debe ser menor al precio normal');
+      return;
+    }
+
     try {
       const productoData = {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || null,
         precio: precio,
-        stock: stock
+        stock: stock,
+        precio_mayoreo: tieneMayoreo ? parseFloat(formData.precio_mayoreo) : null,
+        cantidad_mayoreo: tieneCantidadMayoreo ? parseInt(formData.cantidad_mayoreo) : null
       };
 
       if (editingProducto) {
@@ -163,7 +182,9 @@ export default function TablaProductos() {
       nombre: producto.nombre || '',
       descripcion: producto.descripcion || '',
       precio: producto.precio?.toString() || '',
-      stock: producto.stock?.toString() || ''
+      stock: producto.stock?.toString() || '',
+      precio_mayoreo: producto.precio_mayoreo != null ? producto.precio_mayoreo.toString() : '',
+      cantidad_mayoreo: producto.cantidad_mayoreo != null ? producto.cantidad_mayoreo.toString() : ''
     });
     setShowModal(true);
   };
@@ -236,7 +257,9 @@ export default function TablaProductos() {
       nombre: '',
       descripcion: '',
       precio: '',
-      stock: ''
+      stock: '',
+      precio_mayoreo: '',
+      cantidad_mayoreo: ''
     });
   };
 
@@ -367,6 +390,11 @@ export default function TablaProductos() {
                         <div className="text-sm font-medium text-emerald-600">
                           Bs. {formatPrice(producto.precio)}
                         </div>
+                        {producto.cantidad_mayoreo && producto.precio_mayoreo != null && (
+                          <div className="text-xs text-amber-600 mt-0.5">
+                            {producto.cantidad_mayoreo}+ = Bs. {formatPrice(producto.precio_mayoreo)} c/u
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -507,6 +535,36 @@ export default function TablaProductos() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="form-group">
+                    <label className="form-label">Precio por mayor (opcional)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.precio_mayoreo}
+                      onChange={(e) => handleInputChange('precio_mayoreo', e.target.value)}
+                      className="form-input"
+                      placeholder="Precio por unidad al comprar varios"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Cantidad mínima</label>
+                    <input
+                      type="number"
+                      min="2"
+                      value={formData.cantidad_mayoreo}
+                      onChange={(e) => handleInputChange('cantidad_mayoreo', e.target.value)}
+                      className="form-input"
+                      placeholder="ej. 2"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 -mt-2">
+                  Si se completan ambos campos, al vender esta cantidad o más de este producto en una misma venta, el precio por unidad baja automáticamente al precio por mayor.
+                </p>
 
                 <div className="form-group">
                   <label className="form-label">Stock</label>

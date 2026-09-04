@@ -964,3 +964,21 @@ ADD COLUMN IF NOT EXISTS id_registro INT REFERENCES registro_membresias(id_regis
 CREATE INDEX IF NOT EXISTS idx_asistencias_registro ON asistencias(id_registro);
 
 COMMENT ON COLUMN asistencias.id_registro IS 'Membresía del cliente (registro_membresias) vigente al momento de esta asistencia. Se usa para contar el consumo de membresías con límite de accesos.';
+
+-- ==========================================================
+-- PRECIO POR MAYOR EN PRODUCTOS (ej. "2 o más unidades a Bs. X c/u")
+-- ==========================================================
+-- Ambas columnas son opcionales y van juntas: si un producto define
+-- cantidad_mayoreo, también debe definir precio_mayoreo (y viceversa),
+-- validado en la app, no acá. NULL en ambas = el producto no tiene precio
+-- por mayor, se vende siempre a "precio". La regla se aplica en Venta
+-- Rápida: si la cantidad de ese producto en el carrito llega a
+-- cantidad_mayoreo, el precio por unidad de TODAS esas unidades pasa a
+-- ser precio_mayoreo.
+
+ALTER TABLE productos
+ADD COLUMN IF NOT EXISTS precio_mayoreo DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS cantidad_mayoreo INT;
+
+COMMENT ON COLUMN productos.precio_mayoreo IS 'Precio por unidad cuando se compran cantidad_mayoreo o más unidades en la misma venta. NULL = sin precio por mayor.';
+COMMENT ON COLUMN productos.cantidad_mayoreo IS 'Cantidad mínima de unidades para que aplique precio_mayoreo. NULL = sin precio por mayor.';

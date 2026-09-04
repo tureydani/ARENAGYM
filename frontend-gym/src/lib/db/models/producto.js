@@ -24,6 +24,14 @@ const Producto = sequelize.define('Producto', {
     allowNull: false,
     defaultValue: 0
   },
+  precio_mayoreo: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true // precio por unidad cuando se compra cantidad_mayoreo o más de este producto. NULL = sin precio por mayor.
+  },
+  cantidad_mayoreo: {
+    type: DataTypes.INTEGER,
+    allowNull: true // cantidad mínima para que aplique precio_mayoreo. NULL = sin precio por mayor.
+  },
   activo: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
