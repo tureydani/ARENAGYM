@@ -293,6 +293,11 @@ export default function TablaRegistroMembresias() {
     id_caja: ''
   });
 
+  // Pago mixto: el mismo pago repartido entre dos cajas (ej. parte en
+  // efectivo, parte por Qr).
+  const [pagoMixto, setPagoMixto] = useState(false);
+  const [segundaCajaPago, setSegundaCajaPago] = useState({ id_caja: '', monto: '' });
+
   useEffect(() => {
     fetchRegistros();
     fetchUsuarios();
@@ -481,13 +486,25 @@ export default function TablaRegistroMembresias() {
         // Si se marcó registrar pago, crear el pago también
         if (formData.registrarPago && formData.montoPago) {
           try {
-            await api.post('/pagos', {
-              id_registro: registroResponse.data.id_registro,
-              id_admin: admin.id_admin,
-              id_caja: formData.id_caja,
-              monto_pagado: parseFloat(formData.montoPago),
-              estado_pago: formData.estadoPago
-            });
+            if (pagoMixto && segundaCajaPago.id_caja && segundaCajaPago.monto) {
+              await api.post('/pagos/mixto', {
+                id_registro: registroResponse.data.id_registro,
+                id_admin: admin.id_admin,
+                estado_pago: formData.estadoPago,
+                cajas: [
+                  { id_caja: formData.id_caja, monto: formData.montoPago },
+                  { id_caja: segundaCajaPago.id_caja, monto: segundaCajaPago.monto }
+                ]
+              });
+            } else {
+              await api.post('/pagos', {
+                id_registro: registroResponse.data.id_registro,
+                id_admin: admin.id_admin,
+                id_caja: formData.id_caja,
+                monto_pagado: parseFloat(formData.montoPago),
+                estado_pago: formData.estadoPago
+              });
+            }
             mensajePago = ' y pago';
           } catch (pagoError) {
             console.error('Error al registrar pago:', pagoError);
@@ -659,6 +676,8 @@ export default function TablaRegistroMembresias() {
       estadoPago: 'Completo',
       id_caja: getCajaPorDefecto(cajas)
     });
+    setPagoMixto(false);
+    setSegundaCajaPago({ id_caja: '', monto: '' });
     setSearchUsuarios('');
     setSelectedUserText('');
     setShowUserDropdown(false);
@@ -696,6 +715,8 @@ export default function TablaRegistroMembresias() {
       estadoPago: 'Completo',
       id_caja: getCajaPorDefecto(cajas)
     });
+    setPagoMixto(false);
+    setSegundaCajaPago({ id_caja: '', monto: '' });
     setShowModal(true);
   };
 
@@ -1342,7 +1363,7 @@ export default function TablaRegistroMembresias() {
                     {formData.registrarPago && (
                       <div className="grid grid-cols-2 gap-4 mt-3">
                         <div className="form-group">
-                          <label className="form-label">Monto del Pago (Bs)</label>
+                          <label className="form-label">{pagoMixto ? 'Monto en Caja 1 (Bs)' : 'Monto del Pago (Bs)'}</label>
                           <input
                             type="number"
                             step="0.01"
@@ -1353,7 +1374,7 @@ export default function TablaRegistroMembresias() {
                             required={formData.registrarPago}
                           />
                         </div>
-                        
+
                         <div className="form-group">
                           <label className="form-label">Estado del Pago</label>
                           <select
@@ -1371,7 +1392,7 @@ export default function TablaRegistroMembresias() {
 
                     {formData.registrarPago && (
                       <div className="form-group mt-3">
-                        <label className="form-label">Caja</label>
+                        <label className="form-label">{pagoMixto ? 'Caja 1' : 'Caja'}</label>
                         <select
                           value={formData.id_caja}
                           onChange={(e) => setFormData({...formData, id_caja: e.target.value ? parseInt(e.target.value) : ''})}
@@ -1392,6 +1413,73 @@ export default function TablaRegistroMembresias() {
                         {cajas.length === 0 && (
                           <p className="text-xs text-slate-500 mt-1">No hay cajas disponibles</p>
                         )}
+                      </div>
+                    )}
+
+                    {formData.registrarPago && (
+                      <div className="form-group mt-3">
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={pagoMixto}
+                            onChange={(e) => {
+                              setPagoMixto(e.target.checked);
+                              if (!e.target.checked) setSegundaCajaPago({ id_caja: '', monto: '' });
+                            }}
+                            className="mr-2"
+                          />
+                          <span className="form-label mb-0 text-indigo-600">
+                            Pago mixto (repartido entre dos cajas, ej. efectivo + Qr)
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
+                    {formData.registrarPago && pagoMixto && (
+                      <div className="grid grid-cols-2 gap-4 mt-3">
+                        <div className="form-group">
+                          <label className="form-label">Caja 2</label>
+                          <select
+                            value={segundaCajaPago.id_caja}
+                            onChange={(e) => setSegundaCajaPago({...segundaCajaPago, id_caja: e.target.value ? parseInt(e.target.value) : ''})}
+                            className="form-select"
+                            required={pagoMixto}
+                          >
+                            <option value="">Selecciona una caja</option>
+                            {cajas
+                              .filter(caja => caja.id_caja !== formData.id_caja)
+                              .map(caja => (
+                                <option
+                                  key={caja.id_caja}
+                                  value={caja.id_caja}
+                                  disabled={!caja.abierta}
+                                >
+                                  {caja.descripcion} — Bs. {parseFloat(caja.saldo_actual || 0).toFixed(2)}{!caja.abierta ? ' (cerrada)' : ''}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Monto en Caja 2 (Bs)</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={segundaCajaPago.monto}
+                            onChange={(e) => setSegundaCajaPago({...segundaCajaPago, monto: e.target.value})}
+                            className="form-input"
+                            placeholder="0.00"
+                            required={pagoMixto}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {formData.registrarPago && pagoMixto && (
+                      <div className="mt-3 px-3 py-2 bg-slate-50 rounded-md border border-slate-200 text-sm text-slate-600">
+                        Total del pago mixto: <span className="font-bold text-slate-900">
+                          Bs. {((parseFloat(formData.montoPago) || 0) + (parseFloat(segundaCajaPago.monto) || 0)).toFixed(2)}
+                        </span>
                       </div>
                     )}
                   </div>

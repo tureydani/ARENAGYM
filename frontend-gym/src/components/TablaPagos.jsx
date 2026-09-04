@@ -64,6 +64,12 @@ const TablaPagos = () => {
     estado_pago: 'Completo'
   });
 
+  // Pago mixto: el mismo pago repartido entre dos cajas (ej. parte en
+  // efectivo, parte por Qr). Solo aplica al crear un pago nuevo -- editar
+  // uno existente sigue siendo una sola fila con una sola caja.
+  const [pagoMixto, setPagoMixto] = useState(false);
+  const [segundaCaja, setSegundaCaja] = useState({ id_caja: '', monto: '' });
+
   // Función para obtener información del registro (movida antes del filtro)
   const getRegistroInfo = (idRegistro) => {
     if (!idRegistro || !registros.length) {
@@ -359,6 +365,8 @@ const TablaPagos = () => {
       fecha_pago: fechaHoy, // Fecha local segura
       estado_pago: 'Completo'
     });
+    setPagoMixto(false);
+    setSegundaCaja({ id_caja: '', monto: '' });
     setShowModal(true);
   };
 
@@ -372,6 +380,8 @@ const TablaPagos = () => {
       fecha_pago: pago.fecha_pago ? pago.fecha_pago.split('T')[0] : getFechaHoyLocal(),
       estado_pago: pago.estado_pago
     });
+    setPagoMixto(false);
+    setSegundaCaja({ id_caja: '', monto: '' });
     setShowModal(true);
   };
 
@@ -386,18 +396,43 @@ const TablaPagos = () => {
       fecha_pago: getFechaHoyLocal(),
       estado_pago: 'Completo'
     });
+    setPagoMixto(false);
+    setSegundaCaja({ id_caja: '', monto: '' });
   };
+
+  const totalPagoMixto = (parseFloat(formData.monto_pagado) || 0) + (parseFloat(segundaCaja.monto) || 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    if (pagoMixto && !editingPago) {
+      if (!segundaCaja.id_caja || !segundaCaja.monto) {
+        alert('Completa la caja y el monto de la segunda parte del pago');
+        return;
+      }
+      if (String(segundaCaja.id_caja) === String(formData.id_caja)) {
+        alert('Elige dos cajas distintas para un pago mixto');
+        return;
+      }
+    }
+
     try {
-      let pagoResponse;
       if (editingPago) {
-        pagoResponse = await api.put(`/pagos/${editingPago.id_pago}`, formData);
+        await api.put(`/pagos/${editingPago.id_pago}`, formData);
+      } else if (pagoMixto) {
+        await api.post('/pagos/mixto', {
+          id_registro: formData.id_registro,
+          id_admin: formData.id_admin,
+          fecha_pago: formData.fecha_pago,
+          estado_pago: formData.estado_pago,
+          cajas: [
+            { id_caja: formData.id_caja, monto: formData.monto_pagado },
+            { id_caja: segundaCaja.id_caja, monto: segundaCaja.monto }
+          ]
+        });
       } else {
         // Solo crear el pago - el trigger automáticamente maneja el movimiento de caja
-        pagoResponse = await api.post('/pagos', formData);
+        await api.post('/pagos', formData);
       }
 
       // *** NOTA: El trigger de la base de datos automáticamente:
@@ -407,11 +442,11 @@ const TablaPagos = () => {
 
       await loadPagos();
       closeModal();
-      
+
       // Mostrar check de éxito
       setShowSuccessCheck(true);
       setTimeout(() => setShowSuccessCheck(false), 3000);
-      
+
     } catch (error) {
       console.error('Error:', error);
       alert(error.response?.data?.error || 'Error al guardar el pago');
@@ -785,11 +820,25 @@ const TablaPagos = () => {
                     </h4>
                   </div>
 
+                  {!editingPago && (
+                    <label className="flex items-center gap-2 mb-3 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={pagoMixto}
+                        onChange={(e) => {
+                          setPagoMixto(e.target.checked);
+                          if (!e.target.checked) setSegundaCaja({ id_caja: '', monto: '' });
+                        }}
+                      />
+                      Pago mixto (repartido entre dos cajas, ej. efectivo + Qr)
+                    </label>
+                  )}
+
                   <div className="form-grid">
                     <div>
                       <label className="form-label modern">
                         <span className="label-icon"><IconArchiveBox /></span>
-                        Caja
+                        {pagoMixto ? 'Caja 1' : 'Caja'}
                       </label>
                       <div className="enhanced-select">
                         <select
@@ -813,7 +862,7 @@ const TablaPagos = () => {
                     <div>
                       <label className="form-label modern">
                         <span className="label-icon"><IconBanknotes /></span>
-                        Monto Pagado
+                        {pagoMixto ? 'Monto en Caja 1' : 'Monto Pagado'}
                         {formData.id_registro && formData.monto_pagado && (
                           <span style={{
                             fontSize: '12px',
@@ -841,6 +890,55 @@ const TablaPagos = () => {
                         />
                       </div>
                     </div>
+
+                    {pagoMixto && (
+                      <>
+                        <div>
+                          <label className="form-label modern">
+                            <span className="label-icon"><IconArchiveBox /></span>
+                            Caja 2
+                          </label>
+                          <div className="enhanced-select">
+                            <select
+                              value={segundaCaja.id_caja}
+                              onChange={(e) => setSegundaCaja({...segundaCaja, id_caja: e.target.value})}
+                              className="form-select modern"
+                              required={pagoMixto}
+                            >
+                              <option value="">Seleccionar caja</option>
+                              {cajas
+                                .filter(caja => String(caja.id_caja) !== String(formData.id_caja))
+                                .map(caja => (
+                                  <option key={caja.id_caja} value={caja.id_caja}>
+                                    {caja.descripcion || `Caja ${caja.id_caja}`}
+                                  </option>
+                                ))}
+                            </select>
+                            <span className="select-arrow">▼</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="form-label modern">
+                            <span className="label-icon"><IconBanknotes /></span>
+                            Monto en Caja 2
+                          </label>
+                          <div className="input-wrapper currency">
+                            <span className="currency-symbol">Bs.</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={segundaCaja.monto}
+                              onChange={(e) => setSegundaCaja({...segundaCaja, monto: e.target.value})}
+                              className="form-input modern currency-input"
+                              placeholder="0.00"
+                              required={pagoMixto}
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
 
                     <div>
                       <label className="form-label modern">
@@ -875,6 +973,12 @@ const TablaPagos = () => {
                       </div>
                     </div>
                   </div>
+
+                  {pagoMixto && (
+                    <div className="mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-600">
+                      Total del pago mixto: <span className="font-bold text-slate-900">Bs. {totalPagoMixto.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Acciones */}
@@ -890,7 +994,10 @@ const TablaPagos = () => {
                   <button 
                     type="submit" 
                     className="btn-primary modern-btn"
-                    disabled={!formData.id_registro || !formData.monto_pagado || !formData.id_caja}
+                    disabled={
+                      !formData.id_registro || !formData.monto_pagado || !formData.id_caja ||
+                      (pagoMixto && !editingPago && (!segundaCaja.id_caja || !segundaCaja.monto))
+                    }
                   >
                     <span className="btn-icon">{editingPago ? <IconPencil /> : <IconSave />}</span>
                     {editingPago ? 'Actualizar Pago' : 'Registrar Pago'}
