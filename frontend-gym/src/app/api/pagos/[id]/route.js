@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { Pago, RegistroMembresia, Administrativo, Caja, Usuario, MovimientoCaja } from '@/lib/db/models';
 import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
+import { esCanalCobroValido } from '@/lib/db/canalesCobro';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -56,14 +57,20 @@ export async function PUT(request, { params }) {
     // recibió ese dinero), dejándola en negativo.
     const oldCajaId = pago.id_caja;
     const oldMonto = parseFloat(pago.monto_pagado);
+    const oldCanal = pago.canal_cobro;
     const newCajaId = body.id_caja !== undefined ? parseInt(body.id_caja) : oldCajaId;
     const newMonto = body.monto_pagado !== undefined ? parseFloat(body.monto_pagado) : oldMonto;
+    const newCanal = body.canal_cobro !== undefined ? body.canal_cobro : oldCanal;
 
     if (body.monto_pagado !== undefined && (Number.isNaN(newMonto) || newMonto <= 0)) {
       return NextResponse.json({ error: 'El monto pagado debe ser mayor a 0' }, { status: 400 });
     }
+    if (body.canal_cobro !== undefined && !esCanalCobroValido(newCanal)) {
+      return NextResponse.json({ error: 'canal_cobro inválido (Efectivo, QR, Transferencia o Tarjeta).' }, { status: 400 });
+    }
 
     const huboCambioDeDinero = newCajaId !== oldCajaId || newMonto !== oldMonto;
+    const soloCambioDeCanal = !huboCambioDeDinero && newCanal !== oldCanal;
 
     if (huboCambioDeDinero) {
       const transaction = await sequelize.transaction();
@@ -108,7 +115,8 @@ export async function PUT(request, { params }) {
             descripcion: `Corrección: pago movido a otra caja (ID Pago: ${pago.id_pago})`,
             monto: oldMonto,
             origen: 'Reembolso',
-            id_referencia: pago.id_pago
+            id_referencia: pago.id_pago,
+            canal_cobro: oldCanal
           }, { transaction });
 
           await Caja.update(
@@ -122,10 +130,12 @@ export async function PUT(request, { params }) {
             descripcion: `Corrección: pago movido desde otra caja (ID Pago: ${pago.id_pago})`,
             monto: newMonto,
             origen: 'Pago',
-            id_referencia: pago.id_pago
+            id_referencia: pago.id_pago,
+            canal_cobro: newCanal
           }, { transaction });
         } else {
-          // Misma caja, solo cambió el monto
+          // Misma caja, solo cambió el monto (y/o el canal, que va en el
+          // mismo movimiento de corrección ya que ambos ocurren juntos).
           const delta = newMonto - oldMonto;
           if (delta !== 0) {
             const caja = await Caja.findByPk(oldCajaId, { transaction, lock: transaction.LOCK.UPDATE });
@@ -146,7 +156,8 @@ export async function PUT(request, { params }) {
               descripcion: `Corrección de monto de pago (ID Pago: ${pago.id_pago})`,
               monto: Math.abs(delta),
               origen: delta > 0 ? 'Pago' : 'Reembolso',
-              id_referencia: pago.id_pago
+              id_referencia: pago.id_pago,
+              canal_cobro: newCanal
             }, { transaction });
           }
         }
@@ -157,6 +168,23 @@ export async function PUT(request, { params }) {
         if (!transaction.finished) await transaction.rollback();
         throw error;
       }
+    } else if (soloCambioDeCanal) {
+      // No se movió dinero (mismo id_caja, mismo monto): no corresponde
+      // crear un movimiento de corrección nuevo, solo re-etiquetar el canal
+      // del movimiento de creación de este pago para que el desglose por
+      // canal quede correcto. Se re-etiqueta el más reciente con
+      // origen='Pago' e id_referencia=este pago (si hubo una corrección de
+      // caja/monto antes, esa es la fila vigente; si no, es la del alta).
+      await sequelize.query(`
+        UPDATE movimientos_caja SET canal_cobro = :canal
+        WHERE id_movimiento = (
+          SELECT id_movimiento FROM movimientos_caja
+          WHERE origen = 'Pago' AND id_referencia = :idPago
+          ORDER BY id_movimiento DESC
+          LIMIT 1
+        )
+      `, { replacements: { canal: newCanal, idPago: pago.id_pago } });
+      await pago.update(body);
     } else {
       await pago.update(body);
     }
@@ -241,7 +269,10 @@ export async function DELETE(request, { params }) {
         descripcion: `Eliminación de pago de membresía de ${nombreCliente} (ID Pago: ${pago.id_pago})`,
         monto: pago.monto_pagado,
         origen: 'Reembolso',
-        id_referencia: pago.id_pago
+        id_referencia: pago.id_pago,
+        // Mismo canal que el pago original: si se eliminó un pago hecho
+        // por QR, ese egreso reduce el QR registrado, no el efectivo.
+        canal_cobro: pago.canal_cobro
       }, { transaction });
 
       // 3. Eliminar el pago (soft delete: se conserva el registro para el

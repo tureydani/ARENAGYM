@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../utils/api';
+import { CANALES_COBRO, inferirCanalPorDescripcionCaja } from '../constants/canalesCobro';
 import '../styles/modal-venta-rapida-simple.css';
 
 const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
@@ -31,7 +32,8 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     id_usuario: '',
     id_admin: 1, // Se reemplaza por el admin real de la sesión al abrir el modal
-    id_caja: 1 // Primera caja por defecto
+    id_caja: 1, // Primera caja por defecto
+    canal_cobro: 'Efectivo'
   });
 
   const userInputRef = useRef(null);
@@ -93,12 +95,14 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
     try {
       const response = await api.get('/cajas');
       setCajas(response.data);
-      // Seleccionar automáticamente la primera caja abierta
-      const cajaAbierta = response.data.find(caja => caja.abierta);
+      // Seleccionar automáticamente la primera jornada abierta
+      const cajaAbierta = response.data.find(caja => caja.abierta) || response.data[0];
       if (cajaAbierta) {
-        setFormData(prev => ({ ...prev, id_caja: cajaAbierta.id_caja }));
-      } else if (response.data.length > 0) {
-        setFormData(prev => ({ ...prev, id_caja: response.data[0].id_caja }));
+        setFormData(prev => ({
+          ...prev,
+          id_caja: cajaAbierta.id_caja,
+          canal_cobro: inferirCanalPorDescripcionCaja(cajaAbierta.descripcion) || prev.canal_cobro
+        }));
       }
     } catch (error) {
       console.error('Error al obtener cajas:', error);
@@ -276,9 +280,14 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
         return;
       }
 
-      // Verificar que se ha seleccionado una caja
+      // Verificar que se ha seleccionado una jornada y un canal
       if (!formData.id_caja) {
-        alert('Debe seleccionar una caja');
+        alert('Debe seleccionar una jornada');
+        setLoading(false);
+        return;
+      }
+      if (!formData.canal_cobro) {
+        alert('Debe seleccionar un canal de cobro');
         setLoading(false);
         return;
       }
@@ -297,6 +306,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
         id_usuario: formData.id_usuario,
         id_admin: formData.id_admin,
         id_caja: formData.id_caja,
+        canal_cobro: formData.canal_cobro,
         total: total,
         productos: carrito.map(item => ({
           id_producto: item.id_producto,
@@ -426,7 +436,7 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     <div className="input-group-minimal">
-                      <label>Caja</label>
+                      <label>Jornada</label>
                       <div className="caja-selector-minimal">
                         {cajas.length > 0 ? (
                           cajas.map(caja => (
@@ -434,7 +444,11 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                               key={caja.id_caja}
                               type="button"
                               className={`caja-btn-minimal ${formData.id_caja === caja.id_caja ? 'active' : ''} ${!caja.abierta ? 'cerrada' : ''}`}
-                              onClick={() => setFormData(prev => ({ ...prev, id_caja: caja.id_caja }))}
+                              onClick={() => setFormData(prev => ({
+                                ...prev,
+                                id_caja: caja.id_caja,
+                                canal_cobro: inferirCanalPorDescripcionCaja(caja.descripcion) || prev.canal_cobro
+                              }))}
                               disabled={!caja.abierta}
                             >
                               <span className="caja-nombre">{caja.descripcion}</span>
@@ -443,9 +457,25 @@ const ModalVentaRapida = ({ isOpen, onClose, onSuccess }) => {
                           ))
                         ) : (
                           <div className="no-cajas-minimal">
-                            No hay cajas disponibles
+                            No hay jornadas disponibles
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="input-group-minimal">
+                      <label>Canal de cobro</label>
+                      <div className="caja-selector-minimal">
+                        {CANALES_COBRO.map(canal => (
+                          <button
+                            key={canal.codigo}
+                            type="button"
+                            className={`caja-btn-minimal ${formData.canal_cobro === canal.codigo ? 'active' : ''}`}
+                            onClick={() => setFormData(prev => ({ ...prev, canal_cobro: canal.codigo }))}
+                          >
+                            <span className="caja-nombre">{canal.icono} {canal.nombre}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>

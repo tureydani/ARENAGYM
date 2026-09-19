@@ -11,8 +11,12 @@ const Caja = sequelize.define('Caja', {
     type: DataTypes.STRING(100),
     allowNull: true
   },
+  // TIMESTAMP desde la migración canal_cobro_2026_09 (antes DATEONLY, sin
+  // hora). Las 4 jornadas creadas antes de esa migración quedaron con
+  // 00:00:00, que NO es su hora real de apertura (ver
+  // DB__Gimnasio.txt / migraciones_sistema.metadata).
   fecha_apertura: {
-    type: DataTypes.DATEONLY,
+    type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW
   },

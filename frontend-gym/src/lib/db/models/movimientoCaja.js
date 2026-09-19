@@ -52,6 +52,18 @@ const MovimientoCaja = sequelize.define('MovimientoCaja', {
   id_referencia: {
     type: DataTypes.INTEGER,
     allowNull: true
+  },
+  // Canal por el que se movió ESTE movimiento puntual (Ingreso o Egreso).
+  // Ver src/lib/db/canalesCobro.js. Nullable a nivel de columna por
+  // compatibilidad con filas previas a la migración, pero el código nuevo
+  // siempre debe enviarlo.
+  canal_cobro: {
+    type: DataTypes.STRING(15),
+    allowNull: true,
+    references: {
+      model: 'canales_cobro',
+      key: 'codigo'
+    }
   }
 }, {
   tableName: 'movimientos_caja',

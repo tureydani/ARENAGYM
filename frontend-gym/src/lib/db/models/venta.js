@@ -48,6 +48,14 @@ const Venta = sequelize.define('Venta', {
     validate: {
       isIn: [['Completada', 'Pendiente', 'Cancelada', 'Eliminada']]
     }
+  },
+  canal_cobro: {
+    type: DataTypes.STRING(15),
+    allowNull: true,
+    references: {
+      model: 'canales_cobro',
+      key: 'codigo'
+    }
   }
 }, {
   tableName: 'ventas',

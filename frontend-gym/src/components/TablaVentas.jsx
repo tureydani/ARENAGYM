@@ -12,6 +12,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
+import { CANALES_COBRO } from '../constants/canalesCobro';
 import '../styles/tables.css';
 import '../styles/modals.css';
 import '../styles/modern-modals.css';
@@ -79,6 +80,7 @@ const TablaVentas = () => {
     id_usuario: '',
     id_admin: '',
     id_caja: '',
+    canal_cobro: 'Efectivo',
     fecha_venta: '', // Se establecerá con fecha local
     total: '',
     estado: 'Completada'
@@ -324,6 +326,7 @@ const TablaVentas = () => {
       id_usuario: venta.id_usuario,
       id_admin: venta.id_admin,
       id_caja: venta.id_caja,
+      canal_cobro: venta.canal_cobro || 'Efectivo',
       fecha_venta: venta.fecha_venta ? venta.fecha_venta.split('T')[0] : getFechaHoyLocal(),
       total: venta.total,
       estado: venta.estado
@@ -350,6 +353,7 @@ const TablaVentas = () => {
       id_usuario: '',
       id_admin: '',
       id_caja: '',
+      canal_cobro: 'Efectivo',
       fecha_venta: getFechaHoyLocal(),
       total: '',
       estado: 'Completada'
@@ -905,7 +909,7 @@ const TablaVentas = () => {
                     <div>
                       <label className="form-label modern">
                         <span className="label-icon"><IconArchiveBox /></span>
-                        Caja
+                        Jornada
                       </label>
                       <div className="enhanced-select">
                         <select
@@ -914,12 +918,33 @@ const TablaVentas = () => {
                           className="form-select modern"
                           required
                         >
-                          <option value="">Seleccionar caja</option>
+                          <option value="">Seleccionar jornada</option>
                           {cajas.map(caja => (
                             <option key={caja.id_caja} value={caja.id_caja} disabled={!caja.abierta}>
                               {caja.descripcion || `Caja ${caja.id_caja}`}
                               {!caja.abierta ? ' (cerrada)' : ''}
                             </option>
+                          ))}
+                        </select>
+                        <span className="select-arrow">▼</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label modern">
+                        <span className="label-icon"><IconArchiveBox /></span>
+                        Canal de cobro
+                      </label>
+                      <div className="enhanced-select">
+                        <select
+                          value={formData.canal_cobro}
+                          onChange={(e) => setFormData({...formData, canal_cobro: e.target.value})}
+                          className="form-select modern"
+                          required
+                        >
+                          <option value="">Seleccionar canal</option>
+                          {CANALES_COBRO.map(canal => (
+                            <option key={canal.codigo} value={canal.codigo}>{canal.icono} {canal.nombre}</option>
                           ))}
                         </select>
                         <span className="select-arrow">▼</span>

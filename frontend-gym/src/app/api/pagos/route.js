@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Pago, RegistroMembresia, Administrativo, Caja } from '@/lib/db/models';
 import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
+import { esCanalCobroValido } from '@/lib/db/canalesCobro';
 
 export async function GET(request) {
   try {
@@ -34,7 +35,14 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { id_registro, monto_pagado, fecha_pago, id_admin, id_caja, estado_pago } = body;
+    const { id_registro, monto_pagado, fecha_pago, id_admin, id_caja, estado_pago, canal_cobro } = body;
+
+    // id_caja identifica la JORNADA (punto de cobro abierto), no el canal.
+    // El canal se manda aparte y es obligatorio: sin él no se puede
+    // calcular el efectivo esperado al cerrar la jornada.
+    if (!esCanalCobroValido(canal_cobro)) {
+      return NextResponse.json({ error: 'Debe indicar un canal_cobro válido (Efectivo, QR, Transferencia o Tarjeta).' }, { status: 400 });
+    }
 
     // El trigger de la BD suma monto_pagado directo al saldo de la caja sin
     // ninguna validación propia -- un monto negativo (o 0) se colaría como
@@ -67,7 +75,8 @@ export async function POST(request) {
       fecha_pago,
       id_admin: id_admin || 1,
       id_caja,
-      estado_pago: estado_pago || 'Pendiente'
+      estado_pago: estado_pago || 'Pendiente',
+      canal_cobro
     });
 
     // El trigger automáticamente:

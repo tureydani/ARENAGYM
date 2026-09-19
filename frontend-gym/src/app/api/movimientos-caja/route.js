@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import sequelize from '@/lib/db/sequelize';
 import { MovimientoCaja, Caja, Administrativo } from '@/lib/db/models';
 import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
+import { esCanalCobroValido } from '@/lib/db/canalesCobro';
 
 // Filtros opcionales para reportes (semana/mes/año se calculan en el
 // frontend a partir de fecha_desde/fecha_hasta, no se crean cajas
@@ -52,10 +53,17 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { id_caja, id_admin, tipo_movimiento, descripcion, monto, origen, id_referencia } = body;
+    const { id_caja, id_admin, tipo_movimiento, descripcion, monto, origen, id_referencia, canal_cobro } = body;
 
     if (parseFloat(monto) <= 0 || Number.isNaN(parseFloat(monto))) {
       return NextResponse.json({ error: 'El monto debe ser mayor a 0' }, { status: 400 });
+    }
+
+    // Todo movimiento (Ingreso o Egreso) necesita canal: un Egreso en
+    // Efectivo reduce el efectivo físico del arqueo, uno en QR/Transferencia/
+    // Tarjeta no. Sin canal no se puede calcular ese desglose.
+    if (!esCanalCobroValido(canal_cobro)) {
+      return NextResponse.json({ error: 'Debe indicar un canal_cobro válido (Efectivo, QR, Transferencia o Tarjeta).' }, { status: 400 });
     }
 
     // Los movimientos de origen Pago/Venta no ajustan el saldo acá (lo hace
@@ -106,7 +114,8 @@ export async function POST(request) {
         descripcion,
         monto,
         origen,
-        id_referencia
+        id_referencia,
+        canal_cobro
       }, { transaction });
 
       await transaction.commit();

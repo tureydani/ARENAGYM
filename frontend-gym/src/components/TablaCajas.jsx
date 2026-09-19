@@ -14,6 +14,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
+import { CANALES_COBRO, CANAL_EFECTIVO } from '../constants/canalesCobro';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -29,7 +30,14 @@ export default function TablaCajas() {
   const [selectedCaja, setSelectedCaja] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showSuccessCheck, setShowSuccessCheck] = useState(false);
-  
+
+  // Filtros del historial de JORNADAS (tabla principal, no el modal de
+  // movimientos de una jornada -- ese tiene sus propios filtros más abajo)
+  const [jornadaEstadoFilter, setJornadaEstadoFilter] = useState('');
+  const [jornadaResponsableFilter, setJornadaResponsableFilter] = useState('');
+  const [jornadaCanalFilter, setJornadaCanalFilter] = useState('');
+  const [jornadaDiferenciaFilter, setJornadaDiferenciaFilter] = useState('');
+
   // Estados para filtros del historial
   const [historialSearch, setHistorialSearch] = useState('');
   const [historialFechaInicio, setHistorialFechaInicio] = useState('');
@@ -37,6 +45,7 @@ export default function TablaCajas() {
   const [historialAdminFilter, setHistorialAdminFilter] = useState('');
   const [historialTipoFilter, setHistorialTipoFilter] = useState('');
   const [historialOrigenFilter, setHistorialOrigenFilter] = useState('');
+  const [historialCanalFilter, setHistorialCanalFilter] = useState('');
   
   // Estados para exportación avanzada
   const [showExportModal, setShowExportModal] = useState(false);
@@ -71,7 +80,8 @@ export default function TablaCajas() {
     tipo_movimiento: 'Ingreso',
     descripcion: '',
     monto: '',
-    origen: 'Otro'
+    origen: 'Otro',
+    canal_cobro: CANAL_EFECTIVO
   });
 
   // Configuración de paginación
@@ -79,17 +89,31 @@ export default function TablaCajas() {
   
   // Asegurar que cajas sea siempre un array
   const cajasArray = Array.isArray(cajas) ? cajas : [];
-  
-  const { 
-    currentPage, 
-    totalPages, 
-    paginatedData, 
-    goToPage, 
+
+  const cajasFiltradas = cajasArray.filter(caja => {
+    if (!caja.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (jornadaEstadoFilter && caja.estado !== jornadaEstadoFilter) return false;
+    if (jornadaResponsableFilter) {
+      const responsable = `${caja.AdminApertura?.nombre || ''} ${caja.AdminApertura?.apellido || ''}`.toLowerCase();
+      if (!responsable.includes(jornadaResponsableFilter.toLowerCase())) return false;
+    }
+    if (jornadaCanalFilter) {
+      const tieneCanal = movimientos.some(m => m.id_caja === caja.id_caja && m.canal_cobro === jornadaCanalFilter);
+      if (!tieneCanal) return false;
+    }
+    if (jornadaDiferenciaFilter === 'con_diferencia' && Math.round((parseFloat(caja.diferencia) || 0) * 100) === 0) return false;
+    if (jornadaDiferenciaFilter === 'cuadradas' && caja.estado === 'CERRADA' && Math.round((parseFloat(caja.diferencia) || 0) * 100) !== 0) return false;
+    return true;
+  });
+
+  const {
+    currentPage,
+    totalPages,
+    paginatedData,
+    goToPage,
     nextPage: goToNextPage,
     prevPage: goToPreviousPage
-  } = usePagination(cajasArray.filter(caja => 
-    caja.descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
-  ), itemsPerPage);
+  } = usePagination(cajasFiltradas, itemsPerPage);
 
   // Asegurar que paginatedData sea siempre un array
   const paginatedItems = Array.isArray(paginatedData) ? paginatedData : [];
@@ -340,24 +364,34 @@ export default function TablaCajas() {
 
   const formatFecha = (fecha) => formatearFecha(fecha, { year: 'numeric', month: '2-digit', day: '2-digit' });
 
+  // Tipo de operación derivado de `origen` (no existe columna propia, ver
+  // diseño acordado): Pago -> Membresía, Venta -> Producto.
+  const operacionDeOrigen = (origen) => ({
+    Pago: 'Membresía', Venta: 'Producto', Desembolso: 'Egreso', Reembolso: 'Reversión', Otro: 'Otros'
+  }[origen] || origen || 'N/A');
+
   const exportToCSV = () => {
-    const headers = ['ID', 'Descripción', 'Fecha Apertura', 'Saldo Inicial', 'Saldo Actual', 'Estado'];
+    const headers = ['Jornada', 'Punto de cobro', 'Apertura', 'Responsable', 'Saldo Inicial', 'Saldo Registrado', 'Efectivo Esperado', 'Efectivo Contado', 'Diferencia', 'Estado'];
     const csvContent = [
       headers.join(','),
       ...cajasArray.map(caja => [
         caja.id_caja,
         `"${caja.descripcion || ''}"`,
         caja.fecha_apertura || '',
+        `"${caja.AdminApertura ? `${caja.AdminApertura.nombre} ${caja.AdminApertura.apellido}` : ''}"`,
         formatPrice(caja.saldo_inicial),
         formatPrice(caja.saldo_actual),
-        caja.abierta ? 'Abierta' : 'Cerrada'
+        caja.estado === 'CERRADA' ? formatPrice(caja.saldo_esperado) : formatPrice(getEfectivoEsperado(caja)),
+        caja.saldo_contado !== null && caja.saldo_contado !== undefined ? formatPrice(caja.saldo_contado) : '',
+        caja.diferencia !== null && caja.diferencia !== undefined ? formatPrice(caja.diferencia) : '',
+        caja.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'
       ].join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `cajas_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `jornadas_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
@@ -421,26 +455,27 @@ export default function TablaCajas() {
 
     // Título del documento
     doc.setFontSize(20);
-    doc.text('Reporte Completo de Cajas - Gimnasio', 20, 20);
+    doc.text('Reporte Completo de Jornadas - Gimnasio', 20, 20);
 
     doc.setFontSize(12);
     doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`, 20, 35);
-    doc.text(`Total de cajas: ${cajasAExportar.length}`, 20, 45);
-    
+    doc.text(`Total de jornadas: ${cajasAExportar.length}`, 20, 45);
+
     let yPosition = 60;
 
-    // Tabla de resumen de cajas
+    // Tabla de resumen de jornadas
     const cajasData = cajasAExportar.map(caja => [
       caja.id_caja,
       caja.descripcion || 'Sin descripción',
       formatFecha(caja.fecha_apertura),
+      caja.AdminApertura ? `${caja.AdminApertura.nombre} ${caja.AdminApertura.apellido}` : 'N/A',
       `Bs. ${formatPrice(caja.saldo_inicial)}`,
       `Bs. ${formatPrice(caja.saldo_actual)}`,
-      caja.abierta ? 'Abierta' : 'Cerrada'
+      caja.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'
     ]);
 
     autoTable(doc, {
-      head: [['ID', 'Descripción', 'Fecha Apertura', 'Saldo Inicial', 'Saldo Actual', 'Estado']],
+      head: [['Jornada', 'Punto de cobro', 'Apertura', 'Responsable', 'Saldo Inicial', 'Saldo Registrado', 'Estado']],
       body: cajasData,
       startY: yPosition,
       theme: 'striped',
@@ -460,13 +495,14 @@ export default function TablaCajas() {
       const movimientosData = movimientosFiltrados.map(mov => {
         const caja = cajasArray.find(c => c.id_caja === mov.id_caja);
         const admin = administrativos.find(a => a.id_admin === mov.id_admin);
-        
+
         return [
           mov.id_movimiento,
-          caja?.descripcion || `Caja ${mov.id_caja}`,
+          caja?.descripcion || `Jornada ${mov.id_caja}`,
           `${admin?.nombre || 'N/A'} ${admin?.apellido || ''}`.trim(),
           mov.tipo_movimiento,
-          mov.origen || 'N/A',
+          operacionDeOrigen(mov.origen),
+          mov.canal_cobro || 'N/A',
           mov.descripcion || 'Sin descripción',
           `Bs. ${formatPrice(mov.monto)}`,
           formatFecha(mov.fecha_movimiento)
@@ -474,15 +510,15 @@ export default function TablaCajas() {
       });
 
       autoTable(doc, {
-        head: [['ID', 'Caja', 'Administrador', 'Tipo', 'Origen', 'Descripción', 'Monto', 'Fecha']],
+        head: [['ID', 'Jornada', 'Responsable', 'Tipo', 'Operación', 'Canal', 'Descripción', 'Monto', 'Fecha']],
         body: movimientosData,
         startY: yPosition,
         theme: 'striped',
         headStyles: { fillColor: [16, 185, 129] },
         styles: { fontSize: 8 },
         columnStyles: {
-          5: { cellWidth: 30 }, // Descripción
-          6: { halign: 'right' }, // Monto
+          6: { cellWidth: 30 }, // Descripción
+          7: { halign: 'right' }, // Monto
         }
       });
 
@@ -511,7 +547,7 @@ export default function TablaCajas() {
     doc.text(`Balance: Bs. ${(totalIngresos - totalEgresos).toFixed(2)}`, 20, yPosition + 40);
 
     // Guardar el PDF
-    doc.save(`reporte_cajas_completo_${new Date().toISOString().split('T')[0]}.pdf`);
+    doc.save(`reporte_jornadas_completo_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   const exportarExcel = () => {
@@ -520,41 +556,46 @@ export default function TablaCajas() {
     // Crear el workbook
     const workbook = XLSX.utils.book_new();
 
-    // Hoja 1: Resumen de Cajas
+    // Hoja 1: Resumen de Jornadas
     const cajasData = [
-      ['REPORTE COMPLETO DE CAJAS - GIMNASIO'],
+      ['REPORTE COMPLETO DE JORNADAS - GIMNASIO'],
       [`Fecha de generación: ${new Date().toLocaleDateString('es-ES')}`],
       [''],
-      ['ID', 'Descripción', 'Fecha Apertura', 'Saldo Inicial', 'Saldo Actual', 'Estado'],
+      ['Jornada', 'Punto de cobro', 'Apertura', 'Responsable', 'Saldo Inicial', 'Saldo Registrado', 'Efectivo Esperado', 'Efectivo Contado', 'Diferencia', 'Estado'],
       ...cajasAExportar.map(caja => [
         caja.id_caja,
         caja.descripcion || 'Sin descripción',
         formatFecha(caja.fecha_apertura),
+        caja.AdminApertura ? `${caja.AdminApertura.nombre} ${caja.AdminApertura.apellido}` : 'N/A',
         parseFloat(caja.saldo_inicial) || 0,
         parseFloat(caja.saldo_actual) || 0,
-        caja.abierta ? 'Abierta' : 'Cerrada'
+        caja.estado === 'CERRADA' ? (parseFloat(caja.saldo_esperado) || 0) : getEfectivoEsperado(caja),
+        caja.saldo_contado !== null && caja.saldo_contado !== undefined ? parseFloat(caja.saldo_contado) : '',
+        caja.diferencia !== null && caja.diferencia !== undefined ? parseFloat(caja.diferencia) : '',
+        caja.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'
       ])
     ];
 
     const worksheetCajas = XLSX.utils.aoa_to_sheet(cajasData);
-    XLSX.utils.book_append_sheet(workbook, worksheetCajas, 'Cajas');
+    XLSX.utils.book_append_sheet(workbook, worksheetCajas, 'Jornadas');
 
     // Hoja 2: Movimientos (si está habilitado)
     if (incluirMovimientos && movimientosFiltrados.length > 0) {
       const movimientosData = [
         ['HISTORIAL DE MOVIMIENTOS'],
         [''],
-        ['ID', 'Caja', 'Administrador', 'Tipo', 'Origen', 'Descripción', 'Monto', 'Fecha'],
+        ['ID', 'Jornada', 'Responsable', 'Tipo', 'Operación', 'Canal', 'Descripción', 'Monto', 'Fecha'],
         ...movimientosFiltrados.map(mov => {
           const caja = cajasArray.find(c => c.id_caja === mov.id_caja);
           const admin = administrativos.find(a => a.id_admin === mov.id_admin);
-          
+
           return [
             mov.id_movimiento,
-            caja?.descripcion || `Caja ${mov.id_caja}`,
+            caja?.descripcion || `Jornada ${mov.id_caja}`,
             `${admin?.nombre || 'N/A'} ${admin?.apellido || ''}`.trim(),
             mov.tipo_movimiento,
-            mov.origen || 'N/A',
+            operacionDeOrigen(mov.origen),
+            mov.canal_cobro || 'N/A',
             mov.descripcion || 'Sin descripción',
             parseFloat(mov.monto) || 0,
             formatFecha(mov.fecha_movimiento)
@@ -630,6 +671,33 @@ export default function TablaCajas() {
 
   const totalSaldo = cajasArray.reduce((sum, caja) => sum + (parseFloat(caja.saldo_actual) || 0), 0);
   const cajasAbiertas = cajasArray.filter(caja => caja.abierta).length;
+  const cajasAbiertasArray = cajasArray.filter(caja => caja.abierta);
+  const totalIngresos = movimientos.filter(m => m.tipo_movimiento === 'Ingreso').reduce((s, m) => s + (parseFloat(m.monto) || 0), 0);
+  const totalEgresos = movimientos.filter(m => m.tipo_movimiento === 'Egreso').reduce((s, m) => s + (parseFloat(m.monto) || 0), 0);
+  const diferenciasPendientes = cajasArray.filter(c => c.estado === 'CERRADA' && Math.round((parseFloat(c.diferencia) || 0) * 100) !== 0).length;
+
+  // Desglose por canal de UNA jornada, calculado en el cliente a partir de
+  // `movimientos` (ya cargado): ingresos - egresos de cada canal. No pega
+  // a /arqueo para no golpear el backend por cada jornada abierta que se
+  // muestra en pantalla.
+  const getDesglosePorCanal = (idCaja) => {
+    const desglose = {};
+    for (const canal of CANALES_COBRO) {
+      const ingresos = movimientos
+        .filter(m => m.id_caja === idCaja && m.canal_cobro === canal.codigo && m.tipo_movimiento === 'Ingreso')
+        .reduce((s, m) => s + (parseFloat(m.monto) || 0), 0);
+      const egresos = movimientos
+        .filter(m => m.id_caja === idCaja && m.canal_cobro === canal.codigo && m.tipo_movimiento === 'Egreso')
+        .reduce((s, m) => s + (parseFloat(m.monto) || 0), 0);
+      desglose[canal.codigo] = ingresos - egresos;
+    }
+    return desglose;
+  };
+
+  const getEfectivoEsperado = (caja) => {
+    const desglose = getDesglosePorCanal(caja.id_caja);
+    return (parseFloat(caja.saldo_inicial) || 0) + (desglose[CANAL_EFECTIVO] || 0);
+  };
 
   // Funciones para movimientos de caja
   const openMovimientoModal = (caja) => {
@@ -642,7 +710,8 @@ export default function TablaCajas() {
       tipo_movimiento: 'Ingreso',
       descripcion: '',
       monto: '',
-      origen: 'Otro'
+      origen: 'Otro',
+      canal_cobro: CANAL_EFECTIVO
     });
     setShowMovimientoModal(true);
   };
@@ -751,8 +820,14 @@ export default function TablaCajas() {
     }
 
     if (historialOrigenFilter) {
-      movimientosFiltrados = movimientosFiltrados.filter(mov => 
+      movimientosFiltrados = movimientosFiltrados.filter(mov =>
         mov.origen === historialOrigenFilter
+      );
+    }
+
+    if (historialCanalFilter) {
+      movimientosFiltrados = movimientosFiltrados.filter(mov =>
+        mov.canal_cobro === historialCanalFilter
       );
     }
 
@@ -767,6 +842,7 @@ export default function TablaCajas() {
     setHistorialAdminFilter('');
     setHistorialTipoFilter('');
     setHistorialOrigenFilter('');
+    setHistorialCanalFilter('');
   };
 
   if (loading) {
@@ -786,8 +862,8 @@ export default function TablaCajas() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-slate-900">Control de Cajas</h2>
-          <p className="text-slate-500">Administra las cajas registradoras del gimnasio</p>
+          <h2 className="text-xl font-semibold text-slate-900">Control de Caja</h2>
+          <p className="text-slate-500">Gestiona las jornadas, movimientos y canales de cobro del gimnasio</p>
         </div>
         <div className="flex gap-3">
           <Button onClick={exportToCSV} variant="outline" size="sm">
@@ -797,34 +873,147 @@ export default function TablaCajas() {
             <IconDocumentDownload className="w-4 h-4 inline-block mr-1" /> Exportar Completo
           </Button>
           <Button onClick={() => openAperturaModal()} size="sm">
-            Abrir Caja
+            + Nueva jornada
           </Button>
         </div>
       </div>
 
-      {/* Search and Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Resumen */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-indigo-600">{cajasAbiertas}</div>
+          <div className="text-sm text-slate-500">Jornadas abiertas</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-slate-700">
+            Bs. {formatPrice(totalSaldo)}
+          </div>
+          <div className="text-sm text-slate-500">Saldo registrado</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-emerald-600">
+            Bs. {formatPrice(totalIngresos)}
+          </div>
+          <div className="text-sm text-slate-500">Ingresos</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className="text-2xl font-bold text-red-600">
+            Bs. {formatPrice(totalEgresos)}
+          </div>
+          <div className="text-sm text-slate-500">Egresos</div>
+        </Card>
+        <Card className="p-4 text-center">
+          <div className={`text-2xl font-bold ${diferenciasPendientes > 0 ? 'text-orange-600' : 'text-slate-400'}`}>
+            {diferenciasPendientes}
+          </div>
+          <div className="text-sm text-slate-500">Diferencias pendientes</div>
+        </Card>
+      </div>
+
+      {/* Jornada(s) activa(s): el elemento principal de la pantalla */}
+      {cajasAbiertasArray.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <h3 className="text-lg font-semibold text-slate-900">Jornada activa</h3>
+          <div className={`grid gap-4 ${cajasAbiertasArray.length > 1 ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+            {cajasAbiertasArray.map(caja => {
+              const desglose = getDesglosePorCanal(caja.id_caja);
+              const efectivoEsperado = getEfectivoEsperado(caja);
+              return (
+                <Card key={caja.id_caja} className="p-5 border-2 border-indigo-100">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="text-lg font-semibold text-slate-900">{caja.descripcion}</div>
+                      <div className="text-sm text-slate-500">Jornada #{caja.id_caja}</div>
+                    </div>
+                    <Badge variant="success" className="bg-emerald-50 text-emerald-700">Abierta</Badge>
+                  </div>
+                  <div className="text-xs text-slate-500 mb-4 space-y-0.5">
+                    <div>Responsable: {caja.AdminApertura ? `${caja.AdminApertura.nombre} ${caja.AdminApertura.apellido}` : 'N/D'}</div>
+                    <div>Apertura: {formatearFecha(caja.fecha_apertura, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <div className="text-xs text-slate-500">Saldo registrado</div>
+                      <div className="text-lg font-bold text-slate-800">Bs. {formatPrice(caja.saldo_actual)}</div>
+                    </div>
+                    <div className="bg-indigo-50 rounded-lg p-3">
+                      <div className="text-xs text-indigo-600">Efectivo esperado</div>
+                      <div className="text-lg font-bold text-indigo-700">Bs. {formatPrice(efectivoEsperado)}</div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-slate-500 mb-2">Canales de cobro</div>
+                    <div className="space-y-1">
+                      {CANALES_COBRO.map(canal => (
+                        <div key={canal.codigo} className="flex justify-between text-sm">
+                          <span className="text-slate-600">{canal.icono} {canal.nombre}</span>
+                          <span className="font-medium text-slate-900">Bs. {formatPrice(desglose[canal.codigo])}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button onClick={() => openMovimientosModal(caja)} variant="outline" size="sm">Ver movimientos</Button>
+                    <Button onClick={() => handleEdit(caja)} variant="outline" size="sm">Ver detalle</Button>
+                    <Button onClick={() => openCierreModal(caja)} size="sm">Cerrar jornada</Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Historial de jornadas */}
+      <h3 className="text-lg font-semibold text-slate-900 -mb-2">Historial de jornadas</h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
         <div className="md:col-span-2">
           <SearchBar
             value={searchTerm}
             onChange={setSearchTerm}
-            placeholder="Buscar cajas por descripción..."
+            placeholder="Buscar por punto de cobro..."
           />
         </div>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-indigo-600">{cajasArray.length}</div>
-          <div className="text-sm text-slate-500">Total Cajas</div>
-          <div className="text-xs text-emerald-600">{cajasAbiertas} abiertas</div>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">
-            Bs. {formatPrice(totalSaldo)}
-          </div>
-          <div className="text-sm text-slate-500">Saldo Total</div>
-        </Card>
+        <select
+          value={jornadaEstadoFilter}
+          onChange={(e) => setJornadaEstadoFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+        >
+          <option value="">Todos los estados</option>
+          <option value="ABIERTA">Abierta</option>
+          <option value="CERRADA">Cerrada</option>
+        </select>
+        <input
+          type="text"
+          value={jornadaResponsableFilter}
+          onChange={(e) => setJornadaResponsableFilter(e.target.value)}
+          placeholder="Responsable..."
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+        />
+        <select
+          value={jornadaCanalFilter}
+          onChange={(e) => setJornadaCanalFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+        >
+          <option value="">Todos los canales</option>
+          {CANALES_COBRO.map(canal => (
+            <option key={canal.codigo} value={canal.codigo}>{canal.icono} {canal.nombre}</option>
+          ))}
+        </select>
+        <select
+          value={jornadaDiferenciaFilter}
+          onChange={(e) => setJornadaDiferenciaFilter(e.target.value)}
+          className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700"
+        >
+          <option value="">Cualquier diferencia</option>
+          <option value="con_diferencia">Con diferencia</option>
+          <option value="cuadradas">Solo cuadradas</option>
+        </select>
       </div>
-
-      {/* Cajas Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -834,16 +1023,19 @@ export default function TablaCajas() {
                   ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Descripción
+                  Punto de cobro
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Fecha Apertura
+                  Apertura
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Responsable
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Saldo Inicial
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                  Saldo Actual
+                  Saldo Registrado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Estado
@@ -868,7 +1060,10 @@ export default function TablaCajas() {
                     </div>
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap text-sm text-slate-600">
-                    {formatFecha(caja.fecha_apertura)}
+                    {formatearFecha(caja.fecha_apertura, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                  </td>
+                  <td className="px-6 py-2 whitespace-nowrap text-sm text-slate-600">
+                    {caja.AdminApertura ? `${caja.AdminApertura.nombre} ${caja.AdminApertura.apellido}` : '—'}
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap">
                     <div className="text-sm font-medium text-indigo-600">
@@ -978,7 +1173,7 @@ export default function TablaCajas() {
               No se encontraron cajas
             </div>
             <Button onClick={() => openAperturaModal()} size="sm">
-              Abrir primera caja
+              Abrir primera jornada
             </Button>
           </div>
         )}
@@ -1070,7 +1265,7 @@ export default function TablaCajas() {
         <div className="modal-overlay">
           <div className="modal-container">
             <div className="modal-header">
-              <h3 className="modal-title">Abrir Caja</h3>
+              <h3 className="modal-title">Abrir jornada</h3>
               <button className="modal-close" onClick={closeAperturaModal}>
                 ×
               </button>
@@ -1079,17 +1274,17 @@ export default function TablaCajas() {
             <div className="modal-body">
               <form onSubmit={handleAperturaSubmit} className="modal-form">
                 <div className="form-group">
-                  <label className="form-label">Descripción</label>
+                  <label className="form-label">Punto de cobro</label>
                   <input
                     type="text"
                     value={aperturaFormData.descripcion}
                     onChange={(e) => setAperturaFormData({ ...aperturaFormData, descripcion: e.target.value })}
                     className="form-input"
-                    placeholder="Ej. Caja Efectivo, Caja Qr..."
+                    placeholder="Ej. Recepción, Tienda..."
                     required
                   />
                   <p className="text-xs text-slate-500 mt-1">
-                    No se puede abrir una caja con el mismo nombre de una que ya está abierta.
+                    No se puede abrir una jornada con el mismo nombre de una que ya está abierta. Dentro de esta jornada podrás registrar cobros en Efectivo, QR, Transferencia y Tarjeta.
                   </p>
                 </div>
 
@@ -1108,7 +1303,7 @@ export default function TablaCajas() {
 
                 <div className="modal-actions">
                   <button type="submit" className="btn-primary">
-                    Abrir Caja
+                    Abrir jornada
                   </button>
                   <button type="button" onClick={closeAperturaModal} className="btn-secondary">
                     Cancelar
@@ -1120,12 +1315,12 @@ export default function TablaCajas() {
         </div>
       )}
 
-      {/* Modal Cierre de Caja (Arqueo) */}
+      {/* Modal Cierre de Jornada (Arqueo) */}
       {showCierreModal && selectedCaja && (
         <div className="modal-overlay">
           <div className="modal-container">
             <div className="modal-header">
-              <h3 className="modal-title">Cerrar Caja — {selectedCaja.descripcion}</h3>
+              <h3 className="modal-title">Cerrar jornada — {selectedCaja.descripcion}</h3>
               <button className="modal-close" onClick={closeCierreModal}>
                 ×
               </button>
@@ -1141,25 +1336,52 @@ export default function TablaCajas() {
                 <>
                   <div className="bg-slate-50 rounded-lg p-4 space-y-2 text-sm mb-4">
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Saldo inicial</span>
+                      <span className="text-slate-500">Saldo inicial (efectivo)</span>
                       <span className="font-medium text-slate-900">Bs. {formatPrice(cierreData.saldo_inicial)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Ingresos</span>
+                      <span className="text-slate-500">Ingresos (todos los canales)</span>
                       <span className="font-medium text-emerald-600">+ Bs. {formatPrice(cierreData.total_ingresos)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Egresos</span>
+                      <span className="text-slate-500">Egresos (todos los canales)</span>
                       <span className="font-medium text-red-600">− Bs. {formatPrice(cierreData.total_egresos)}</span>
                     </div>
                     <div className="flex justify-between border-t border-slate-200 pt-2">
-                      <span className="text-slate-700 font-semibold">Saldo esperado</span>
-                      <span className="font-bold text-indigo-600">Bs. {formatPrice(cierreData.saldo_esperado)}</span>
+                      <span className="text-slate-700 font-semibold">Saldo registrado</span>
+                      <span className="font-bold text-slate-700">Bs. {formatPrice(cierreData.saldo_registrado)}</span>
                     </div>
+                    <p className="text-xs text-slate-400">
+                      El saldo registrado incluye QR/Transferencia/Tarjeta: no es dinero físico, no se cuenta al cerrar.
+                    </p>
+                  </div>
+
+                  {cierreData.desglose_por_canal && (
+                    <div className="bg-slate-50 rounded-lg p-4 mb-4 text-sm">
+                      <p className="text-slate-700 font-semibold mb-2">Canales de cobro</p>
+                      <div className="space-y-1">
+                        {CANALES_COBRO.map(canal => (
+                          <div key={canal.codigo} className="flex justify-between">
+                            <span className="text-slate-500">{canal.icono} {canal.nombre}</span>
+                            <span className="font-medium text-slate-900">Bs. {formatPrice(cierreData.desglose_por_canal[canal.codigo])}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-indigo-50 rounded-lg p-4 space-y-2 text-sm mb-4 border border-indigo-100">
+                    <div className="flex justify-between">
+                      <span className="text-indigo-700 font-semibold">Efectivo esperado</span>
+                      <span className="font-bold text-indigo-700">Bs. {formatPrice(cierreData.efectivo_esperado)}</span>
+                    </div>
+                    <p className="text-xs text-indigo-400">
+                      Esto es lo único que se cuenta físicamente al cerrar (QR/Transferencia/Tarjeta no son efectivo).
+                    </p>
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Dinero contado (Bs.)</label>
+                    <label className="form-label">Efectivo contado (Bs.)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1174,17 +1396,17 @@ export default function TablaCajas() {
 
                   {saldoContado !== '' && !Number.isNaN(parseFloat(saldoContado)) && (
                     (() => {
-                      const diferencia = Math.round((parseFloat(saldoContado) - cierreData.saldo_esperado) * 100) / 100;
+                      const diferencia = Math.round((parseFloat(saldoContado) - cierreData.efectivo_esperado) * 100) / 100;
                       return (
                         <div className={`rounded-lg p-3 text-sm font-semibold text-center mb-4 ${
                           diferencia === 0 ? 'bg-emerald-50 text-emerald-700' :
                           diferencia > 0 ? 'bg-sky-50 text-sky-700' : 'bg-red-50 text-red-700'
                         }`}>
                           {diferencia === 0
-                            ? 'Caja cuadrada'
+                            ? 'Efectivo cuadrado'
                             : diferencia > 0
-                              ? `Sobrante: Bs. ${diferencia.toFixed(2)}`
-                              : `Faltante: Bs. ${Math.abs(diferencia).toFixed(2)}`}
+                              ? `Sobrante de efectivo: Bs. ${diferencia.toFixed(2)}`
+                              : `Faltante de efectivo: Bs. ${Math.abs(diferencia).toFixed(2)}`}
                         </div>
                       );
                     })()
@@ -1192,7 +1414,7 @@ export default function TablaCajas() {
 
                   <div className="modal-actions">
                     <button type="button" onClick={handleConfirmarCierre} className="btn-primary">
-                      Confirmar Cierre
+                      Confirmar cierre de jornada
                     </button>
                     <button type="button" onClick={closeCierreModal} className="btn-secondary">
                       Cancelar
@@ -1249,6 +1471,28 @@ export default function TablaCajas() {
                     <option value="Pago" className="bg-white text-emerald-700">Pago</option>
                     <option value="Otro" className="bg-white text-slate-600">Otro</option>
                   </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="text-slate-700 font-medium">Canal de cobro</label>
+                  <select
+                    value={movimientoFormData.canal_cobro}
+                    onChange={(e) => setMovimientoFormData({
+                      ...movimientoFormData,
+                      canal_cobro: e.target.value
+                    })}
+                    className="form-input bg-white border-slate-300 text-slate-900"
+                    required
+                  >
+                    {CANALES_COBRO.map(canal => (
+                      <option key={canal.codigo} value={canal.codigo}>{canal.icono} {canal.nombre}</option>
+                    ))}
+                  </select>
+                  {movimientoFormData.tipo_movimiento === 'Egreso' && movimientoFormData.canal_cobro !== CANAL_EFECTIVO && (
+                    <p className="text-xs text-slate-500 mt-1">
+                      Un egreso en {movimientoFormData.canal_cobro} no reduce el efectivo físico de la jornada.
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -1417,6 +1661,21 @@ export default function TablaCajas() {
                       <option value="Otro">Otro</option>
                     </select>
                   </div>
+
+                  {/* Filtro por canal de cobro */}
+                  <div>
+                    <label className="block text-slate-500 mb-1">Canal:</label>
+                    <select
+                      value={historialCanalFilter}
+                      onChange={(e) => setHistorialCanalFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all duration-200"
+                    >
+                      <option value="">Todos</option>
+                      {CANALES_COBRO.map(canal => (
+                        <option key={canal.codigo} value={canal.codigo}>{canal.icono} {canal.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Contador de resultados */}
@@ -1434,6 +1693,7 @@ export default function TablaCajas() {
                       <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Fecha</th>
                       <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Tipo</th>
                       <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Origen</th>
+                      <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Canal</th>
                       <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Descripción</th>
                       <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Monto</th>
                       <th className="px-4 py-3 text-left text-slate-700 font-semibold border-b border-slate-300">Admin</th>
@@ -1456,6 +1716,7 @@ export default function TablaCajas() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sky-700 font-medium">{mov.origen}</td>
+                        <td className="px-4 py-3 text-slate-700">{mov.canal_cobro || '—'}</td>
                         <td className="px-4 py-3 text-slate-700">{mov.descripcion}</td>
                         <td className="px-4 py-3">
                           <span className={`font-bold text-lg ${

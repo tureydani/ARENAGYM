@@ -1143,3 +1143,102 @@ COMMENT ON TABLE auditoria_asistencias IS 'Historial de quien creo/edito/anulo/r
 COMMENT ON COLUMN auditoria_asistencias.motivo IS 'Obligatorio en la app para EDICION, ANULACION y REACTIVACION. NULL para CREACION (no aplica).';
 COMMENT ON COLUMN auditoria_asistencias.datos_anteriores IS 'Snapshot de la fila asistencias antes del cambio. NULL para CREACION.';
 COMMENT ON COLUMN auditoria_asistencias.datos_nuevos IS 'Snapshot de la fila asistencias despues del cambio.';
+
+-- ==========================================================
+-- MODELO CAJA/JORNADA -> CANALES DE COBRO (2026-09)
+-- ==========================================================
+-- Antes de esto, cada canal de cobro (Efectivo, Qr, ...) se modelaba como
+-- una fila INDEPENDIENTE de `cajas` (ej. "Efectivo", "Qr", "PRODUCTOS
+-- EFECTIVO", "PRODUCTOS QR"), y `pagos.id_caja`/`ventas.id_caja` en
+-- realidad apuntaban al canal, no a una jornada de trabajo. Esto impedia
+-- separar "cuanto dinero total entro" de "cuanto efectivo fisico deberia
+-- haber", y hacia que abrir/cerrar una jornada significara abrir/cerrar
+-- cuatro filas sueltas en vez de una sola jornada con cuatro canales
+-- dentro.
+--
+-- `cajas` SE MANTIENE representando una jornada de un punto de cobro (no
+-- se crea una tabla nueva de "jornadas"): el cambio es que ahora el canal
+-- de cobro se registra explicitamente en cada operacion/movimiento, en vez
+-- de inferirse de a que fila de `cajas` pertenecia.
+--
+-- Aplicado por scripts/migrate-canales-cobro.js (migracion versionada,
+-- registrada en la tabla `migraciones_sistema`; idempotente: si se vuelve
+-- a correr y la migracion ya quedo aplicada, no repite el backfill). El
+-- rollback seguro esta en scripts/rollback-canales-cobro.js: NO hace DROP
+-- COLUMN a ciegas, primero verifica contra migraciones_sistema.metadata si
+-- hay pagos/ventas/movimientos creados DESPUES de esta migracion que ya
+-- tengan canal_cobro asignado por la app -- si los hay, se niega a
+-- continuar hasta que se reconcilien, para no perder informacion nueva.
+
+CREATE TABLE IF NOT EXISTS migraciones_sistema (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) UNIQUE NOT NULL,
+    fecha_aplicada TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metadata JSONB
+);
+COMMENT ON TABLE migraciones_sistema IS 'Registro de migraciones puntuales (scripts/migrate-*.js) ya aplicadas contra esta base, con metadata para permitir un rollback seguro.';
+
+-- Catalogo unico de canales de cobro: agregar un canal nuevo en el futuro
+-- es un INSERT aca, no un ALTER TABLE/CHECK repetido en pagos, ventas y
+-- movimientos_caja.
+CREATE TABLE IF NOT EXISTS canales_cobro (
+    codigo VARCHAR(15) PRIMARY KEY,
+    nombre VARCHAR(30) NOT NULL,
+    orden INT NOT NULL DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+COMMENT ON TABLE canales_cobro IS 'Catalogo unico de canales de cobro. Referenciado por pagos/ventas/movimientos_caja.canal_cobro. Ampliar un canal nuevo = INSERT aca, no ALTER TABLE en otras tablas.';
+
+INSERT INTO canales_cobro (codigo, nombre, orden) VALUES
+  ('Efectivo', 'Efectivo', 1),
+  ('QR', 'QR', 2),
+  ('Transferencia', 'Transferencia', 3),
+  ('Tarjeta', 'Tarjeta', 4)
+ON CONFLICT (codigo) DO NOTHING;
+
+ALTER TABLE pagos ADD COLUMN IF NOT EXISTS canal_cobro VARCHAR(15) REFERENCES canales_cobro(codigo);
+ALTER TABLE ventas ADD COLUMN IF NOT EXISTS canal_cobro VARCHAR(15) REFERENCES canales_cobro(codigo);
+ALTER TABLE movimientos_caja ADD COLUMN IF NOT EXISTS canal_cobro VARCHAR(15) REFERENCES canales_cobro(codigo);
+
+CREATE INDEX IF NOT EXISTS idx_pagos_canal_cobro ON pagos(canal_cobro);
+CREATE INDEX IF NOT EXISTS idx_ventas_canal_cobro ON ventas(canal_cobro);
+CREATE INDEX IF NOT EXISTS idx_movimientos_caja_canal_cobro ON movimientos_caja(canal_cobro);
+
+COMMENT ON COLUMN pagos.canal_cobro IS 'Canal por el que se cobro esta fila de pago (Efectivo/QR/Transferencia/Tarjeta). En un pago mixto, cada fila tiene su propio canal.';
+COMMENT ON COLUMN ventas.canal_cobro IS 'Canal por el que se cobro esta venta.';
+COMMENT ON COLUMN movimientos_caja.canal_cobro IS 'Canal afectado por ESTE movimiento puntual (Ingreso o Egreso). Se deriva del id_caja que tenia el movimiento en el momento en que se creo, no del id_caja actual del pago/venta relacionado (que puede haber cambiado despues por una edicion). Un Egreso en Efectivo reduce el efectivo fisico del arqueo; un Egreso en QR/Transferencia/Tarjeta no.';
+
+-- No se agrega columna de "tipo_operacion": se deriva de
+-- movimientos_caja.origen (Pago -> Membresia, Venta -> Producto,
+-- Desembolso/Reembolso/Otro -> el movimiento correspondiente), que ya
+-- existia y ya distingue esto sin necesidad de duplicar el dato.
+
+-- Backfill de datos historicos: mapeo verificado contra un diagnostico de
+-- solo lectura (scripts/diagnostico-canales-caja.js) antes de tocar nada.
+-- Las 4 cajas existentes en ese momento eran inequivocas por descripcion:
+--   id_caja 1 "Efectivo"           -> Efectivo
+--   id_caja 2 "Qr"                 -> QR
+--   id_caja 3 "PRODUCTOS EFECTIVO" -> Efectivo
+--   id_caja 4 "PRODUCTOS QR"       -> QR
+-- Cada tabla se backfillea con SU PROPIO id_caja (no cruzado contra el
+-- id_caja actual del pago/venta relacionado): un movimiento historico
+-- puede legitimamente tener un id_caja distinto al id_caja actual de su
+-- pago/venta cuando ese pago fue editado despues (ver
+-- src/app/api/pagos/[id]/route.js, PUT: mover un pago de caja crea un
+-- Egreso "Reembolso" en la caja vieja + un Ingreso "Pago" en la caja
+-- nueva, ambos con el mismo id_referencia). Confirmado con
+-- scripts/_check-consistencia-caja.js antes de migrar: 23 movimientos de
+-- origen Pago y 1 de origen Venta muestran esa diferencia esperada, no
+-- corrupcion.
+
+-- cajas.fecha_apertura pasa de DATE a TIMESTAMP para que una jornada
+-- profesional pueda registrar la hora real de apertura, no solo el dia.
+ALTER TABLE cajas ALTER COLUMN fecha_apertura TYPE TIMESTAMP USING fecha_apertura::timestamp;
+COMMENT ON COLUMN cajas.fecha_apertura IS 'Fecha y hora de apertura de la jornada. Para las jornadas creadas antes de esta migracion, la columna era DATE (sin hora): el valor 00:00:00 en esas filas NO es una hora real de apertura, es un artefacto de la conversion de tipo -- solo la fecha es confiable para ese historico (id_caja 1-4). Ver migraciones_sistema.metadata (canal_cobro_2026_09) para la lista exacta.';
+
+-- Resultado real tras aplicar esta migracion (ver conversacion para el detalle completo):
+--   pagos:            Efectivo 143 filas / Bs 9471.00   |  QR 95 filas / Bs 6224.00
+--   ventas:           Efectivo 3 filas / Bs 4.00         |  QR 7 filas / Bs 57.00
+--   movimientos_caja: Efectivo 202 filas / Bs 12541.50   |  QR 129 filas / Bs 7824.00
+-- 0 filas sin canal_cobro en las 3 tablas. Las 4 cajas historicas siguen
+-- ABIERTA (nunca se cerraron) -- no se les toco descripcion ni estado.

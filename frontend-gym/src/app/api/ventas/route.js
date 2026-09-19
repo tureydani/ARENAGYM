@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { Venta, DetalleVenta, Usuario, Administrativo, Caja, Producto } from '@/lib/db/models';
 import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
+import { esCanalCobroValido } from '@/lib/db/canalesCobro';
 
 export async function GET(request) {
   try {
@@ -33,8 +34,13 @@ export async function POST(request) {
 
   try {
     const body = await request.json();
-    const { id_usuario, id_admin, id_caja, fecha_venta, estado, productos } = body;
+    const { id_usuario, id_admin, id_caja, fecha_venta, estado, productos, canal_cobro } = body;
     let { total } = body;
+
+    if (!esCanalCobroValido(canal_cobro)) {
+      await transaction.rollback();
+      return NextResponse.json({ error: 'Debe indicar un canal_cobro válido (Efectivo, QR, Transferencia o Tarjeta).' }, { status: 400 });
+    }
 
     // Función para obtener fecha local en formato YYYY-MM-DD
     const getFechaHoy = () => {
@@ -131,7 +137,8 @@ export async function POST(request) {
       id_caja,
       fecha_venta: fecha_venta || getFechaHoy(),
       total: total || 0,
-      estado: estado || 'Completada'
+      estado: estado || 'Completada',
+      canal_cobro
     }, { transaction });
 
     // Crear detalles de venta (con el precio recalculado arriba) y

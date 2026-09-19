@@ -52,6 +52,16 @@ const Pago = sequelize.define('Pago', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  // Canal de cobro de ESTA fila. En un pago mixto, cada fila (misma
+  // id_registro, mismo id_caja/jornada) tiene su propio canal.
+  canal_cobro: {
+    type: DataTypes.STRING(15),
+    allowNull: true,
+    references: {
+      model: 'canales_cobro',
+      key: 'codigo'
+    }
   }
 }, {
   tableName: 'pagos',

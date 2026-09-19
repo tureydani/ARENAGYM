@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import sequelize from '@/lib/db/sequelize';
 import { Venta, DetalleVenta, Usuario, Administrativo, Caja, Producto, MovimientoCaja } from '@/lib/db/models';
 import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
+import { esCanalCobroValido } from '@/lib/db/canalesCobro';
 
 export async function GET(request, { params }) {
   const { id } = await params;
@@ -47,14 +48,20 @@ export async function PUT(request, { params }) {
     // caja vieja mientras el registro apunta a la nueva.
     const oldCajaId = venta.id_caja;
     const oldTotal = parseFloat(venta.total);
+    const oldCanal = venta.canal_cobro;
     const newCajaId = body.id_caja !== undefined ? parseInt(body.id_caja) : oldCajaId;
     const newTotal = body.total !== undefined ? parseFloat(body.total) : oldTotal;
+    const newCanal = body.canal_cobro !== undefined ? body.canal_cobro : oldCanal;
 
     if (body.total !== undefined && (Number.isNaN(newTotal) || newTotal <= 0)) {
       return NextResponse.json({ error: 'El total debe ser mayor a 0' }, { status: 400 });
     }
+    if (body.canal_cobro !== undefined && !esCanalCobroValido(newCanal)) {
+      return NextResponse.json({ error: 'canal_cobro inválido (Efectivo, QR, Transferencia o Tarjeta).' }, { status: 400 });
+    }
 
     const huboCambioDeDinero = newCajaId !== oldCajaId || newTotal !== oldTotal;
+    const soloCambioDeCanal = !huboCambioDeDinero && newCanal !== oldCanal;
 
     if (huboCambioDeDinero) {
       const transaction = await sequelize.transaction();
@@ -97,7 +104,8 @@ export async function PUT(request, { params }) {
             descripcion: `Corrección: venta movida a otra caja (ID Venta: ${venta.id_venta})`,
             monto: oldTotal,
             origen: 'Reembolso',
-            id_referencia: venta.id_venta
+            id_referencia: venta.id_venta,
+            canal_cobro: oldCanal
           }, { transaction });
 
           await Caja.update(
@@ -111,7 +119,8 @@ export async function PUT(request, { params }) {
             descripcion: `Corrección: venta movida desde otra caja (ID Venta: ${venta.id_venta})`,
             monto: newTotal,
             origen: 'Venta',
-            id_referencia: venta.id_venta
+            id_referencia: venta.id_venta,
+            canal_cobro: newCanal
           }, { transaction });
         } else {
           const delta = newTotal - oldTotal;
@@ -134,7 +143,8 @@ export async function PUT(request, { params }) {
               descripcion: `Corrección de total de venta (ID Venta: ${venta.id_venta})`,
               monto: Math.abs(delta),
               origen: delta > 0 ? 'Venta' : 'Reembolso',
-              id_referencia: venta.id_venta
+              id_referencia: venta.id_venta,
+              canal_cobro: newCanal
             }, { transaction });
           }
         }
@@ -145,6 +155,17 @@ export async function PUT(request, { params }) {
         if (!transaction.finished) await transaction.rollback();
         throw error;
       }
+    } else if (soloCambioDeCanal) {
+      await sequelize.query(`
+        UPDATE movimientos_caja SET canal_cobro = :canal
+        WHERE id_movimiento = (
+          SELECT id_movimiento FROM movimientos_caja
+          WHERE origen = 'Venta' AND id_referencia = :idVenta
+          ORDER BY id_movimiento DESC
+          LIMIT 1
+        )
+      `, { replacements: { canal: newCanal, idVenta: venta.id_venta } });
+      await venta.update(body);
     } else {
       await venta.update(body);
     }
@@ -226,7 +247,8 @@ export async function DELETE(request, { params }) {
       descripcion: `Eliminación de venta de productos a ${nombreCliente} (ID Venta: ${venta.id_venta})`,
       monto: venta.total,
       origen: 'Reembolso',
-      id_referencia: venta.id_venta
+      id_referencia: venta.id_venta,
+      canal_cobro: venta.canal_cobro
     }, { transaction });
 
     // 4. Eliminar detalles de venta (hard delete ya que no tienen soft delete)

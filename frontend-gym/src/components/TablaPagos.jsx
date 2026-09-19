@@ -11,6 +11,7 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { formatearFecha, parsearFechaLocal } from '../utils/fechas';
+import { CANALES_COBRO } from '../constants/canalesCobro';
 import '../styles/tables.css';
 import '../styles/modals.css';
 
@@ -58,17 +59,18 @@ const TablaPagos = () => {
   const [formData, setFormData] = useState({
     id_registro: '',
     id_admin: '1', // Administrativo por defecto (asumiendo ID 1)
-    id_caja: '', // Debe elegirse explícitamente una caja abierta
+    id_caja: '', // Debe elegirse explícitamente una jornada abierta
+    canal_cobro: 'Efectivo',
     monto_pagado: '',
     fecha_pago: '', // Se establecerá con fecha local
     estado_pago: 'Completo'
   });
 
-  // Pago mixto: el mismo pago repartido entre dos cajas (ej. parte en
-  // efectivo, parte por Qr). Solo aplica al crear un pago nuevo -- editar
-  // uno existente sigue siendo una sola fila con una sola caja.
+  // Pago mixto: el mismo pago repartido entre dos CANALES de la misma
+  // jornada (ej. parte en efectivo, parte por QR). Solo aplica al crear un
+  // pago nuevo -- editar uno existente sigue siendo una sola fila.
   const [pagoMixto, setPagoMixto] = useState(false);
-  const [segundaCaja, setSegundaCaja] = useState({ id_caja: '', monto: '' });
+  const [segundaPata, setSegundaPata] = useState({ canal_cobro: '', monto: '' });
 
   // Función para obtener información del registro (movida antes del filtro)
   const getRegistroInfo = (idRegistro) => {
@@ -360,13 +362,14 @@ const TablaPagos = () => {
     setFormData({
       id_registro: '',
       id_admin: admin?.id_admin || '1',
-      id_caja: '', // Debe elegirse explícitamente una caja abierta
+      id_caja: '', // Debe elegirse explícitamente una jornada abierta
+      canal_cobro: 'Efectivo',
       monto_pagado: '',
       fecha_pago: fechaHoy, // Fecha local segura
       estado_pago: 'Completo'
     });
     setPagoMixto(false);
-    setSegundaCaja({ id_caja: '', monto: '' });
+    setSegundaPata({ canal_cobro: '', monto: '' });
     setShowModal(true);
   };
 
@@ -376,12 +379,13 @@ const TablaPagos = () => {
       id_registro: pago.id_registro,
       id_admin: pago.id_admin,
       id_caja: pago.id_caja,
+      canal_cobro: pago.canal_cobro || 'Efectivo',
       monto_pagado: pago.monto_pagado,
       fecha_pago: pago.fecha_pago ? pago.fecha_pago.split('T')[0] : getFechaHoyLocal(),
       estado_pago: pago.estado_pago
     });
     setPagoMixto(false);
-    setSegundaCaja({ id_caja: '', monto: '' });
+    setSegundaPata({ canal_cobro: '', monto: '' });
     setShowModal(true);
   };
 
@@ -392,26 +396,27 @@ const TablaPagos = () => {
       id_registro: '',
       id_admin: '1',
       id_caja: '',
+      canal_cobro: 'Efectivo',
       monto_pagado: '',
       fecha_pago: getFechaHoyLocal(),
       estado_pago: 'Completo'
     });
     setPagoMixto(false);
-    setSegundaCaja({ id_caja: '', monto: '' });
+    setSegundaPata({ canal_cobro: '', monto: '' });
   };
 
-  const totalPagoMixto = (parseFloat(formData.monto_pagado) || 0) + (parseFloat(segundaCaja.monto) || 0);
+  const totalPagoMixto = (parseFloat(formData.monto_pagado) || 0) + (parseFloat(segundaPata.monto) || 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (pagoMixto && !editingPago) {
-      if (!segundaCaja.id_caja || !segundaCaja.monto) {
-        alert('Completa la caja y el monto de la segunda parte del pago');
+      if (!segundaPata.canal_cobro || !segundaPata.monto) {
+        alert('Completa el canal y el monto de la segunda parte del pago');
         return;
       }
-      if (String(segundaCaja.id_caja) === String(formData.id_caja)) {
-        alert('Elige dos cajas distintas para un pago mixto');
+      if (String(segundaPata.canal_cobro) === String(formData.canal_cobro)) {
+        alert('Elige dos canales distintos para un pago mixto');
         return;
       }
     }
@@ -425,9 +430,10 @@ const TablaPagos = () => {
           id_admin: formData.id_admin,
           fecha_pago: formData.fecha_pago,
           estado_pago: formData.estado_pago,
-          cajas: [
-            { id_caja: formData.id_caja, monto: formData.monto_pagado },
-            { id_caja: segundaCaja.id_caja, monto: segundaCaja.monto }
+          id_caja: formData.id_caja,
+          patas: [
+            { canal_cobro: formData.canal_cobro, monto: formData.monto_pagado },
+            { canal_cobro: segundaPata.canal_cobro, monto: segundaPata.monto }
           ]
         });
       } else {
@@ -650,9 +656,10 @@ const TablaPagos = () => {
                             <div><span className="font-semibold text-slate-600">ID:</span> {pago.id_pago} (Registro #{pago.id_registro})</div>
                             <div><span className="font-semibold text-slate-600">Precio membresía:</span> Bs {parseFloat(registroInfo.precio).toFixed(2)}</div>
                             <div>
-                              <span className="font-semibold text-slate-600">Caja:</span>{' '}
+                              <span className="font-semibold text-slate-600">Jornada:</span>{' '}
                               {pago.Caja ? pago.Caja.descripcion || `Caja ${pago.id_caja}` : `Caja ${pago.id_caja}`}
                             </div>
+                            <div><span className="font-semibold text-slate-600">Canal:</span> {pago.canal_cobro || 'N/A'}</div>
                             <div><span className="font-semibold text-slate-600">Fecha Pago:</span> {formatearFecha(pago.fecha_pago)}</div>
                           </div>
                         </td>
@@ -827,10 +834,10 @@ const TablaPagos = () => {
                         checked={pagoMixto}
                         onChange={(e) => {
                           setPagoMixto(e.target.checked);
-                          if (!e.target.checked) setSegundaCaja({ id_caja: '', monto: '' });
+                          if (!e.target.checked) setSegundaPata({ canal_cobro: '', monto: '' });
                         }}
                       />
-                      Pago mixto (repartido entre dos cajas, ej. efectivo + Qr)
+                      Pago mixto (repartido entre dos canales de la misma jornada, ej. efectivo + QR)
                     </label>
                   )}
 
@@ -838,7 +845,7 @@ const TablaPagos = () => {
                     <div>
                       <label className="form-label modern">
                         <span className="label-icon"><IconArchiveBox /></span>
-                        {pagoMixto ? 'Caja 1' : 'Caja'}
+                        Jornada
                       </label>
                       <div className="enhanced-select">
                         <select
@@ -847,7 +854,7 @@ const TablaPagos = () => {
                           className="form-select modern"
                           required
                         >
-                          <option value="">Seleccionar caja</option>
+                          <option value="">Seleccionar jornada</option>
                           {cajas.map(caja => (
                             <option key={caja.id_caja} value={caja.id_caja} disabled={!caja.abierta}>
                               {caja.descripcion || `Caja ${caja.id_caja}`}
@@ -862,7 +869,28 @@ const TablaPagos = () => {
                     <div>
                       <label className="form-label modern">
                         <span className="label-icon"><IconBanknotes /></span>
-                        {pagoMixto ? 'Monto en Caja 1' : 'Monto Pagado'}
+                        {pagoMixto ? 'Canal 1' : 'Canal de cobro'}
+                      </label>
+                      <div className="enhanced-select">
+                        <select
+                          value={formData.canal_cobro}
+                          onChange={(e) => setFormData({...formData, canal_cobro: e.target.value})}
+                          className="form-select modern"
+                          required
+                        >
+                          <option value="">Seleccionar canal</option>
+                          {CANALES_COBRO.map(canal => (
+                            <option key={canal.codigo} value={canal.codigo}>{canal.icono} {canal.nombre}</option>
+                          ))}
+                        </select>
+                        <span className="select-arrow">▼</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label modern">
+                        <span className="label-icon"><IconBanknotes /></span>
+                        {pagoMixto ? 'Monto en Canal 1' : 'Monto Pagado'}
                         {formData.id_registro && formData.monto_pagado && (
                           <span style={{
                             fontSize: '12px',
@@ -896,23 +924,20 @@ const TablaPagos = () => {
                         <div>
                           <label className="form-label modern">
                             <span className="label-icon"><IconArchiveBox /></span>
-                            Caja 2
+                            Canal 2
                           </label>
                           <div className="enhanced-select">
                             <select
-                              value={segundaCaja.id_caja}
-                              onChange={(e) => setSegundaCaja({...segundaCaja, id_caja: e.target.value})}
+                              value={segundaPata.canal_cobro}
+                              onChange={(e) => setSegundaPata({...segundaPata, canal_cobro: e.target.value})}
                               className="form-select modern"
                               required={pagoMixto}
                             >
-                              <option value="">Seleccionar caja</option>
-                              {cajas
-                                .filter(caja => String(caja.id_caja) !== String(formData.id_caja))
-                                .map(caja => (
-                                  <option key={caja.id_caja} value={caja.id_caja} disabled={!caja.abierta}>
-                                    {caja.descripcion || `Caja ${caja.id_caja}`}
-                                    {!caja.abierta ? ' (cerrada)' : ''}
-                                  </option>
+                              <option value="">Seleccionar canal</option>
+                              {CANALES_COBRO
+                                .filter(canal => canal.codigo !== formData.canal_cobro)
+                                .map(canal => (
+                                  <option key={canal.codigo} value={canal.codigo}>{canal.icono} {canal.nombre}</option>
                                 ))}
                             </select>
                             <span className="select-arrow">▼</span>
@@ -922,7 +947,7 @@ const TablaPagos = () => {
                         <div>
                           <label className="form-label modern">
                             <span className="label-icon"><IconBanknotes /></span>
-                            Monto en Caja 2
+                            Monto en Canal 2
                           </label>
                           <div className="input-wrapper currency">
                             <span className="currency-symbol">Bs.</span>
@@ -930,8 +955,8 @@ const TablaPagos = () => {
                               type="number"
                               step="0.01"
                               min="0"
-                              value={segundaCaja.monto}
-                              onChange={(e) => setSegundaCaja({...segundaCaja, monto: e.target.value})}
+                              value={segundaPata.monto}
+                              onChange={(e) => setSegundaPata({...segundaPata, monto: e.target.value})}
                               className="form-input modern currency-input"
                               placeholder="0.00"
                               required={pagoMixto}
@@ -996,8 +1021,8 @@ const TablaPagos = () => {
                     type="submit" 
                     className="btn-primary modern-btn"
                     disabled={
-                      !formData.id_registro || !formData.monto_pagado || !formData.id_caja ||
-                      (pagoMixto && !editingPago && (!segundaCaja.id_caja || !segundaCaja.monto))
+                      !formData.id_registro || !formData.monto_pagado || !formData.id_caja || !formData.canal_cobro ||
+                      (pagoMixto && !editingPago && (!segundaPata.canal_cobro || !segundaPata.monto))
                     }
                   >
                     <span className="btn-icon">{editingPago ? <IconPencil /> : <IconSave />}</span>
