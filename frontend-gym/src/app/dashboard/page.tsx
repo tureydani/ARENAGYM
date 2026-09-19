@@ -9,6 +9,7 @@ import TablaRegistroMembresias from '../../components/TablaRegistroMembresias';
 import TablaPagos from '../../components/TablaPagos';
 import TablaProductos from '../../components/TablaProductos';
 import TablaCajas from '../../components/TablaCajas';
+import TablaFinanzas from '../../components/TablaFinanzas';
 import TablaAsistencias from '../../components/TablaAsistencias';
 import '../../styles/dashboard.css';
 
@@ -63,6 +64,13 @@ const IconArchiveBox = () => (
   </svg>
 );
 
+const IconWallet = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 100 6h3.75A2.25 2.25 0 0021 13.5v-1.5z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 6.75A2.25 2.25 0 015.25 4.5h13.5A2.25 2.25 0 0121 6.75V9m0 9v2.25A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V6.75" />
+  </svg>
+);
+
 const IconCreditCard = () => (
   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3M3.75 6h16.5a1.5 1.5 0 011.5 1.5v9a1.5 1.5 0 01-1.5 1.5H3.75a1.5 1.5 0 01-1.5-1.5v-9a1.5 1.5 0 011.5-1.5z" />
@@ -107,7 +115,7 @@ export default function Dashboard() {
 
   const handleLogoClick = () => {
     setShowAdminPanels(!showAdminPanels);
-    if (showAdminPanels && (activeTab === 'administrativos' || activeTab === 'membresias' || activeTab === 'productos' || activeTab === 'cajas')) {
+    if (showAdminPanels && (activeTab === 'administrativos' || activeTab === 'membresias' || activeTab === 'productos' || activeTab === 'cajas' || activeTab === 'finanzas')) {
       setActiveTab('registros');
     }
   };
@@ -146,7 +154,8 @@ export default function Dashboard() {
       { id: 'membresias', name: 'Membresías', icon: <IconFlag />, description: 'Tipos de membresías' },
       { id: 'administrativos', name: 'Administrativos', icon: <IconIdentification />, description: 'Administradores del sistema' },
       { id: 'productos', name: 'Productos', icon: <IconArchiveBox />, description: 'Gestión de productos' },
-      { id: 'cajas', name: 'Cajas', icon: <IconCreditCard />, description: 'Control de cajas registradoras' }
+      { id: 'cajas', name: 'Cajas', icon: <IconCreditCard />, description: 'Control operativo de cobros por jornada' },
+      { id: 'finanzas', name: 'Finanzas', icon: <IconWallet />, description: 'Control de fondos y movimientos de dinero' }
     ] : [])
   ];
 
@@ -168,6 +177,8 @@ export default function Dashboard() {
         return <TablaProductos />;
       case 'cajas':
         return <TablaCajas />;
+      case 'finanzas':
+        return <TablaFinanzas />;
       default:
         return <TablaRegistroMembresias />;
     }
@@ -296,7 +307,7 @@ export default function Dashboard() {
                   <div className="text-left flex-1 min-w-0">
                     <div className="flex items-center gap-1 sm:gap-2 mb-0 sm:mb-1">
                       <span className="font-semibold truncate text-xs sm:text-sm">{tab.name}</span>
-                      {(tab.id === 'administrativos' || tab.id === 'membresias' || tab.id === 'productos' || tab.id === 'cajas') && (
+                      {(tab.id === 'administrativos' || tab.id === 'membresias' || tab.id === 'productos' || tab.id === 'cajas' || tab.id === 'finanzas') && (
                         <span className="text-xs bg-indigo-600 text-white px-1 sm:px-2 py-0.5 sm:py-1 rounded-md font-bold hidden sm:inline">ADMIN</span>
                       )}
                     </div>

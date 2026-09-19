@@ -33,6 +33,18 @@ const Administrativo = sequelize.define('Administrativo', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  // Introducido para el módulo Finanzas (api/finanzas/*), que es el único
+  // que hoy valida esto en el backend. El resto del sistema sigue sin
+  // distinguir por rol -- no se retrofitea para no cambiar comportamiento
+  // ya probado en otros módulos.
+  rol: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'ADMIN',
+    validate: {
+      isIn: [['SUPER_ADMIN', 'ADMIN', 'RECEPCIONISTA', 'ENTRENADOR']]
+    }
   }
 }, {
   tableName: 'administrativos',

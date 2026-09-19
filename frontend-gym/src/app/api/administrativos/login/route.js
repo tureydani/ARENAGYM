@@ -40,6 +40,7 @@ export async function POST(request) {
         nombre: admin.nombre,
         apellido: admin.apellido,
         usuario: admin.usuario,
+        rol: admin.rol,
       },
     });
   } catch (error) {

@@ -14,6 +14,8 @@ const AuditoriaAsistencia = require('./auditoriaAsistencia');
 const Notificacion = require('./notificacion');
 const Meta = require('./meta');
 const Progreso = require('./progreso');
+const Fondo = require('./fondo');
+const MovimientoFinanciero = require('./movimientoFinanciero');
 
 // Definir todas las relaciones
 
@@ -227,6 +229,38 @@ Usuario.hasMany(Progreso, {
   foreignKey: 'id_usuario'
 });
 
+// Fondo - MovimientoFinanciero
+MovimientoFinanciero.belongsTo(Fondo, {
+  foreignKey: 'id_fondo',
+  as: 'Fondo'
+});
+Fondo.hasMany(MovimientoFinanciero, {
+  foreignKey: 'id_fondo',
+  as: 'Movimientos'
+});
+
+// MovimientoFinanciero - Administrativo (quién lo registró / quién anuló)
+MovimientoFinanciero.belongsTo(Administrativo, {
+  foreignKey: 'id_admin',
+  as: 'Administrativo'
+});
+MovimientoFinanciero.belongsTo(Administrativo, {
+  foreignKey: 'id_admin_anulacion',
+  as: 'AdminAnulacion'
+});
+
+// MovimientoFinanciero - Caja (jornada de origen, cuando origen=CIERRE_JORNADA)
+MovimientoFinanciero.belongsTo(Caja, {
+  foreignKey: 'id_jornada',
+  as: 'Jornada'
+});
+
+// Fondo - Administrativo (quién lo creó)
+Fondo.belongsTo(Administrativo, {
+  foreignKey: 'id_admin_creacion',
+  as: 'AdminCreacion'
+});
+
 module.exports = {
   Usuario,
   Administrativo,
@@ -242,5 +276,7 @@ module.exports = {
   AuditoriaAsistencia,
   Notificacion,
   Meta,
-  Progreso
+  Progreso,
+  Fondo,
+  MovimientoFinanciero
 };

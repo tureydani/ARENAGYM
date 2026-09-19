@@ -23,6 +23,7 @@ export async function firmarTokenAdmin(admin) {
     usuario: admin.usuario,
     nombre: admin.nombre,
     apellido: admin.apellido,
+    rol: admin.rol,
   })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

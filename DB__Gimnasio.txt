@@ -1242,3 +1242,151 @@ COMMENT ON COLUMN cajas.fecha_apertura IS 'Fecha y hora de apertura de la jornad
 --   movimientos_caja: Efectivo 202 filas / Bs 12541.50   |  QR 129 filas / Bs 7824.00
 -- 0 filas sin canal_cobro en las 3 tablas. Las 4 cajas historicas siguen
 -- ABIERTA (nunca se cerraron) -- no se les toco descripcion ni estado.
+
+-- ==========================================================
+-- TRANSICION REAL A JORNADAS: CIERRE DE LAS 4 CAJAS HISTORICAS
+-- Y APERTURA DE "RECEPCION" (2026-09)
+-- ==========================================================
+-- Ejecutado via POST /api/cajas/[id]/cerrar real (no SQL directo) sobre
+-- las 4 cajas historicas, con el efectivo realmente contado que confirmo
+-- el usuario. Las diferencias preexistentes (+Bs150 en "Efectivo",
+-- -Bs0.50 en "PRODUCTOS EFECTIVO") quedaron registradas en `diferencia`,
+-- NUNCA corregidas -- ver el fix de mas abajo, que es la razon por la que
+-- esto quedo bien.
+--
+-- FIX (antes de cerrar ninguna): cajas/[id]/cerrar/route.js sobreescribia
+-- saldo_actual con el saldo recalculado desde movimientos_caja al cerrar.
+-- Eso habria "corregido" silenciosamente el +150/-0.50. Se quito esa
+-- linea: el cierre ya NO toca saldo_actual, solo escribe fecha_cierre/
+-- saldo_esperado/saldo_contado/diferencia/estado/id_admin_cierre.
+--
+-- Resultado (verificado 1 a 1 contra un snapshot pre-cierre; 238 pagos +
+-- 10 ventas + 331 movimientos_caja identicos antes/despues):
+--   #1 Efectivo:           CERRADA, saldo_actual 8080.00 (sin tocar), esperado 7930.00, contado 8080.00, diferencia +150.00
+--   #2 Qr:                 CERRADA, saldo_actual 5160.00 (sin tocar), esperado 0.00,    contado 0.00,    diferencia 0.00
+--   #3 PRODUCTOS EFECTIVO: CERRADA, saldo_actual 88.90 (sin tocar),   esperado 89.40,   contado 88.90,   diferencia -0.50
+--   #4 PRODUCTOS QR:       CERRADA, saldo_actual 8.00 (sin tocar),    esperado 0.00,    contado 0.00,    diferencia 0.00
+--
+-- Nueva jornada creada via POST /api/cajas/abrir: id_caja 16,
+-- descripcion "Recepcion", saldo_inicial 200.00 (monto explicito, NO
+-- suma de los saldos historicos), id_admin_apertura del admin real de la
+-- sesion. Las cajas 1-4 se conservan indefinidamente como historial/
+-- auditoria -- no se elimino ni se reutilizo ningun id_caja.
+
+-- ==========================================================
+-- MODULO FINANZAS: FONDOS Y MOVIMIENTOS FINANCIEROS (2026-09)
+-- ==========================================================
+-- Responde una pregunta que Jornadas/Cajas NO responde: "?donde esta el
+-- dinero de la empresa ahora?" (Jornadas responde "?que se cobro durante
+-- este periodo?"). Son conceptos separados a proposito: un fondo (caja
+-- fisica, banco, cuenta QR...) persiste ENTRE jornadas; una jornada es un
+-- periodo de cobro que se cierra y queda historico.
+--
+-- Integracion con Jornadas sin duplicar dinero: NO hay ningun trigger ni
+-- automatismo que cree un movimiento_financiero a partir de un pago/venta/
+-- cierre de jornada. El vinculo es una decision explicita posterior del
+-- admin (POST /api/finanzas/movimientos con id_jornada + origen=
+-- CIERRE_JORNADA), que solo AGREGA una fila en movimientos_financieros
+-- con una referencia a la jornada -- nunca toca movimientos_caja. El
+-- monto de la jornada sigue viviendo unicamente en movimientos_caja; el
+-- movimiento financiero es la respuesta a "?que se hizo despues con ese
+-- efectivo contado?", no una copia del mismo dato. Probado explicitamente
+-- (ver test-finanzas.js, caso 14): vincular una jornada a un movimiento
+-- financiero no crea ninguna fila nueva en movimientos_caja.
+
+-- Roles: se agrega `rol` a administrativos. Es el UNICO lugar del sistema
+-- que hoy lo valida en el backend (src/lib/auth/permisosFinanzas.js) --
+-- el resto de endpoints (pagos, ventas, cajas, etc.) sigue aceptando
+-- cualquier admin autenticado, sin cambios, para no alterar comportamiento
+-- ya probado fuera de Finanzas.
+ALTER TABLE administrativos ADD COLUMN IF NOT EXISTS rol VARCHAR(20) NOT NULL DEFAULT 'ADMIN';
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_administrativos_rol') THEN
+    ALTER TABLE administrativos ADD CONSTRAINT chk_administrativos_rol
+      CHECK (rol IN ('SUPER_ADMIN', 'ADMIN', 'RECEPCIONISTA', 'ENTRENADOR'));
+  END IF;
+END $$;
+-- Los 3 administrativos existentes al migrar quedaron todos en 'ADMIN'
+-- (default): nadie se adivino como SUPER_ADMIN/RECEPCIONISTA/ENTRENADOR.
+-- El JWT de sesion ahora incluye `rol` (src/lib/auth/adminAuth.js) -- una
+-- sesion iniciada ANTES de esta migracion no lo tiene y Finanzas la trata
+-- como sin permiso hasta volver a iniciar sesion.
+
+CREATE TABLE IF NOT EXISTS tipos_fondo (
+    codigo VARCHAR(30) PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,
+    orden INT NOT NULL DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+-- Seed: CAJA_FISICA, BANCO, CUENTA_QR, TARJETA_POR_COBRAR, OTRO.
+
+CREATE TABLE IF NOT EXISTS categorias_financieras (
+    codigo VARCHAR(40) PRIMARY KEY,
+    nombre VARCHAR(60) NOT NULL,
+    tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('INGRESO', 'EGRESO', 'AMBOS')),
+    orden INT NOT NULL DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+-- Seed: SALDO_INICIAL/APORTE/COBRO/RECUPERACION/OTRO_INGRESO/CIERRE_JORNADA
+-- (INGRESO); PROVEEDOR/COMPRA/SERVICIOS/MANTENIMIENTO/RETIRO_PROPIETARIO/
+-- GASTO_OPERATIVO/OTRO_EGRESO (EGRESO); TRANSFERENCIA/ANULACION (AMBOS --
+-- existen del lado ingreso y egreso segun la fila).
+
+CREATE TABLE IF NOT EXISTS fondos (
+    id_fondo SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    tipo_fondo VARCHAR(30) NOT NULL REFERENCES tipos_fondo(codigo),
+    descripcion TEXT,
+    saldo_actual DECIMAL(12,2) NOT NULL DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_admin_creacion INT REFERENCES administrativos(id_admin)
+);
+-- saldo_actual: mantenido incrementalmente por movimientos_financieros
+-- (igual patron que cajas.saldo_actual) -- nunca se escribe directo desde
+-- un PUT del frontend (el endpoint lo rechaza explicitamente). CHECK
+-- saldo_actual >= 0 (sin sobregiro). Indice unico parcial en nombre WHERE
+-- activo=true (mismo patron que cajas para "no reabrir el mismo nombre").
+
+CREATE TABLE IF NOT EXISTS movimientos_financieros (
+    id_movimiento SERIAL PRIMARY KEY,
+    id_fondo INT NOT NULL REFERENCES fondos(id_fondo),
+    tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('INGRESO', 'EGRESO')),
+    categoria VARCHAR(40) NOT NULL REFERENCES categorias_financieras(codigo),
+    descripcion TEXT,
+    monto DECIMAL(12,2) NOT NULL CHECK (monto > 0),
+    fecha_movimiento TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id_admin INT NOT NULL REFERENCES administrativos(id_admin),
+    origen VARCHAR(20) NOT NULL CHECK (origen IN ('SALDO_INICIAL', 'MANUAL', 'TRANSFERENCIA', 'CIERRE_JORNADA', 'ANULACION')),
+    id_referencia INT,
+    id_jornada INT REFERENCES cajas(id_caja),
+    id_transferencia INT,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    motivo_anulacion TEXT,
+    fecha_anulacion TIMESTAMP,
+    id_admin_anulacion INT REFERENCES administrativos(id_admin)
+);
+-- Transferencia = 2 filas (EGRESO en origen, INGRESO en destino) creadas
+-- en una sola transaccion, unidas por id_transferencia = id_movimiento de
+-- la fila EGRESO. Anular = NUNCA se borra ni se reescribe el monto
+-- original: se marca activo=false (motivo_anulacion/fecha_anulacion/
+-- id_admin_anulacion) y se crea una fila nueva de signo contrario
+-- (origen=ANULACION, id_referencia=movimiento original) que es la que
+-- realmente corrige saldo_actual -- mismo patron que ya usa el sistema
+-- para pagos/ventas/movimientos_caja.
+
+-- Endpoints (todos bajo /api/finanzas/*, todos exigen rol SUPER_ADMIN/
+-- ADMIN para escribir y SUPER_ADMIN/ADMIN/RECEPCIONISTA para leer):
+--   GET/POST   /api/finanzas/fondos
+--   GET/PUT    /api/finanzas/fondos/[id]              (PUT rechaza saldo_actual)
+--   GET/POST   /api/finanzas/movimientos               (POST solo INGRESO/EGRESO sueltos, no transferencias)
+--   POST       /api/finanzas/movimientos/[id]/anular
+--   POST       /api/finanzas/transferencias             (transaccional, ordena locks por id para evitar deadlock)
+--   GET        /api/finanzas/categorias
+--   GET        /api/finanzas/resumen                    (excluye TRANSFERENCIA de ingresos/egresos del periodo)
+--
+-- Probado con scripts/test-finanzas.js (HTTP real contra servidor de
+-- prueba aislado, datos TEST_ limpiados despues): 33/33 casos, incluyendo
+-- seguridad por rol, transferencia atomica con rollback ante fallo,
+-- anulacion, y la prueba critica de no-duplicacion con Jornadas.
