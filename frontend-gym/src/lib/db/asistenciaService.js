@@ -550,8 +550,21 @@ async function clientesBajaFrecuencia(umbralDias = 7) {
   const limiteFecha = new Date();
   limiteFecha.setDate(limiteFecha.getDate() - umbralDias);
 
-  const resultado = [];
+  // Un cliente puede tener más de un registro_membresias vigente a la vez
+  // (ej. dos membresías activas que se superponen): se deduplica por
+  // id_usuario para que aparezca una sola vez en el listado, quedándose
+  // con la membresía vigente que vence más lejos (la más representativa
+  // de "hasta cuándo puede seguir viniendo").
+  const porUsuario = new Map();
   for (const registro of membresiasVigentes) {
+    const actual = porUsuario.get(registro.id_usuario);
+    if (!actual || (registro.fecha_fin ?? '9999-12-31') > (actual.fecha_fin ?? '9999-12-31')) {
+      porUsuario.set(registro.id_usuario, registro);
+    }
+  }
+
+  const resultado = [];
+  for (const registro of porUsuario.values()) {
     const ultima = await Asistencia.findOne({
       where: { id_usuario: registro.id_usuario },
       order: [['fecha_hora', 'DESC']]
