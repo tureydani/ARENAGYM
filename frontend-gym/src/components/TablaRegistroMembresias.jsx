@@ -336,6 +336,7 @@ export default function TablaRegistroMembresias() {
     registrarPago: true,
     montoPago: '',
     estadoPago: 'Completo',
+    fechaPago: '',
     id_caja: ''
   });
 
@@ -537,6 +538,7 @@ export default function TablaRegistroMembresias() {
                 id_registro: registroResponse.data.id_registro,
                 id_admin: admin.id_admin,
                 estado_pago: formData.estadoPago,
+                fecha_pago: formData.fechaPago || getFechaHoyLocal(),
                 cajas: [
                   { id_caja: formData.id_caja, monto: formData.montoPago },
                   { id_caja: segundaCajaPago.id_caja, monto: segundaCajaPago.monto }
@@ -548,7 +550,8 @@ export default function TablaRegistroMembresias() {
                 id_admin: admin.id_admin,
                 id_caja: formData.id_caja,
                 monto_pagado: parseFloat(formData.montoPago),
-                estado_pago: formData.estadoPago
+                estado_pago: formData.estadoPago,
+                fecha_pago: formData.fechaPago || getFechaHoyLocal()
               });
             }
             mensajePago = ' y pago';
@@ -720,6 +723,7 @@ export default function TablaRegistroMembresias() {
       registrarPago: true,
       montoPago: '',
       estadoPago: 'Completo',
+      fechaPago: getFechaHoyLocal(),
       id_caja: getCajaPorDefecto(cajas)
     });
     setPagoMixto(false);
@@ -759,6 +763,7 @@ export default function TablaRegistroMembresias() {
       registrarPago: false,
       montoPago: '',
       estadoPago: 'Completo',
+      fechaPago: getFechaHoyLocal(),
       id_caja: getCajaPorDefecto(cajas)
     });
     setPagoMixto(false);
@@ -1037,7 +1042,7 @@ export default function TablaRegistroMembresias() {
               <tr>
                 <th className="w-8"></th>
                 <th>Usuario y Membresía</th>
-                <th>Estado</th>
+                <th>Fecha Inicio / Fin</th>
                 <th>Tiempo Restante</th>
                 <th>Acciones</th>
               </tr>
@@ -1083,14 +1088,12 @@ export default function TablaRegistroMembresias() {
                           </div>
                         </td>
                         <td>
-                          <span className={`status-badge ${
-                            estado === 'Activo' ? 'status-active' :
-                            estado === 'Por vencer' ? 'status-pending' :
-                            estado === 'Vencido' ? 'status-inactive' :
-                            'status-inactive'
-                          }`}>
-                            {estado}
-                          </span>
+                          <div className="text-sm text-slate-700">
+                            Inicio: {formatFecha(registro.fecha_inicio)}
+                          </div>
+                          <div className="text-sm text-slate-500">
+                            Fin: {formatFecha(registro.fecha_fin)}
+                          </div>
                         </td>
                         <td>
                           <div className={`font-medium ${
@@ -1133,8 +1136,15 @@ export default function TablaRegistroMembresias() {
                                 }
                               </div>
                               <div>
-                                <span className="font-semibold text-slate-600">Fechas:</span>{' '}
-                                Inicio {formatFecha(registro.fecha_inicio)} · Fin {formatFecha(registro.fecha_fin)}
+                                <span className="font-semibold text-slate-600">Estado:</span>{' '}
+                                <span className={`status-badge ${
+                                  estado === 'Activo' ? 'status-active' :
+                                  estado === 'Por vencer' ? 'status-pending' :
+                                  estado === 'Vencido' ? 'status-inactive' :
+                                  'status-inactive'
+                                }`}>
+                                  {estado}
+                                </span>
                               </div>
                             </div>
                           </td>
@@ -1394,6 +1404,17 @@ export default function TablaRegistroMembresias() {
                             <option value="Parcial">Parcial</option>
                             <option value="Pendiente">Pendiente</option>
                           </select>
+                        </div>
+
+                        <div className="form-group">
+                          <label className="form-label">Fecha del Pago</label>
+                          <input
+                            type="date"
+                            value={formData.fechaPago || getFechaHoyLocal()}
+                            onChange={(e) => setFormData({...formData, fechaPago: e.target.value})}
+                            className="form-input"
+                            required={formData.registrarPago}
+                          />
                         </div>
                       </div>
                     )}
