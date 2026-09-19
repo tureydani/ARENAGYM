@@ -85,17 +85,16 @@
   color: #FFFFFF;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.3);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 2px rgba(14, 165, 233, 0.2);
 }
 
 .btn-info:hover {
   background: #0369A1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 3px 8px rgba(14, 165, 233, 0.3);
 }
 
 /* Responsive para pantallas pequeñas */
@@ -1058,27 +1057,25 @@
 }
 
 .btn-success {
-  background: #059669;
+  background: #10B981;
   color: #FFFFFF;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
 }
 
 .btn-success:hover {
-  background: #047857;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  background: #059669;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
 }
 
 .btn-success:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 .btn-danger {
@@ -1205,27 +1202,25 @@
 }
 
 .btn-success {
-  background: #059669;
+  background: #10B981;
   color: #FFFFFF;
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
 }
 
 .btn-success:hover {
-  background: #047857;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  background: #059669;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);
 }
 
 .btn-success:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 /* Ajuste para modal más grande en ventas */

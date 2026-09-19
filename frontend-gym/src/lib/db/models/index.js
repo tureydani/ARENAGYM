@@ -10,6 +10,7 @@ const Venta = require('./venta');
 const DetalleVenta = require('./detalleVenta');
 const MovimientoCaja = require('./movimientoCaja');
 const Asistencia = require('./asistencia');
+const AuditoriaAsistencia = require('./auditoriaAsistencia');
 const Notificacion = require('./notificacion');
 const Meta = require('./meta');
 const Progreso = require('./progreso');
@@ -125,6 +126,16 @@ Producto.hasMany(DetalleVenta, {
   foreignKey: 'id_producto'
 });
 
+// Caja - Administrativo (apertura / cierre)
+Caja.belongsTo(Administrativo, {
+  foreignKey: 'id_admin_apertura',
+  as: 'AdminApertura'
+});
+Caja.belongsTo(Administrativo, {
+  foreignKey: 'id_admin_cierre',
+  as: 'AdminCierre'
+});
+
 // MovimientoCaja - Caja
 MovimientoCaja.belongsTo(Caja, {
   foreignKey: 'id_caja',
@@ -159,6 +170,34 @@ Asistencia.belongsTo(RegistroMembresia, {
 });
 RegistroMembresia.hasMany(Asistencia, {
   foreignKey: 'id_registro'
+});
+
+// Asistencia - Administrativo (quién la registró/corrigió)
+Asistencia.belongsTo(Administrativo, {
+  foreignKey: 'id_admin',
+  as: 'Administrativo'
+});
+Administrativo.hasMany(Asistencia, {
+  foreignKey: 'id_admin'
+});
+
+// AuditoriaAsistencia - Asistencia
+AuditoriaAsistencia.belongsTo(Asistencia, {
+  foreignKey: 'id_asistencia',
+  as: 'Asistencia'
+});
+Asistencia.hasMany(AuditoriaAsistencia, {
+  foreignKey: 'id_asistencia',
+  as: 'Auditorias'
+});
+
+// AuditoriaAsistencia - Administrativo
+AuditoriaAsistencia.belongsTo(Administrativo, {
+  foreignKey: 'id_admin',
+  as: 'Administrativo'
+});
+Administrativo.hasMany(AuditoriaAsistencia, {
+  foreignKey: 'id_admin'
 });
 
 // Notificacion - Usuario
@@ -200,6 +239,7 @@ module.exports = {
   DetalleVenta,
   MovimientoCaja,
   Asistencia,
+  AuditoriaAsistencia,
   Notificacion,
   Meta,
   Progreso

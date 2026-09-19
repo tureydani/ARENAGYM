@@ -27,6 +27,38 @@ const Caja = sequelize.define('Caja', {
   abierta: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  // Campos de apertura/cierre formal con arqueo. `estado` es la fuente de
+  // verdad nueva; `abierta` se mantiene sincronizada por el código (no se
+  // elimina para no romper lecturas existentes).
+  fecha_cierre: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  saldo_esperado: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  saldo_contado: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  diferencia: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true
+  },
+  id_admin_apertura: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  id_admin_cierre: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  estado: {
+    type: DataTypes.STRING(20),
+    allowNull: false,
+    defaultValue: 'ABIERTA'
   }
 }, {
   tableName: 'cajas',

@@ -37,3 +37,42 @@ export function formatearFecha(fecha, opciones = { year: 'numeric', month: 'shor
   if (!local) return 'N/A';
   return local.toLocaleDateString('es-ES', opciones);
 }
+
+// --- Ayudantes para columnas TIMESTAMP (fecha_hora), como
+// asistencias.fecha_hora: a diferencia de las columnas DATE de arriba,
+// estas sí tienen una hora real y hay que mostrarlas en hora de Bolivia
+// (no en la zona horaria del navegador de quien esté mirando el panel).
+
+export function formatearFechaHoraBolivia(fechaHora) {
+  if (!fechaHora) return 'N/A';
+  const fecha = new Date(fechaHora);
+  if (Number.isNaN(fecha.getTime())) return 'N/A';
+  return fecha.toLocaleString('es-BO', {
+    timeZone: 'America/La_Paz',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+export function formatearSoloFechaBolivia(fechaHora) {
+  if (!fechaHora) return 'N/A';
+  const fecha = new Date(fechaHora);
+  if (Number.isNaN(fecha.getTime())) return 'N/A';
+  return fecha.toLocaleDateString('es-BO', { timeZone: 'America/La_Paz', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+export function formatearSoloHoraBolivia(fechaHora) {
+  if (!fechaHora) return 'N/A';
+  const fecha = new Date(fechaHora);
+  if (Number.isNaN(fecha.getTime())) return 'N/A';
+  return fecha.toLocaleTimeString('es-BO', { timeZone: 'America/La_Paz', hour: '2-digit', minute: '2-digit' });
+}
+
+// "Hoy" en Bolivia como YYYY-MM-DD, para valores por defecto de filtros de
+// fecha en el frontend (mismo criterio que fechaHoyBolivia() en backend).
+export function hoyBoliviaISO() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/La_Paz' }).format(new Date());
+}

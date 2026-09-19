@@ -349,7 +349,7 @@ const TablaVentas = () => {
     setFormData({
       id_usuario: '',
       id_admin: '',
-      id_caja: '1',
+      id_caja: '',
       fecha_venta: getFechaHoyLocal(),
       total: '',
       estado: 'Completada'
@@ -916,9 +916,9 @@ const TablaVentas = () => {
                         >
                           <option value="">Seleccionar caja</option>
                           {cajas.map(caja => (
-                            <option key={caja.id_caja} value={caja.id_caja}>
+                            <option key={caja.id_caja} value={caja.id_caja} disabled={!caja.abierta}>
                               {caja.descripcion || `Caja ${caja.id_caja}`}
-                              {caja.id_caja === 1 && ' (Principal)'}
+                              {!caja.abierta ? ' (cerrada)' : ''}
                             </option>
                           ))}
                         </select>

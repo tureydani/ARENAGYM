@@ -44,12 +44,29 @@ export async function POST(request) {
       return NextResponse.json({ error: 'El monto pagado debe ser mayor a 0' }, { status: 400 });
     }
 
+    // El backend decide con qué caja se queda esto: ya no se asume que
+    // "id_caja = 1" es siempre la caja vigente. La caja referenciada debe
+    // existir y estar abierta; si no se manda id_caja, no hay dónde
+    // registrar el pago.
+    if (!id_caja) {
+      return NextResponse.json({ error: 'Debe indicar una caja para registrar el pago.' }, { status: 400 });
+    }
+    const cajaDestino = await Caja.findByPk(id_caja);
+    if (!cajaDestino) {
+      return NextResponse.json({ error: 'La caja seleccionada no existe.' }, { status: 404 });
+    }
+    if (cajaDestino.estado === 'CERRADA') {
+      return NextResponse.json({
+        error: `No existe una caja abierta ("${cajaDestino.descripcion}" está cerrada). Debe abrir una caja antes de registrar pagos.`
+      }, { status: 400 });
+    }
+
     const nuevoPago = await Pago.create({
       id_registro,
       monto_pagado,
       fecha_pago,
       id_admin: id_admin || 1,
-      id_caja: id_caja || 1,
+      id_caja,
       estado_pago: estado_pago || 'Pendiente'
     });
 

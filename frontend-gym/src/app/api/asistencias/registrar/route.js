@@ -1,26 +1,22 @@
 import { NextResponse } from 'next/server';
-import { Op } from 'sequelize';
-import { Asistencia, Usuario, RegistroMembresia } from '@/lib/db/models';
 import { verificarTokenAsistencia } from '@/lib/auth/clienteAuth';
-import { fechaHoyBolivia, claveDiaBolivia } from '@/lib/fecha';
-
-// Convierte "YYYY-MM-DD" a "DD/MM/YYYY" sin pasar por Date/timezone.
-function formatearFechaLegible(fechaISO) {
-  const [anio, mes, dia] = fechaISO.split('-');
-  return `${dia}/${mes}/${anio}`;
-}
+import { registrarAsistencia } from '@/lib/db/asistenciaService';
 
 // Usado desde el panel administrativo: registra la asistencia de un
 // cliente, ya sea escaneando su código QR (qrToken) o marcándola
-// manualmente eligiéndolo en el sistema (id_usuario).
+// manualmente eligiéndolo en el sistema (id_usuario). Ambas vías pasan por
+// el mismo servicio (asistenciaService.registrarAsistencia); solo cambia
+// el valor de "metodo" que se guarda.
 export async function POST(request) {
   try {
-    const { qrToken, id_usuario } = await request.json();
+    const { qrToken, id_usuario, id_admin, observacion } = await request.json();
 
     let idUsuario = id_usuario;
+    let metodo = 'Manual';
 
     if (qrToken) {
       idUsuario = verificarTokenAsistencia(qrToken);
+      metodo = 'QR';
       if (!idUsuario) {
         return NextResponse.json({
           error: 'Código QR inválido o expirado. Pide al cliente que lo genere de nuevo.'
@@ -32,118 +28,40 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Falta el código QR o el usuario' }, { status: 400 });
     }
 
-    const usuario = await Usuario.findOne({ where: { id_usuario: idUsuario, activo: true } });
-    if (!usuario) {
-      return NextResponse.json({ error: 'Cliente no encontrado o inactivo' }, { status: 404 });
+    if (!id_admin) {
+      return NextResponse.json({ error: 'Falta el administrativo responsable del registro' }, { status: 400 });
     }
 
-    // Misma definición de "membresía activa" que ya usa el resto del panel
-    // (registro activo=true y fecha_fin todavía no pasó, o sin fecha_fin):
-    // no se registra la asistencia de un cliente con la membresía vencida.
-    const hoy = fechaHoyBolivia();
-    const membresiaVigente = await RegistroMembresia.findOne({
-      where: {
-        id_usuario: idUsuario,
-        activo: true,
-        [Op.or]: [
-          { fecha_fin: null },
-          { fecha_fin: { [Op.gte]: hoy } }
-        ]
-      }
-    });
+    const resultado = await registrarAsistencia({ id_usuario: idUsuario, metodo, id_admin, observacion });
 
-    if (!membresiaVigente) {
-      const ultimaMembresia = await RegistroMembresia.scope('withInactive').findOne({
-        where: { id_usuario: idUsuario },
-        order: [['fecha_fin', 'DESC']]
-      });
-
-      const mensaje = ultimaMembresia?.fecha_fin
-        ? `Membresía vencida el ${formatearFechaLegible(ultimaMembresia.fecha_fin)}. No se puede registrar el ingreso.`
-        : 'Este cliente no tiene una membresía activa registrada. No se puede registrar el ingreso.';
-
-      return NextResponse.json({
-        error: mensaje,
-        usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
-        membresiaVencida: true
-      }, { status: 403 });
-    }
-
-    // Evitar duplicados si el mismo QR/click se procesa dos veces seguidas
-    // (doble escaneo accidental, doble clic, etc.)
-    const dosMinutosAtras = new Date(Date.now() - 2 * 60 * 1000);
-    const yaRegistrada = await Asistencia.findOne({
-      where: {
-        id_usuario: idUsuario,
-        fecha_hora: { [Op.gte]: dosMinutosAtras }
-      },
-      order: [['fecha_hora', 'DESC']]
-    });
-
-    if (yaRegistrada) {
-      return NextResponse.json({
-        message: `Ya se registró la asistencia de ${usuario.nombre} ${usuario.apellido} hace un momento`,
-        usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
-        fecha_hora: yaRegistrada.fecha_hora,
-        duplicado: true
-      });
-    }
-
-    // Membresías con límite de asistencias (ej. "15 accesos en el mes"): el
-    // cliente tiene la membresía activa por toda su duración, pero solo
-    // puede ingresar un número fijo de veces. Se cuenta contra las
-    // asistencias ya vinculadas a ESTE registro (no todo el historial del
-    // usuario), para que renovar la membresía reinicie el contador.
-    if (membresiaVigente.limite_asistencias !== null) {
-      const hoyBolivia = fechaHoyBolivia();
-      const asistenciasDeHoy = await Asistencia.findAll({
-        where: { id_registro: membresiaVigente.id_registro },
-        order: [['fecha_hora', 'DESC']],
-        limit: 50
-      });
-
-      const yaAsistioHoy = asistenciasDeHoy.some(a => claveDiaBolivia(a.fecha_hora) === hoyBolivia);
-      if (yaAsistioHoy) {
+    switch (resultado.tipo) {
+      case 'no_encontrado':
+        return NextResponse.json({ error: resultado.error }, { status: 404 });
+      case 'membresia_vencida':
+        return NextResponse.json({ error: resultado.error, usuario: resultado.usuario, membresiaVencida: true }, { status: 403 });
+      case 'limite':
+        return NextResponse.json({ error: resultado.error, usuario: resultado.usuario, limiteAlcanzado: true }, { status: 403 });
+      case 'duplicado':
         return NextResponse.json({
-          message: `${usuario.nombre} ${usuario.apellido} ya registró su ingreso hoy. Solo se cuenta una asistencia por día en esta membresía.`,
-          usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
+          message: resultado.message,
+          usuario: resultado.usuario,
+          fecha_hora: resultado.fecha_hora,
           duplicado: true
         });
-      }
-
-      const asistenciasUsadas = await Asistencia.count({ where: { id_registro: membresiaVigente.id_registro } });
-      if (asistenciasUsadas >= membresiaVigente.limite_asistencias) {
+      case 'ok':
         return NextResponse.json({
-          error: `${usuario.nombre} ${usuario.apellido} ya utilizó las ${membresiaVigente.limite_asistencias} asistencias incluidas en su membresía actual.`,
-          usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
-          limiteAlcanzado: true
-        }, { status: 403 });
-      }
+          usuario: resultado.usuario,
+          fecha_hora: resultado.fecha_hora,
+          id_asistencia: resultado.id_asistencia,
+          metodo: resultado.metodo,
+          message: resultado.message,
+          duplicado: false,
+          asistenciasUsadas: resultado.asistenciasUsadas,
+          limiteAsistencias: resultado.limiteAsistencias
+        }, { status: 201 });
+      default:
+        return NextResponse.json({ error: 'No se pudo registrar la asistencia' }, { status: 500 });
     }
-
-    const asistencia = await Asistencia.create({
-      id_usuario: idUsuario,
-      id_registro: membresiaVigente.id_registro
-    });
-
-    let message = `Asistencia registrada: ${usuario.nombre} ${usuario.apellido}`;
-
-    const respuesta = {
-      usuario: { id_usuario: usuario.id_usuario, nombre: usuario.nombre, apellido: usuario.apellido },
-      fecha_hora: asistencia.fecha_hora,
-      duplicado: false
-    };
-
-    if (membresiaVigente.limite_asistencias !== null) {
-      const asistenciasUsadas = await Asistencia.count({ where: { id_registro: membresiaVigente.id_registro } });
-      respuesta.asistenciasUsadas = asistenciasUsadas;
-      respuesta.limiteAsistencias = membresiaVigente.limite_asistencias;
-      message += ` (${asistenciasUsadas}/${membresiaVigente.limite_asistencias} accesos usados)`;
-    }
-
-    respuesta.message = message;
-
-    return NextResponse.json(respuesta, { status: 201 });
   } catch (error) {
     console.error('Error al registrar asistencia:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });

@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
-import { Caja } from '@/lib/db/models';
+import { Caja, Administrativo } from '@/lib/db/models';
 
-export async function GET() {
+// ?estado=ABIERTA|CERRADA filtra (usado por el historial de cajas
+// cerradas); sin el parámetro devuelve todas, igual que antes.
+export async function GET(request) {
   try {
+    const estado = request.nextUrl.searchParams.get('estado');
+    const where = estado ? { estado } : {};
+
     const cajas = await Caja.findAll({
+      where,
+      include: [
+        { model: Administrativo, as: 'AdminApertura', attributes: ['id_admin', 'nombre', 'apellido'], required: false },
+        { model: Administrativo, as: 'AdminCierre', attributes: ['id_admin', 'nombre', 'apellido'], required: false }
+      ],
       order: [['id_caja', 'ASC']]
     });
     return NextResponse.json(cajas);
@@ -32,13 +42,37 @@ export async function POST(request) {
       }, { status: 400 });
     }
 
-    const caja = await Caja.create({
-      descripcion: descripcion.trim(),
-      saldo_inicial: saldoInicial,
-      saldo_actual: saldoInicial, // El saldo actual empieza igual al inicial
-      abierta: abierta !== undefined ? abierta : true,
-      fecha_apertura: new Date()
-    });
+    const estaAbierta = abierta !== undefined ? Boolean(abierta) : true;
+    const descripcionTrim = descripcion.trim();
+
+    if (estaAbierta) {
+      const yaAbierta = await Caja.findOne({ where: { descripcion: descripcionTrim, estado: 'ABIERTA' } });
+      if (yaAbierta) {
+        return NextResponse.json({
+          error: `Ya existe una caja abierta con el nombre "${descripcionTrim}" (Caja #${yaAbierta.id_caja}).`
+        }, { status: 400 });
+      }
+    }
+
+    let caja;
+    try {
+      caja = await Caja.create({
+        descripcion: descripcionTrim,
+        saldo_inicial: saldoInicial,
+        saldo_actual: saldoInicial, // El saldo actual empieza igual al inicial
+        abierta: estaAbierta,
+        estado: estaAbierta ? 'ABIERTA' : 'CERRADA',
+        fecha_apertura: new Date()
+      });
+    } catch (error) {
+      const codigoPostgres = error?.original?.code || error?.parent?.code;
+      if (codigoPostgres === '23505') {
+        return NextResponse.json({
+          error: `Ya existe una caja abierta con el nombre "${descripcionTrim}".`
+        }, { status: 400 });
+      }
+      throw error;
+    }
 
     return NextResponse.json(caja, { status: 201 });
   } catch (error) {

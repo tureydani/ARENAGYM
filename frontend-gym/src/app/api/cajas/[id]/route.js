@@ -37,9 +37,25 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: 'Caja no encontrada' }, { status: 404 });
     }
 
+    // Abrir/cerrar una caja ya no se hace togueleando `abierta` acá: abrir
+    // crea una caja nueva (POST /api/cajas/abrir) y cerrar exige el arqueo
+    // (POST /api/cajas/:id/cerrar). Permitir `abierta` en este PUT genérico
+    // se saltaría esas validaciones (saldo esperado, saldo contado,
+    // responsable, índice único de "una sola caja abierta por nombre").
+    if (abierta !== undefined) {
+      return NextResponse.json({
+        error: 'Para abrir o cerrar una caja usa los endpoints dedicados (POST /api/cajas/abrir y POST /api/cajas/:id/cerrar), no este PUT.'
+      }, { status: 400 });
+    }
+
+    if (caja.estado === 'CERRADA') {
+      return NextResponse.json({
+        error: 'Esta caja ya está cerrada y es un registro histórico: no admite modificaciones.'
+      }, { status: 400 });
+    }
+
     const updateData = {};
     if (descripcion !== undefined) updateData.descripcion = descripcion.trim();
-    if (abierta !== undefined) updateData.abierta = abierta;
 
     await caja.update(updateData);
 

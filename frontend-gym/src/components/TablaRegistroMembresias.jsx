@@ -1077,13 +1077,13 @@ export default function TablaRegistroMembresias() {
                           </button>
                         </td>
                         <td>
-                          <div className="font-medium text-slate-900">
+                          <div className="font-semibold text-slate-900 text-sm">
                             {getUsuarioNombre(registro.id_usuario)}
                           </div>
-                          <div className="text-sm text-indigo-600">
+                          <div className="text-xs text-slate-500 mt-0.5">
                             {getMembresiaTipo(registro.id_membresia)}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-slate-400">
                             Bs. {membresiaInfo.precio}
                           </div>
                         </td>

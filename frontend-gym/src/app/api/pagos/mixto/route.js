@@ -36,6 +36,24 @@ export async function POST(request) {
       }
     }
 
+    // Cada pata del pago mixto debe caer en una caja realmente abierta
+    // (varias cajas pueden estar abiertas al mismo tiempo -- ej. Efectivo y
+    // Qr -- pero ninguna cerrada puede recibir dinero).
+    const cajasInvolucradas = await Caja.findAll({ where: { id_caja: idsCajas }, transaction });
+    for (const idCaja of idsCajas) {
+      const caja = cajasInvolucradas.find(c => c.id_caja === idCaja);
+      if (!caja) {
+        await transaction.rollback();
+        return NextResponse.json({ error: `La caja ${idCaja} no existe.` }, { status: 404 });
+      }
+      if (caja.estado === 'CERRADA') {
+        await transaction.rollback();
+        return NextResponse.json({
+          error: `No se puede registrar el pago: la caja "${caja.descripcion}" está cerrada.`
+        }, { status: 400 });
+      }
+    }
+
     const pagosCreados = [];
     for (const leg of cajas) {
       const pago = await Pago.create({

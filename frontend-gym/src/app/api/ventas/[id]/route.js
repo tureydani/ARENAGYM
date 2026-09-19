@@ -29,8 +29,16 @@ export async function GET(request, { params }) {
 export async function PUT(request, { params }) {
   const { id } = await params;
   try {
-    const venta = await Venta.findByPk(id);
+    const venta = await Venta.findByPk(id, { include: [{ model: Caja, as: 'Caja' }] });
     if (!venta) return NextResponse.json({ error: "No encontrada" }, { status: 404 });
+
+    // Una caja cerrada es un registro histórico: no admite que se le sigan
+    // modificando ventas (eso alteraría un cierre ya hecho por otra vía).
+    if (venta.Caja && venta.Caja.estado === 'CERRADA') {
+      return NextResponse.json({
+        error: `Esta venta pertenece a "${venta.Caja.descripcion}", que ya está cerrada. No se puede modificar una venta de una caja cerrada.`
+      }, { status: 400 });
+    }
 
     const body = await request.json();
 
@@ -64,6 +72,12 @@ export async function PUT(request, { params }) {
           if (!cajaNueva) {
             await transaction.rollback();
             return NextResponse.json({ error: 'La caja de destino no existe' }, { status: 404 });
+          }
+          if (cajaNueva.estado === 'CERRADA') {
+            await transaction.rollback();
+            return NextResponse.json({
+              error: `No se puede mover la venta: la caja "${cajaNueva.descripcion}" está cerrada.`
+            }, { status: 400 });
           }
           if (cajaAnterior && parseFloat(cajaAnterior.saldo_actual) - oldTotal < 0) {
             await transaction.rollback();
@@ -174,6 +188,12 @@ export async function DELETE(request, { params }) {
     // garantiza el lock) para que la validación y el descuento sean
     // atómicos frente a otra operación concurrente sobre la misma caja.
     const cajaBloqueada = await Caja.findByPk(venta.id_caja, { transaction, lock: transaction.LOCK.UPDATE });
+    if (cajaBloqueada && cajaBloqueada.estado === 'CERRADA') {
+      await transaction.rollback();
+      return NextResponse.json({
+        error: `No se puede eliminar: la caja "${cajaBloqueada.descripcion}" ya está cerrada. Es un registro histórico.`
+      }, { status: 400 });
+    }
     if (cajaBloqueada && parseFloat(cajaBloqueada.saldo_actual) - parseFloat(venta.total) < 0) {
       await transaction.rollback();
       return NextResponse.json({

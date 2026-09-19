@@ -27,10 +27,49 @@ const Asistencia = sequelize.define('Asistencia', {
       model: 'registro_membresias',
       key: 'id_registro'
     }
+  },
+  metodo: {
+    type: DataTypes.STRING(10),
+    allowNull: false,
+    defaultValue: 'Manual' // 'QR' | 'Manual'
+  },
+  id_admin: {
+    type: DataTypes.INTEGER,
+    allowNull: true, // NULL en histórico previo a la auditoría; el panel siempre lo envía en registros nuevos
+    references: {
+      model: 'administrativos',
+      key: 'id_admin'
+    }
+  },
+  observacion: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  activo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true // FALSE = anulada (soft delete); no cuenta para límites, estadísticas ni reportes
+  },
+  fecha_actualizacion: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'asistencias',
   timestamps: false,
+  defaultScope: {
+    where: {
+      activo: true
+    }
+  },
+  scopes: {
+    withInactive: {},
+    onlyInactive: {
+      where: {
+        activo: false
+      }
+    }
+  }
 });
 
 module.exports = Asistencia;

@@ -1,11 +1,41 @@
 import { NextResponse } from 'next/server';
+import { Op } from 'sequelize';
 import sequelize from '@/lib/db/sequelize';
 import { MovimientoCaja, Caja, Administrativo } from '@/lib/db/models';
 import { mensajeErrorSaldoNegativo } from '@/lib/db/erroresCaja';
 
-export async function GET() {
+// Filtros opcionales para reportes (semana/mes/año se calculan en el
+// frontend a partir de fecha_desde/fecha_hasta, no se crean cajas
+// separadas por período): id_caja, fecha_desde, fecha_hasta,
+// tipo_movimiento, origen, id_admin. Sin filtros devuelve todo, igual que
+// antes.
+export async function GET(request) {
   try {
+    const params = request.nextUrl.searchParams;
+    const where = {};
+
+    const id_caja = params.get('id_caja');
+    if (id_caja) where.id_caja = id_caja;
+
+    const tipo_movimiento = params.get('tipo_movimiento');
+    if (tipo_movimiento) where.tipo_movimiento = tipo_movimiento;
+
+    const origen = params.get('origen');
+    if (origen) where.origen = origen;
+
+    const id_admin = params.get('id_admin');
+    if (id_admin) where.id_admin = id_admin;
+
+    const fecha_desde = params.get('fecha_desde');
+    const fecha_hasta = params.get('fecha_hasta');
+    if (fecha_desde || fecha_hasta) {
+      where.fecha_movimiento = {};
+      if (fecha_desde) where.fecha_movimiento[Op.gte] = new Date(fecha_desde);
+      if (fecha_hasta) where.fecha_movimiento[Op.lte] = new Date(fecha_hasta);
+    }
+
     const movimientos = await MovimientoCaja.findAll({
+      where,
       include: [
         { model: Caja, as: 'Caja' },
         { model: Administrativo, as: 'Administrativo' }
@@ -47,6 +77,12 @@ export async function POST(request) {
         if (!caja) {
           await transaction.rollback();
           return NextResponse.json({ error: 'Caja no encontrada' }, { status: 404 });
+        }
+        if (caja.estado === 'CERRADA') {
+          await transaction.rollback();
+          return NextResponse.json({
+            error: `La caja "${caja.descripcion}" está cerrada. Debe abrir una caja para registrar movimientos.`
+          }, { status: 400 });
         }
         if (tipo_movimiento === 'Egreso' && parseFloat(monto) > parseFloat(caja.saldo_actual)) {
           await transaction.rollback();

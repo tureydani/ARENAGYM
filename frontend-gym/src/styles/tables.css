@@ -37,13 +37,15 @@
   color: #FFFFFF;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: 10px;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.25);
   transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-primary:hover {
   background: #4338CA;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
 }
 
 .btn-secondary {
@@ -51,7 +53,7 @@
   color: #334155;
   border: 1px solid #E2E8F0;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -62,17 +64,17 @@
 }
 
 .btn-danger {
-  background: #DC2626;
+  background: #EF4444;
   color: #FFFFFF;
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   transition: background-color 0.2s ease;
 }
 
 .btn-danger:hover {
-  background: #B91C1C;
+  background: #DC2626;
 }
 
 .table-wrapper {
@@ -108,7 +110,10 @@
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  border-bottom: 1px solid rgba(79, 70, 229, 0.3);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #E2E8F0;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -116,9 +121,9 @@
 
 .data-table td {
   padding: 1rem;
-  border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+  border-bottom: 1px solid #F1F5F9;
   color: #334155 !important;
-  transition: all 0.3s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 /* Asegurar que todos los textos sean visibles */
@@ -145,7 +150,7 @@
 }
 
 .data-table tr:hover {
-  background: rgba(79, 70, 229, 0.1);
+  background: #F8FAFF;
 }
 
 .data-table tr:hover td {
@@ -168,28 +173,29 @@
 .status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  display: inline-block;
 }
 
 .status-active {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10B981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
 }
 
 .status-inactive {
-  background: rgba(239, 68, 68, 0.2);
-  color: #EF4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FECACA;
 }
 
 .status-pending {
-  background: rgba(251, 191, 36, 0.2);
-  color: #F59E0B;
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: #FFFBEB;
+  color: #D97706;
+  border: 1px solid #FDE68A;
 }
 
 .loading-spinner {

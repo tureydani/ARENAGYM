@@ -52,6 +52,19 @@ export default function TablaCajas() {
     saldo_inicial: '',
     abierta: true
   });
+
+  // Apertura formal de caja (POST /cajas/abrir): crea una fila nueva, no
+  // togglea una existente. Se usa tanto para abrir una caja nueva como
+  // para reabrir una ya cerrada (precargando su descripción).
+  const [showAperturaModal, setShowAperturaModal] = useState(false);
+  const [aperturaFormData, setAperturaFormData] = useState({ descripcion: '', saldo_inicial: '' });
+
+  // Cierre formal con arqueo (GET .../arqueo + POST .../cerrar).
+  const [showCierreModal, setShowCierreModal] = useState(false);
+  const [cierreData, setCierreData] = useState(null);
+  const [cierreLoading, setCierreLoading] = useState(false);
+  const [saldoContado, setSaldoContado] = useState('');
+
   const [movimientoFormData, setMovimientoFormData] = useState({
     id_caja: '',
     id_admin: '1', // Por defecto
@@ -155,39 +168,26 @@ export default function TablaCajas() {
     return `${year}-${month}-${day}`;
   };
 
+  // Este modal ahora solo EDITA la descripción de una caja existente
+  // (abierta): abrir/cerrar pasó a los flujos dedicados de abajo, que
+  // exigen arqueo/responsable en vez de togglear un booleano a ciegas.
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.descripcion.trim()) {
       alert('Por favor, ingrese una descripción para la caja');
       return;
     }
 
     try {
-      const cajaData = {
-        descripcion: formData.descripcion.trim(),
-        saldo_inicial: parseFloat(formData.saldo_inicial) || 0,
-        saldo_actual: parseFloat(formData.saldo_inicial) || 0,
-        abierta: formData.abierta,
-        fecha_apertura: getFechaHoyLocal()
-      };
-
-      if (editingCaja) {
-        // No permitir editar saldo_inicial en edición, solo descripción y estado
-        const updateData = {
-          descripcion: cajaData.descripcion,
-          abierta: cajaData.abierta
-        };
-        await api.put(`/cajas/${editingCaja.id_caja}`, updateData);
-      } else {
-        await api.post('/cajas', cajaData);
-      }
-
+      await api.put(`/cajas/${editingCaja.id_caja}`, {
+        descripcion: formData.descripcion.trim()
+      });
       await fetchCajas();
       closeModal();
     } catch (error) {
       console.error('Error al guardar caja:', error);
-      alert('Error al guardar la caja');
+      alert(error.response?.data?.error || 'Error al guardar la caja');
     }
   };
 
@@ -201,18 +201,105 @@ export default function TablaCajas() {
     setShowModal(true);
   };
 
-  const handleToggleEstado = async (caja) => {
-    const nuevoEstado = !caja.abierta;
-    const accion = nuevoEstado ? 'abrir' : 'cerrar';
-    
-    if (window.confirm(`¿Estás seguro de que deseas ${accion} la caja "${caja.descripcion}"?`)) {
-      try {
-        await api.put(`/cajas/${caja.id_caja}`, { abierta: nuevoEstado });
-        await fetchCajas();
-      } catch (error) {
-        console.error('Error al cambiar estado de caja:', error);
-        alert('Error al cambiar el estado de la caja');
-      }
+  const getAdminActualId = () => {
+    const adminData = sessionStorage.getItem('admin');
+    const admin = adminData ? JSON.parse(adminData) : null;
+    return admin?.id_admin;
+  };
+
+  // Apertura formal: crea una caja NUEVA con estado ABIERTA (no reutiliza
+  // la fila de una caja cerrada). Si se pasa `caja`, se precarga su
+  // descripción para "reabrir" el mismo canal (ej. volver a abrir
+  // "Efectivo" al día siguiente).
+  const openAperturaModal = (caja = null) => {
+    setAperturaFormData({ descripcion: caja?.descripcion || '', saldo_inicial: '' });
+    setShowAperturaModal(true);
+  };
+
+  const closeAperturaModal = () => {
+    setShowAperturaModal(false);
+    setAperturaFormData({ descripcion: '', saldo_inicial: '' });
+  };
+
+  const handleAperturaSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!aperturaFormData.descripcion.trim()) {
+      alert('Por favor, ingrese una descripción para la caja');
+      return;
+    }
+    const id_admin = getAdminActualId();
+    if (!id_admin) {
+      alert('No se pudo identificar al administrador actual. Vuelve a iniciar sesión.');
+      return;
+    }
+
+    try {
+      await api.post('/cajas/abrir', {
+        descripcion: aperturaFormData.descripcion.trim(),
+        saldo_inicial: parseFloat(aperturaFormData.saldo_inicial) || 0,
+        id_admin
+      });
+      await fetchCajas();
+      closeAperturaModal();
+    } catch (error) {
+      console.error('Error al abrir caja:', error);
+      alert(error.response?.data?.error || 'Error al abrir la caja');
+    }
+  };
+
+  // Cierre formal con arqueo: primero trae el saldo esperado calculado por
+  // el backend (a partir de movimientos_caja), luego el responsable
+  // introduce el dinero contado y confirma.
+  const openCierreModal = async (caja) => {
+    setSelectedCaja(caja);
+    setSaldoContado('');
+    setCierreData(null);
+    setShowCierreModal(true);
+    setCierreLoading(true);
+    try {
+      const response = await api.get(`/cajas/${caja.id_caja}/arqueo`);
+      setCierreData(response.data);
+    } catch (error) {
+      console.error('Error al calcular arqueo:', error);
+      alert(error.response?.data?.error || 'Error al calcular el arqueo de la caja');
+      setShowCierreModal(false);
+    } finally {
+      setCierreLoading(false);
+    }
+  };
+
+  const closeCierreModal = () => {
+    setShowCierreModal(false);
+    setSelectedCaja(null);
+    setCierreData(null);
+    setSaldoContado('');
+  };
+
+  const handleConfirmarCierre = async () => {
+    const id_admin = getAdminActualId();
+    if (!id_admin) {
+      alert('No se pudo identificar al administrador actual. Vuelve a iniciar sesión.');
+      return;
+    }
+    const contado = parseFloat(saldoContado);
+    if (saldoContado === '' || Number.isNaN(contado) || contado < 0) {
+      alert('Ingresa el dinero contado (un número mayor o igual a 0).');
+      return;
+    }
+    if (!window.confirm(`¿Confirmar el cierre de "${selectedCaja.descripcion}"? Esta acción no se puede deshacer.`)) return;
+
+    try {
+      const response = await api.post(`/cajas/${selectedCaja.id_caja}/cerrar`, {
+        saldo_contado: contado,
+        id_admin
+      });
+      await fetchCajas();
+      closeCierreModal();
+      alert(response.data.message);
+    } catch (error) {
+      console.error('Error al cerrar caja:', error);
+      alert(error.response?.data?.error || 'Error al cerrar la caja');
     }
   };
 
@@ -709,8 +796,8 @@ export default function TablaCajas() {
           <Button onClick={() => setShowExportModal(true)} variant="outline" size="sm">
             <IconDocumentDownload className="w-4 h-4 inline-block mr-1" /> Exportar Completo
           </Button>
-          <Button onClick={() => setShowModal(true)} size="sm">
-            Nueva Caja
+          <Button onClick={() => openAperturaModal()} size="sm">
+            Abrir Caja
           </Button>
         </div>
       </div>
@@ -762,6 +849,9 @@ export default function TablaCajas() {
                   Estado
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Cierre / Diferencia
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
@@ -791,12 +881,29 @@ export default function TablaCajas() {
                     </div>
                   </td>
                   <td className="px-6 py-2 whitespace-nowrap">
-                    <Badge 
-                      variant={caja.abierta ? 'success' : 'secondary'}
-                      className={caja.abierta ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}
+                    <Badge
+                      variant={caja.estado === 'ABIERTA' ? 'success' : 'secondary'}
+                      className={caja.estado === 'ABIERTA' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}
                     >
-                      {caja.abierta ? 'Abierta' : 'Cerrada'}
+                      {caja.estado === 'ABIERTA' ? 'Abierta' : 'Cerrada'}
                     </Badge>
+                  </td>
+                  <td className="px-6 py-2 whitespace-nowrap text-xs">
+                    {caja.estado === 'CERRADA' && caja.fecha_cierre ? (
+                      <div>
+                        <div className="text-slate-500">{formatearFecha(caja.fecha_cierre, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>
+                        <div className={`font-semibold ${
+                          parseFloat(caja.diferencia) === 0 ? 'text-emerald-600' :
+                          parseFloat(caja.diferencia) > 0 ? 'text-sky-600' : 'text-red-600'
+                        }`}>
+                          {parseFloat(caja.diferencia) === 0
+                            ? 'Cuadrada'
+                            : `${parseFloat(caja.diferencia) > 0 ? 'Sobrante' : 'Faltante'}: Bs. ${Math.abs(parseFloat(caja.diferencia)).toFixed(2)}`}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex space-x-1">
@@ -827,25 +934,27 @@ export default function TablaCajas() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                       </button>
-                      <button
-                        onClick={() => handleToggleEstado(caja)}
-                        className={`p-2 rounded transition-colors ${
-                          caja.abierta 
-                            ? 'text-orange-400 hover:text-orange-300 hover:bg-orange-400/10' 
-                            : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10'
-                        }`}
-                        title={caja.abierta ? 'Cerrar caja' : 'Abrir caja'}
-                      >
-                        {caja.abierta ? (
+                      {caja.estado === 'ABIERTA' ? (
+                        <button
+                          onClick={() => openCierreModal(caja)}
+                          className="p-2 rounded transition-colors text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                          title="Cerrar caja (arqueo)"
+                        >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
-                        ) : (
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openAperturaModal(caja)}
+                          className="p-2 rounded transition-colors text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50"
+                          title="Abrir caja"
+                        >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                           </svg>
-                        )}
-                      </button>
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(caja)}
                         className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
@@ -868,8 +977,8 @@ export default function TablaCajas() {
             <div className="text-slate-500 mb-4">
               No se encontraron cajas
             </div>
-            <Button onClick={() => setShowModal(true)} size="sm">
-              Crear primera caja
+            <Button onClick={() => openAperturaModal()} size="sm">
+              Abrir primera caja
             </Button>
           </div>
         )}
@@ -894,14 +1003,12 @@ export default function TablaCajas() {
         <div className="modal-overlay">
           <div className="modal-container">
             <div className="modal-header">
-              <h3 className="modal-title">
-                {editingCaja ? 'Editar Caja' : 'Agregar Caja'}
-              </h3>
+              <h3 className="modal-title">Editar Caja</h3>
               <button className="modal-close" onClick={closeModal}>
                 ×
               </button>
             </div>
-            
+
             <div className="modal-body">
               <form onSubmit={handleSubmit} className="modal-form">
                 <div className="form-group">
@@ -914,33 +1021,6 @@ export default function TablaCajas() {
                     placeholder="Nombre de la caja"
                     required
                   />
-                </div>
-
-                {!editingCaja && (
-                  <div className="form-group">
-                    <label className="form-label">Saldo Inicial (Bs.)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.saldo_inicial}
-                      onChange={(e) => handleInputChange('saldo_inicial', e.target.value)}
-                      className="form-input"
-                      placeholder="0.00"
-                    />
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={formData.abierta}
-                      onChange={(e) => handleInputChange('abierta', e.target.checked)}
-                      className="w-4 h-4 text-indigo-600 bg-white border-slate-300 rounded"
-                    />
-                    <span className="form-label mb-0">Caja abierta (operativa)</span>
-                  </label>
                 </div>
 
                 {editingCaja && (
@@ -969,7 +1049,7 @@ export default function TablaCajas() {
                     disabled={loading}
                     className="btn-primary"
                   >
-                    {loading ? 'Guardando...' : (editingCaja ? 'Actualizar' : 'Guardar')}
+                    {loading ? 'Guardando...' : 'Actualizar'}
                   </button>
                   <button
                     type="button"
@@ -980,6 +1060,146 @@ export default function TablaCajas() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Apertura de Caja */}
+      {showAperturaModal && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h3 className="modal-title">Abrir Caja</h3>
+              <button className="modal-close" onClick={closeAperturaModal}>
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <form onSubmit={handleAperturaSubmit} className="modal-form">
+                <div className="form-group">
+                  <label className="form-label">Descripción</label>
+                  <input
+                    type="text"
+                    value={aperturaFormData.descripcion}
+                    onChange={(e) => setAperturaFormData({ ...aperturaFormData, descripcion: e.target.value })}
+                    className="form-input"
+                    placeholder="Ej. Caja Efectivo, Caja Qr..."
+                    required
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    No se puede abrir una caja con el mismo nombre de una que ya está abierta.
+                  </p>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Saldo Inicial (Bs.)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={aperturaFormData.saldo_inicial}
+                    onChange={(e) => setAperturaFormData({ ...aperturaFormData, saldo_inicial: e.target.value })}
+                    className="form-input"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button type="submit" className="btn-primary">
+                    Abrir Caja
+                  </button>
+                  <button type="button" onClick={closeAperturaModal} className="btn-secondary">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cierre de Caja (Arqueo) */}
+      {showCierreModal && selectedCaja && (
+        <div className="modal-overlay">
+          <div className="modal-container">
+            <div className="modal-header">
+              <h3 className="modal-title">Cerrar Caja — {selectedCaja.descripcion}</h3>
+              <button className="modal-close" onClick={closeCierreModal}>
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {cierreLoading || !cierreData ? (
+                <div className="text-center py-8">
+                  <div className="loading-spinner mx-auto mb-3"></div>
+                  <p className="text-slate-500 text-sm">Calculando arqueo...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-slate-50 rounded-lg p-4 space-y-2 text-sm mb-4">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Saldo inicial</span>
+                      <span className="font-medium text-slate-900">Bs. {formatPrice(cierreData.saldo_inicial)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Ingresos</span>
+                      <span className="font-medium text-emerald-600">+ Bs. {formatPrice(cierreData.total_ingresos)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Egresos</span>
+                      <span className="font-medium text-red-600">− Bs. {formatPrice(cierreData.total_egresos)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-slate-200 pt-2">
+                      <span className="text-slate-700 font-semibold">Saldo esperado</span>
+                      <span className="font-bold text-indigo-600">Bs. {formatPrice(cierreData.saldo_esperado)}</span>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Dinero contado (Bs.)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={saldoContado}
+                      onChange={(e) => setSaldoContado(e.target.value)}
+                      className="form-input"
+                      placeholder="0.00"
+                      autoFocus
+                    />
+                  </div>
+
+                  {saldoContado !== '' && !Number.isNaN(parseFloat(saldoContado)) && (
+                    (() => {
+                      const diferencia = Math.round((parseFloat(saldoContado) - cierreData.saldo_esperado) * 100) / 100;
+                      return (
+                        <div className={`rounded-lg p-3 text-sm font-semibold text-center mb-4 ${
+                          diferencia === 0 ? 'bg-emerald-50 text-emerald-700' :
+                          diferencia > 0 ? 'bg-sky-50 text-sky-700' : 'bg-red-50 text-red-700'
+                        }`}>
+                          {diferencia === 0
+                            ? 'Caja cuadrada'
+                            : diferencia > 0
+                              ? `Sobrante: Bs. ${diferencia.toFixed(2)}`
+                              : `Faltante: Bs. ${Math.abs(diferencia).toFixed(2)}`}
+                        </div>
+                      );
+                    })()
+                  )}
+
+                  <div className="modal-actions">
+                    <button type="button" onClick={handleConfirmarCierre} className="btn-primary">
+                      Confirmar Cierre
+                    </button>
+                    <button type="button" onClick={closeCierreModal} className="btn-secondary">
+                      Cancelar
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -105,11 +105,30 @@ export async function POST(request) {
       return NextResponse.json({ error: 'El total no puede ser negativo' }, { status: 400 });
     }
 
+    // El backend decide con qué caja se queda esto: ya no se asume que
+    // "id_caja = 1" es siempre la caja vigente. La caja referenciada debe
+    // existir y estar abierta.
+    if (!id_caja) {
+      await transaction.rollback();
+      return NextResponse.json({ error: 'Debe indicar una caja para registrar la venta.' }, { status: 400 });
+    }
+    const cajaDestino = await Caja.findByPk(id_caja, { transaction });
+    if (!cajaDestino) {
+      await transaction.rollback();
+      return NextResponse.json({ error: 'La caja seleccionada no existe.' }, { status: 404 });
+    }
+    if (cajaDestino.estado === 'CERRADA') {
+      await transaction.rollback();
+      return NextResponse.json({
+        error: `No existe una caja abierta ("${cajaDestino.descripcion}" está cerrada). Debe abrir una caja antes de registrar ventas.`
+      }, { status: 400 });
+    }
+
     // Crear la venta principal con valores por defecto
     const nuevaVenta = await Venta.create({
       id_usuario,
       id_admin: id_admin || 1,
-      id_caja: id_caja || 1,
+      id_caja,
       fecha_venta: fecha_venta || getFechaHoy(),
       total: total || 0,
       estado: estado || 'Completada'

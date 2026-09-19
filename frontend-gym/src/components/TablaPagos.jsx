@@ -58,7 +58,7 @@ const TablaPagos = () => {
   const [formData, setFormData] = useState({
     id_registro: '',
     id_admin: '1', // Administrativo por defecto (asumiendo ID 1)
-    id_caja: '1', // Caja principal por defecto
+    id_caja: '', // Debe elegirse explícitamente una caja abierta
     monto_pagado: '',
     fecha_pago: '', // Se establecerá con fecha local
     estado_pago: 'Completo'
@@ -360,7 +360,7 @@ const TablaPagos = () => {
     setFormData({
       id_registro: '',
       id_admin: admin?.id_admin || '1',
-      id_caja: '1', // Caja principal por defecto
+      id_caja: '', // Debe elegirse explícitamente una caja abierta
       monto_pagado: '',
       fecha_pago: fechaHoy, // Fecha local segura
       estado_pago: 'Completo'
@@ -391,7 +391,7 @@ const TablaPagos = () => {
     setFormData({
       id_registro: '',
       id_admin: '1',
-      id_caja: '1',
+      id_caja: '',
       monto_pagado: '',
       fecha_pago: getFechaHoyLocal(),
       estado_pago: 'Completo'
@@ -849,9 +849,9 @@ const TablaPagos = () => {
                         >
                           <option value="">Seleccionar caja</option>
                           {cajas.map(caja => (
-                            <option key={caja.id_caja} value={caja.id_caja}>
+                            <option key={caja.id_caja} value={caja.id_caja} disabled={!caja.abierta}>
                               {caja.descripcion || `Caja ${caja.id_caja}`}
-                              {caja.id_caja === 1 && ' (Principal)'}
+                              {!caja.abierta ? ' (cerrada)' : ''}
                             </option>
                           ))}
                         </select>
@@ -909,8 +909,9 @@ const TablaPagos = () => {
                               {cajas
                                 .filter(caja => String(caja.id_caja) !== String(formData.id_caja))
                                 .map(caja => (
-                                  <option key={caja.id_caja} value={caja.id_caja}>
+                                  <option key={caja.id_caja} value={caja.id_caja} disabled={!caja.abierta}>
                                     {caja.descripcion || `Caja ${caja.id_caja}`}
+                                    {!caja.abierta ? ' (cerrada)' : ''}
                                   </option>
                                 ))}
                             </select>

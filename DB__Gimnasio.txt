@@ -982,3 +982,164 @@ ADD COLUMN IF NOT EXISTS cantidad_mayoreo INT;
 
 COMMENT ON COLUMN productos.precio_mayoreo IS 'Precio por unidad cuando se compran cantidad_mayoreo o más unidades en la misma venta. NULL = sin precio por mayor.';
 COMMENT ON COLUMN productos.cantidad_mayoreo IS 'Cantidad mínima de unidades para que aplique precio_mayoreo. NULL = sin precio por mayor.';
+
+-- ==========================================================
+-- APERTURA / CIERRE FORMAL DE CAJAS CON ARQUEO (2026-09)
+-- ==========================================================
+-- Antes de esto, "cajas" solo tenía saldo_inicial/saldo_actual/abierta: abrir
+-- o cerrar una caja era simplemente togglear el booleano `abierta`, sin
+-- registrar quién lo hizo, cuándo se cerró, ni comparar el saldo calculado
+-- por el sistema contra el dinero contado físicamente (arqueo).
+--
+-- IMPORTANTE: el sistema sigue permitiendo VARIAS cajas abiertas al mismo
+-- tiempo (ej. "Caja Efectivo" y "Caja Qr" abiertas en paralelo), porque el
+-- pago mixto reparte un cobro entre dos cajas distintas y ambas deben poder
+-- estar abiertas a la vez. La única regla nueva es: no se puede reabrir una
+-- caja con la MISMA descripción mientras ya exista una abierta con ese
+-- mismo nombre (ver índice único parcial más abajo). No es "una sola caja
+-- abierta en todo el sistema".
+--
+-- No se elimina la columna `abierta` (se mantiene sincronizada con `estado`
+-- por el código de la app) para no romper nada que todavía la lea.
+
+ALTER TABLE cajas
+ADD COLUMN IF NOT EXISTS fecha_cierre TIMESTAMP,
+ADD COLUMN IF NOT EXISTS saldo_esperado DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS saldo_contado DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS diferencia DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS id_admin_apertura INT REFERENCES administrativos(id_admin),
+ADD COLUMN IF NOT EXISTS id_admin_cierre INT REFERENCES administrativos(id_admin),
+ADD COLUMN IF NOT EXISTS estado VARCHAR(20) NOT NULL DEFAULT 'ABIERTA';
+
+-- Constraints agregados por separado (no todos los motores/versiones
+-- soportan CHECK inline en ADD COLUMN de forma portable, y así se puede
+-- volver a correr el bloque sin duplicar el constraint).
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_cajas_estado'
+  ) THEN
+    ALTER TABLE cajas ADD CONSTRAINT chk_cajas_estado CHECK (estado IN ('ABIERTA', 'CERRADA'));
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_cajas_saldo_contado_no_negativo'
+  ) THEN
+    ALTER TABLE cajas ADD CONSTRAINT chk_cajas_saldo_contado_no_negativo CHECK (saldo_contado IS NULL OR saldo_contado >= 0);
+  END IF;
+
+  -- Esta ya existe en la base real (ver src/lib/db/erroresCaja.js, que la
+  -- traduce a un mensaje legible) pero nunca quedó documentada en este
+  -- archivo -- se deja constancia acá por si se recrea la base desde cero.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_cajas_saldo_no_negativo'
+  ) THEN
+    ALTER TABLE cajas ADD CONSTRAINT chk_cajas_saldo_no_negativo CHECK (saldo_actual >= 0);
+  END IF;
+END $$;
+
+-- Migración de datos existentes: mapear el booleano `abierta` ya presente
+-- a `estado`, sin inventar fecha_cierre/saldo_contado/responsable para el
+-- histórico que nunca los tuvo (quedan NULL, tal como pide no inventar
+-- información).
+UPDATE cajas SET estado = 'ABIERTA' WHERE abierta = TRUE;
+UPDATE cajas SET estado = 'CERRADA' WHERE abierta = FALSE;
+
+-- Regla "no se puede reabrir la misma caja/canal dos veces a la vez":
+-- índice único parcial sobre (descripcion) solo para las filas con
+-- estado = 'ABIERTA'. Esto permite "Efectivo" y "Qr" abiertas al mismo
+-- tiempo (descripciones distintas) pero impide dos filas "Efectivo"
+-- ABIERTA simultáneamente. La validación se protege en el backend, pero el
+-- índice es la garantía real ante peticiones concurrentes (ver punto 24 del
+-- pedido: dos usuarios abriendo al mismo tiempo).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cajas_unica_abierta_por_descripcion
+ON cajas (descripcion)
+WHERE estado = 'ABIERTA';
+
+COMMENT ON COLUMN cajas.fecha_cierre IS 'Fecha y hora del cierre formal (arqueo). NULL mientras la caja está ABIERTA o si es un registro histórico previo a este cambio.';
+COMMENT ON COLUMN cajas.saldo_esperado IS 'Saldo calculado por el sistema al momento del cierre: saldo_inicial + ingresos - egresos (movimientos_caja). NULL hasta que se cierra.';
+COMMENT ON COLUMN cajas.saldo_contado IS 'Dinero físico contado por el responsable al cerrar la caja (arqueo). NULL hasta que se cierra.';
+COMMENT ON COLUMN cajas.diferencia IS 'saldo_contado - saldo_esperado. Negativo = faltante, positivo = sobrante, 0 = caja cuadrada. Se conserva siempre para auditoría, nunca se oculta.';
+COMMENT ON COLUMN cajas.id_admin_apertura IS 'Administrativo que abrió la caja.';
+COMMENT ON COLUMN cajas.id_admin_cierre IS 'Administrativo que realizó el cierre/arqueo.';
+COMMENT ON COLUMN cajas.estado IS 'ABIERTA o CERRADA. Reemplaza el uso operativo de `abierta`, que se conserva sincronizada por compatibilidad.';
+
+-- ==========================================================
+-- MÓDULO DE CONTROL DE ASISTENCIAS: AUDITORÍA, SOFT DELETE,
+-- MÉTODO Y RESPONSABLE (2026-09)
+-- ==========================================================
+-- Antes de esto, "asistencias" solo tenía id_asistencia/id_usuario/
+-- fecha_hora/id_registro: no se sabía quién marcó el ingreso, si fue por
+-- QR o manual, no se podía anular un registro erróneo (solo DELETE físico,
+-- que no se usaba) ni corregirlo con trazabilidad.
+--
+-- Todas las columnas son NUEVAS y opcionales (nullable o con DEFAULT), así
+-- que el historial existente sigue siendo válido sin tocarlo: no se borra
+-- ni se inventa ningún dato para las asistencias ya registradas (ver
+-- migración de datos más abajo, que solo completa metodo/activo con
+-- valores conservadores, nunca id_admin ni observacion).
+
+ALTER TABLE asistencias
+ADD COLUMN IF NOT EXISTS metodo VARCHAR(10) NOT NULL DEFAULT 'Manual',
+ADD COLUMN IF NOT EXISTS id_admin INT REFERENCES administrativos(id_admin),
+ADD COLUMN IF NOT EXISTS observacion TEXT,
+ADD COLUMN IF NOT EXISTS activo BOOLEAN NOT NULL DEFAULT TRUE,
+ADD COLUMN IF NOT EXISTS fecha_actualizacion TIMESTAMP;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'chk_asistencias_metodo'
+  ) THEN
+    ALTER TABLE asistencias ADD CONSTRAINT chk_asistencias_metodo CHECK (metodo IN ('QR', 'Manual'));
+  END IF;
+END $$;
+
+-- Migración de datos existentes: las asistencias registradas antes de este
+-- cambio no tienen forma confiable de saber si vinieron de QR o de marcado
+-- manual (el código anterior no lo distinguía), así que se documentan
+-- explícitamente como 'Manual' -- es el valor por defecto de la columna y
+-- es coherente con que el admin panel era la única vía de registro. No se
+-- inventa id_admin (se deja NULL: no hay forma de saber quién las marcó).
+UPDATE asistencias SET metodo = 'Manual' WHERE metodo IS NULL;
+UPDATE asistencias SET activo = TRUE WHERE activo IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_asistencias_usuario ON asistencias(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_asistencias_registro ON asistencias(id_registro);
+CREATE INDEX IF NOT EXISTS idx_asistencias_fecha ON asistencias(fecha_hora);
+CREATE INDEX IF NOT EXISTS idx_asistencias_metodo ON asistencias(metodo);
+CREATE INDEX IF NOT EXISTS idx_asistencias_activo ON asistencias(activo);
+CREATE INDEX IF NOT EXISTS idx_asistencias_admin ON asistencias(id_admin);
+
+COMMENT ON COLUMN asistencias.metodo IS 'QR o Manual: cómo se registró el ingreso. Para el historico previo a esta migracion, se asumio Manual (unica via que existia).';
+COMMENT ON COLUMN asistencias.id_admin IS 'Administrativo responsable de registrar (o corregir) esta asistencia. NULL en historico previo a esta migracion, donde no se guardaba.';
+COMMENT ON COLUMN asistencias.observacion IS 'Nota libre opcional, usada tipicamente para explicar una correccion o una circunstancia especial.';
+COMMENT ON COLUMN asistencias.activo IS 'TRUE = asistencia valida. FALSE = anulada mediante soft delete (nunca se borra fisicamente). Una asistencia anulada no cuenta para limite_asistencias, estadisticas ni reportes.';
+COMMENT ON COLUMN asistencias.fecha_actualizacion IS 'Cuando se edito, anulo o reactivo esta asistencia por ultima vez. NULL si nunca se modifico.';
+
+-- =============================
+-- TABLA: Auditoría de Asistencias
+-- =============================
+-- Registro inmutable de quién hizo qué, cuándo y por qué sobre una
+-- asistencia (creación, edición, anulación, reactivación). No se expone
+-- ninguna vía de edición/borrado de esta tabla desde la interfaz normal:
+-- es de solo lectura para el panel administrativo.
+CREATE TABLE IF NOT EXISTS auditoria_asistencias (
+    id_auditoria SERIAL PRIMARY KEY,
+    id_asistencia INT NOT NULL REFERENCES asistencias(id_asistencia),
+    id_admin INT REFERENCES administrativos(id_admin),
+    accion VARCHAR(20) NOT NULL CHECK (accion IN ('CREACION', 'EDICION', 'ANULACION', 'REACTIVACION')),
+    fecha_accion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    motivo TEXT,
+    datos_anteriores JSONB,
+    datos_nuevos JSONB
+);
+
+CREATE INDEX IF NOT EXISTS idx_auditoria_asistencias_asistencia ON auditoria_asistencias(id_asistencia);
+CREATE INDEX IF NOT EXISTS idx_auditoria_asistencias_fecha ON auditoria_asistencias(fecha_accion);
+CREATE INDEX IF NOT EXISTS idx_auditoria_asistencias_admin ON auditoria_asistencias(id_admin);
+
+COMMENT ON TABLE auditoria_asistencias IS 'Historial de quien creo/edito/anulo/reactivo cada asistencia, con motivo y snapshot antes/despues en JSONB. Solo lectura desde la interfaz normal.';
+COMMENT ON COLUMN auditoria_asistencias.motivo IS 'Obligatorio en la app para EDICION, ANULACION y REACTIVACION. NULL para CREACION (no aplica).';
+COMMENT ON COLUMN auditoria_asistencias.datos_anteriores IS 'Snapshot de la fila asistencias antes del cambio. NULL para CREACION.';
+COMMENT ON COLUMN auditoria_asistencias.datos_nuevos IS 'Snapshot de la fila asistencias despues del cambio.';
