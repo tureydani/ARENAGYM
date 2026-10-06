@@ -80,12 +80,13 @@ async function ejecutarHerramienta(nombre, args, contexto) {
     }
 
     case 'consultar_planes': {
-      return await consultarPlanes();
+      // La API de Gemini exige que "response" sea un objeto, no un array.
+      return { planes: await consultarPlanes() };
     }
 
     case 'consultar_pagos': {
       if (!contexto.idUsuario) return { error: 'cliente_no_identificado' };
-      return await consultarPagos(contexto.idUsuario);
+      return { pagos: await consultarPagos(contexto.idUsuario) };
     }
 
     case 'consultar_asistencias': {

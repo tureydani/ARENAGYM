@@ -29,7 +29,7 @@ function getModel() {
   }
   const genAI = new GoogleGenerativeAI(apiKey);
   return genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
     systemInstruction: construirInstruccionSistema(),
     tools: [{ functionDeclarations: declaraciones }]
   });

@@ -64,6 +64,13 @@ const Usuario = sequelize.define('Usuario', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  },
+  // Vincula este usuario con su chat de Telegram (agente de atención al
+  // cliente). NULL hasta que el cliente se identifica con su teléfono.
+  telegram_user_id: {
+    type: DataTypes.BIGINT,
+    allowNull: true,
+    unique: true
   }
 }, {
   tableName: 'usuarios',
