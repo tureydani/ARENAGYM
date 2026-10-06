@@ -21,11 +21,14 @@ const CORS_HEADERS = {
 //   src/lib/auth/clienteAuth.js), validado dentro de cada route handler.
 // - /api/administrativos/login: es justamente la ruta que entrega el token,
 //   no puede exigirlo para sí misma.
+// - /api/telegram/webhook: la llama Telegram directamente (sin sesión de
+//   admin); se verifica con un secret_token propio dentro del handler.
 // - /api (raíz): healthcheck público, sin datos sensibles.
 function requiereSesionAdmin(pathname: string) {
   if (pathname === '/api') return false;
   if (pathname.startsWith('/api/cliente/')) return false;
   if (pathname === '/api/administrativos/login') return false;
+  if (pathname === '/api/telegram/webhook') return false;
   return pathname.startsWith('/api/');
 }
 

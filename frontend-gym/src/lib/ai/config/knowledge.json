@@ -1,0 +1,22 @@
+{
+  "_comentario": "EDITAR con los datos reales de Arena Gym antes de producción. Esto es solo información ESTÁTICA (horarios, ubicación, servicios). Precios de membresías y disponibilidad SIEMPRE se consultan en vivo por herramientas (tabla membresias), nunca se inventan desde aquí.",
+  "gimnasio": {
+    "nombre": "Arena Gym",
+    "ciudad": "Cochabamba",
+    "direccion": "TODO: dirección exacta"
+  },
+  "horario": {
+    "lunes_a_viernes": "07:00 - 22:00",
+    "sabado": "07:00 - 15:00",
+    "domingo": "Cerrado"
+  },
+  "servicios": [
+    "Entrenamiento con máquinas",
+    "Zumba",
+    "Productos de nutrición"
+  ],
+  "metodos_pago": [
+    "Efectivo en recepción",
+    "QR / transferencia bancaria"
+  ]
+}

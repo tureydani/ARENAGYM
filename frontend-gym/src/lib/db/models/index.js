@@ -16,6 +16,8 @@ const Meta = require('./meta');
 const Progreso = require('./progreso');
 const Fondo = require('./fondo');
 const MovimientoFinanciero = require('./movimientoFinanciero');
+const Conversacion = require('./conversacion');
+const Mensaje = require('./mensaje');
 
 // Definir todas las relaciones
 
@@ -261,6 +263,25 @@ Fondo.belongsTo(Administrativo, {
   as: 'AdminCreacion'
 });
 
+// Conversacion - Usuario
+Conversacion.belongsTo(Usuario, {
+  foreignKey: 'id_usuario',
+  as: 'Usuario'
+});
+Usuario.hasMany(Conversacion, {
+  foreignKey: 'id_usuario'
+});
+
+// Mensaje - Conversacion
+Mensaje.belongsTo(Conversacion, {
+  foreignKey: 'id_conversacion',
+  as: 'Conversacion'
+});
+Conversacion.hasMany(Mensaje, {
+  foreignKey: 'id_conversacion',
+  as: 'Mensajes'
+});
+
 module.exports = {
   Usuario,
   Administrativo,
@@ -278,5 +299,7 @@ module.exports = {
   Meta,
   Progreso,
   Fondo,
-  MovimientoFinanciero
+  MovimientoFinanciero,
+  Conversacion,
+  Mensaje
 };
