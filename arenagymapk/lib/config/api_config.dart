@@ -11,9 +11,13 @@ class ApiConfig {
   /// Cambia este valor para alternar entre desarrollo local y producción.
   static const ApiEnvironment environment = ApiEnvironment.production;
 
-  /// Backend local (Next.js) corriendo en esta PC. Desde el emulador Android
-  /// oficial, 10.0.2.2 apunta al localhost del host.
-  static const String _localBaseUrl = 'http://10.0.2.2:3001/api/cliente';
+  /// Backend local (Next.js) corriendo en esta PC.
+  /// - Emulador Android oficial: 10.0.2.2 apunta al localhost del host.
+  /// - Dispositivo físico (como al probar con `flutter run` por USB): hace
+  ///   falta la IP de la PC en la red WiFi (`ipconfig` -> adaptador Wi-Fi/
+  ///   Ethernet, no el adaptador de Radmin VPN), y el teléfono debe estar
+  ///   en la MISMA red WiFi que la PC.
+  static const String _localBaseUrl = 'http://192.168.2.120:3001/api/cliente';
 
   /// Backend desplegado en producción (Vercel).
   static const String _productionBaseUrl =

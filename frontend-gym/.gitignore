@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# fotos corporales privadas del módulo de Seguimiento físico (nunca al repo)
+/storage
+
 # next.js
 /.next/
 /out/

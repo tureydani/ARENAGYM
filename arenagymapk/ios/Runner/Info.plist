@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Arena Gym usa la cámara para tomar las fotografías corporales del módulo de Seguimiento físico.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Arena Gym necesita acceso a tus fotos para elegir una fotografía corporal existente en el módulo de Seguimiento físico.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

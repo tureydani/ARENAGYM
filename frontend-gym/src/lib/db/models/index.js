@@ -18,6 +18,9 @@ const Fondo = require('./fondo');
 const MovimientoFinanciero = require('./movimientoFinanciero');
 const Conversacion = require('./conversacion');
 const Mensaje = require('./mensaje');
+const FotoProgreso = require('./fotoProgreso');
+const PoseLandmark = require('./poseLandmark');
+const MetricaFisica = require('./metricaFisica');
 
 // Definir todas las relaciones
 
@@ -282,6 +285,36 @@ Conversacion.hasMany(Mensaje, {
   as: 'Mensajes'
 });
 
+// Progreso - FotoProgreso (Seguimiento físico con visión artificial)
+FotoProgreso.belongsTo(Progreso, {
+  foreignKey: 'id_progreso',
+  as: 'Progreso'
+});
+Progreso.hasMany(FotoProgreso, {
+  foreignKey: 'id_progreso',
+  as: 'Fotos'
+});
+
+// FotoProgreso - PoseLandmark
+PoseLandmark.belongsTo(FotoProgreso, {
+  foreignKey: 'id_foto',
+  as: 'Foto'
+});
+FotoProgreso.hasMany(PoseLandmark, {
+  foreignKey: 'id_foto',
+  as: 'Landmarks'
+});
+
+// Progreso - MetricaFisica (1 a 1)
+MetricaFisica.belongsTo(Progreso, {
+  foreignKey: 'id_progreso',
+  as: 'Progreso'
+});
+Progreso.hasOne(MetricaFisica, {
+  foreignKey: 'id_progreso',
+  as: 'Metricas'
+});
+
 module.exports = {
   Usuario,
   Administrativo,
@@ -301,5 +334,8 @@ module.exports = {
   Fondo,
   MovimientoFinanciero,
   Conversacion,
-  Mensaje
+  Mensaje,
+  FotoProgreso,
+  PoseLandmark,
+  MetricaFisica
 };

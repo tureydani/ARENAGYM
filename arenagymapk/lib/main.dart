@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'screens/auth_gate.dart';
+import 'services/evaluacion_fisica_notification_service.dart';
 import 'services/theme_controller.dart';
 import 'theme/app_theme.dart';
 
@@ -11,6 +12,11 @@ Future<void> main() async {
   // Se aplica la preferencia de modo oscuro guardada antes de construir la
   // UI por primera vez, para evitar un parpadeo del tema claro al abrir.
   await ThemeController.cargarPreferencia();
+  // Recordatorio de "próxima evaluación recomendada": se inicializa acá
+  // (una sola vez) para que esté listo antes de que cualquier pantalla
+  // intente programar o cancelar una notificación. Nunca bloquea el
+  // arranque si falla (ver comentario en el propio servicio).
+  await EvaluacionFisicaNotificationService.instance.inicializar();
   runApp(const ArenaGymApp());
 }
 

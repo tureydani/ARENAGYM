@@ -44,6 +44,38 @@ dependencies:
   # Generar el QR de asistencia a partir del token del backend
   qr_flutter: ^4.1.0
 
+  # Módulo "Seguimiento físico": captura de fotos corporales desde cámara
+  # o galería.
+  image_picker: ^1.2.3
+  # Detección de pose 100% on-device/offline (ver documentación del
+  # módulo): se evaluaron wrappers que cargan un .task de MediaPipe Tasks
+  # literal (flutter_mp_pose_landmarker, flutter_mediapipe_vision), pero
+  # todos tienen 2-6 likes, publicador no verificado y soporte iOS "en
+  # pruebas" -- alto riesgo de abandono/incompatibilidad. google_mlkit_pose_detection
+  # usa la misma familia de tecnología de pose de Google, corre
+  # localmente sin conexión, y es mantenido activamente por flutter-ml.dev.
+  google_mlkit_pose_detection: ^0.14.1
+  # Comprimir las fotos antes de enviarlas al backend (sección 21 del
+  # pedido: evitar cargar fotografías gigantes en memoria/red).
+  flutter_image_compress: ^2.5.1
+  # Hornear la rotación EXIF en los píxeles antes de analizar/comprimir:
+  # algunos teléfonos guardan la foto "acostada" + una bandera EXIF de
+  # rotación, y si esa bandera se pierde la pose queda rotada 90° (ver
+  # CapturaFotoCard._capturar). Ya era una dependencia transitiva de
+  # flutter_image_compress; se declara explícita porque se usa directo.
+  image: ^4.9.2
+
+  # Recordatorio de "próxima evaluación recomendada" (EvaluacionFisicaNotificationService):
+  # no había ninguna solución de notificaciones locales en el proyecto
+  # (notificaciones_tab.dart es una bandeja server-side, no push local), así
+  # que se agrega flutter_local_notifications -- la librería estándar y más
+  # mantenida para este caso en Flutter. timezone + flutter_timezone son sus
+  # dependencias recomendadas por la documentación oficial para programar
+  # notificaciones en una fecha/hora local concreta (zonedSchedule).
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^3.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

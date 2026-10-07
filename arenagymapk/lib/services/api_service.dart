@@ -1,10 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
+import '../models/evaluacion_foto.dart';
 import '../models/meta.dart';
+import '../models/metricas_fisicas.dart';
 import '../models/notificacion.dart';
 import '../models/perfil_response.dart';
 import '../models/progreso.dart';
@@ -341,6 +344,8 @@ class ApiService {
     double? pierna,
     double? cadera,
     String? observaciones,
+    double? altura,
+    String? objetivo,
   }) {
     return _guarded(() async {
       final response = await http.post(
@@ -355,10 +360,119 @@ class ApiService {
           if (pierna != null) 'pierna': pierna,
           if (cadera != null) 'cadera': cadera,
           if (observaciones != null) 'observaciones': observaciones,
+          if (altura != null) 'altura': altura,
+          if (objetivo != null) 'objetivo': objetivo,
         }),
       );
       final json = _decodeOrThrow(response);
       return Progreso.fromJson(json);
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Seguimiento físico con visión artificial
+  // -------------------------------------------------------------------
+
+  /// GET /progresos/{id} -> evaluación con Fotos y Metricas anidadas.
+  Future<Map<String, dynamic>> obtenerEvaluacion(int idProgreso) {
+    return _guarded(() async {
+      final response = await http.get(_uri('/progresos/$idProgreso'), headers: await _authHeaders());
+      return _decodeOrThrow(response);
+    });
+  }
+
+  /// GET /progresos/{id}/fotos -> metadata de las fotos (sin bytes)
+  Future<List<EvaluacionFoto>> obtenerFotosDeEvaluacion(int idProgreso) {
+    return _guarded(() async {
+      final response = await http.get(_uri('/progresos/$idProgreso/fotos'), headers: await _authHeaders());
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is List) {
+          return decoded.map((e) => EvaluacionFoto.fromJson(e as Map<String, dynamic>)).toList();
+        }
+      }
+      _decodeOrThrow(response);
+      return <EvaluacionFoto>[];
+    });
+  }
+
+  /// GET /progresos/{id}/fotos/{fotoId} -> bytes de la fotografía (única
+  /// vía autenticada para leerla; nunca hay URL pública).
+  Future<Uint8List> obtenerBytesFoto(int idProgreso, int idFoto) {
+    return _guarded(() async {
+      final response = await http.get(
+        _uri('/progresos/$idProgreso/fotos/$idFoto'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return response.bodyBytes;
+      }
+      _decodeOrThrow(response);
+      return Uint8List(0);
+    });
+  }
+
+  /// POST /progresos/{id}/fotos -> sube una fotografía ya analizada
+  /// localmente (landmarks incluidos) y devuelve su metadata.
+  Future<EvaluacionFoto> subirFotoEvaluacion({
+    required int idProgreso,
+    required String tipo,
+    required List<int> bytesImagen,
+    required String mimeType,
+    required int anchoPx,
+    required int altoPx,
+    String? calidad,
+    double? confianza,
+    List<Map<String, dynamic>>? landmarks,
+    String? encuadre,
+    String? calidadCaptura,
+    int? qualityScore,
+  }) {
+    return _guarded(() async {
+      final response = await http.post(
+        _uri('/progresos/$idProgreso/fotos'),
+        headers: await _authHeaders(),
+        body: jsonEncode({
+          'tipo': tipo,
+          'imagen_base64': base64Encode(bytesImagen),
+          'mime_type': mimeType,
+          'ancho_px': anchoPx,
+          'alto_px': altoPx,
+          if (calidad != null) 'calidad': calidad,
+          if (confianza != null) 'confianza': confianza,
+          if (landmarks != null) 'landmarks': landmarks,
+          if (encuadre != null) 'encuadre': encuadre,
+          if (calidadCaptura != null) 'calidad_captura': calidadCaptura,
+          if (qualityScore != null) 'quality_score': qualityScore,
+        }),
+      );
+      final json = _decodeOrThrow(response);
+      return EvaluacionFoto.fromJson(json);
+    });
+  }
+
+  /// POST /progresos/{id}/metricas -> guarda las métricas calculadas
+  /// localmente y devuelve el índice de evolución recalculado.
+  Future<double?> guardarMetricasEvaluacion(int idProgreso, MetricasFisicas metricas) {
+    return _guarded(() async {
+      final response = await http.post(
+        _uri('/progresos/$idProgreso/metricas'),
+        headers: await _authHeaders(),
+        body: jsonEncode(metricas.toJson()),
+      );
+      final json = _decodeOrThrow(response);
+      return double.tryParse(json['indice_evolucion']?.toString() ?? '');
+    });
+  }
+
+  /// GET /progresos/{id}/comparacion?contra=inicial|anterior|idEvaluacion
+  Future<Map<String, dynamic>> obtenerComparacionEvaluacion(int idProgreso, {String contra = 'anterior'}) {
+    return _guarded(() async {
+      final response = await http.get(
+        _uri('/progresos/$idProgreso/comparacion').replace(queryParameters: {'contra': contra}),
+        headers: await _authHeaders(),
+      );
+      return _decodeOrThrow(response);
     });
   }
 }

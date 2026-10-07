@@ -51,6 +51,22 @@ const Progreso = sequelize.define('Progreso', {
   observaciones: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  altura: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true
+  },
+  objetivo: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  // Índice de evolución física (0-100) calculado por
+  // lib/seguimientoFisico/indiceEvolucion.js a partir de esta evaluación
+  // y de MetricaFisica. Null hasta que se calcula (requiere al menos una
+  // medición manual o una foto analizada).
+  indice_evolucion: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true
   }
 }, {
   tableName: 'progresos',

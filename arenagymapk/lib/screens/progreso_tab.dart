@@ -9,10 +9,11 @@ import '../services/api_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_card.dart';
 import 'asistencias_calendario_tab.dart';
+import 'seguimiento_fisico/seguimiento_fisico_home.dart';
 
-/// Pestaña "Progreso": combina Metas, Mediciones y Asistencias en tres
-/// sub-tabs dentro de una misma pestaña, para que el cliente vea su espacio
-/// personal de evolución sin salir de la sección.
+/// Pestaña "Progreso": combina Metas, Mediciones, Seguimiento físico y
+/// Asistencias en sub-tabs dentro de una misma pestaña, para que el
+/// cliente vea su espacio personal de evolución sin salir de la sección.
 class ProgresoTab extends StatefulWidget {
   const ProgresoTab({super.key});
 
@@ -26,7 +27,7 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -59,6 +60,8 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
             ),
             child: TabBar(
               controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               indicator: BoxDecoration(
                 color: AppColors.accent,
                 borderRadius: BorderRadius.circular(12),
@@ -71,6 +74,7 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
               tabs: const [
                 Tab(text: 'Metas'),
                 Tab(text: 'Mediciones'),
+                Tab(text: 'Seguimiento físico'),
                 Tab(text: 'Asistencias'),
               ],
             ),
@@ -82,6 +86,7 @@ class _ProgresoTabState extends State<ProgresoTab> with SingleTickerProviderStat
             children: const [
               _MetasSection(),
               _ProgresosSection(),
+              SeguimientoFisicoHome(),
               AsistenciasCalendarioTab(),
             ],
           ),

@@ -10,6 +10,9 @@ class Progreso {
   final double? pierna;
   final double? cadera;
   final String? observaciones;
+  final double? altura;
+  final String? objetivo;
+  final double? indiceEvolucion;
 
   Progreso({
     required this.idProgreso,
@@ -23,6 +26,9 @@ class Progreso {
     required this.pierna,
     required this.cadera,
     required this.observaciones,
+    this.altura,
+    this.objetivo,
+    this.indiceEvolucion,
   });
 
   factory Progreso.fromJson(Map<String, dynamic> json) {
@@ -38,6 +44,9 @@ class Progreso {
       pierna: double.tryParse(json['pierna']?.toString() ?? ''),
       cadera: double.tryParse(json['cadera']?.toString() ?? ''),
       observaciones: json['observaciones'] as String?,
+      altura: double.tryParse(json['altura']?.toString() ?? ''),
+      objetivo: json['objetivo'] as String?,
+      indiceEvolucion: double.tryParse(json['indice_evolucion']?.toString() ?? ''),
     );
   }
 }

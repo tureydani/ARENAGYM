@@ -1,5 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Módulo "Seguimiento físico": capturar fotografías corporales con la
+         cámara. READ_MEDIA_IMAGES (Android 13+) / READ_EXTERNAL_STORAGE
+         (versiones anteriores) permiten elegir una foto existente desde la
+         galería como alternativa a la cámara. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <!-- Recordatorio de "próxima evaluación recomendada" (flutter_local_notifications):
+         POST_NOTIFICATIONS ya lo declara el propio plugin (se fusiona
+         automáticamente); RECEIVE_BOOT_COMPLETED sí hay que declararlo en
+         la app para que el recordatorio programado sobreviva un reinicio
+         del teléfono (ver README del plugin, sección "Setup"). No se usa
+         SCHEDULE_EXACT_ALARM porque la notificación se programa en modo
+         inexactAllowWhileIdle (no es crítica en tiempo, no necesita ese
+         permiso especial de Android 12+). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application
         android:label="Arena Gym"
         android:name="${applicationName}"
@@ -31,6 +47,18 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Requeridos por flutter_local_notifications para que las
+             notificaciones programadas (y su reprogramación tras reiniciar
+             el teléfono) funcionen -- ver README del plugin. -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

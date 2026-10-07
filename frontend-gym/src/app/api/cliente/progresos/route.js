@@ -79,10 +79,21 @@ export async function POST(request) {
   }
 
   try {
-    const { peso, porcentaje_grasa, pecho, cintura, brazo, pierna, cadera, observaciones } = await request.json();
+    const {
+      peso, porcentaje_grasa, pecho, cintura, brazo, pierna, cadera, observaciones,
+      altura, objetivo,
+    } = await request.json();
 
-    if (peso === undefined && porcentaje_grasa === undefined && !pecho && !cintura && !brazo && !pierna && !cadera) {
-      return NextResponse.json({ error: 'Registra al menos una medición' }, { status: 400 });
+    // No se exige ningún dato manual: el módulo de Seguimiento físico crea
+    // la evaluación primero y recién después sube las fotos (en una
+    // request separada, ligada a este id_progreso) -- una evaluación
+    // basada 100% en fotos + análisis de pose, sin ninguna medida manual,
+    // es un caso válido.
+
+    for (const [campo, valor] of Object.entries({ peso, pecho, cintura, brazo, pierna, cadera, altura })) {
+      if (valor !== undefined && valor !== null && Number(valor) <= 0) {
+        return NextResponse.json({ error: `El campo "${campo}" debe ser un valor positivo` }, { status: 400 });
+      }
     }
 
     const progreso = await Progreso.create({
@@ -94,7 +105,9 @@ export async function POST(request) {
       brazo,
       pierna,
       cadera,
-      observaciones
+      observaciones,
+      altura,
+      objetivo,
     });
 
     await sincronizarMetasConProgreso(auth.id_usuario, progreso);
