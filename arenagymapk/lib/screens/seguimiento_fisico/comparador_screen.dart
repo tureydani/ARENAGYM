@@ -3,12 +3,15 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../models/evaluacion_foto.dart';
+import '../../models/metricas_fisicas.dart';
 import '../../models/progreso.dart';
 import '../../services/api_exception.dart';
 import '../../services/api_service.dart';
+import '../../services/evaluacion_fisica_schedule_service.dart';
 import '../../services/physical_progress_analysis_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_card.dart';
+import 'metricas_individuales_view.dart';
 
 const _etiquetasCambios = <String, (String, String)>{
   'peso': ('Peso', 'kg'),
@@ -50,6 +53,16 @@ class _ComparadorScreenState extends State<ComparadorScreen> {
   bool _loading = true;
   String? _errorMessage;
   String _contra = 'anterior';
+
+  /// La evaluación en sí (GET /progresos/:id, con Fotos y Metricas) --
+  /// siempre se puede cargar con un solo registro, nunca depende de que
+  /// exista otra evaluación.
+  Map<String, dynamic>? _evaluacion;
+
+  /// La comparación contra una evaluación de referencia. Puede ser `null`
+  /// aunque la carga haya sido exitosa: significa simplemente que todavía
+  /// no hay una evaluación anterior con la que comparar (sección 12 del
+  /// pedido) -- no es un error, así que nunca bloquea mostrar [_evaluacion].
   Map<String, dynamic>? _comparacion;
 
   @override
@@ -64,10 +77,22 @@ class _ComparadorScreenState extends State<ComparadorScreen> {
       _errorMessage = null;
     });
     try {
-      final data = await ApiService.instance.obtenerComparacionEvaluacion(widget.idProgresoActual, contra: _contra);
+      final evaluacion = await ApiService.instance.obtenerEvaluacion(widget.idProgresoActual);
+
+      Map<String, dynamic>? comparacion;
+      try {
+        comparacion = await ApiService.instance.obtenerComparacionEvaluacion(widget.idProgresoActual, contra: _contra);
+      } on ApiException {
+        // Sin evaluación de referencia todavía (o falló por cualquier otro
+        // motivo): se muestra igual la evaluación individual, solo queda
+        // sin "evolución" disponible.
+        comparacion = null;
+      }
+
       if (!mounted) return;
       setState(() {
-        _comparacion = data;
+        _evaluacion = evaluacion;
+        _comparacion = comparacion;
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -82,7 +107,7 @@ class _ComparadorScreenState extends State<ComparadorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Comparar evolución')),
+      appBar: AppBar(title: const Text('Evaluación física')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null
@@ -108,35 +133,37 @@ class _ComparadorScreenState extends State<ComparadorScreen> {
   }
 
   Widget _buildContenido() {
-    final datos = _comparacion!;
-    final referencia = datos['referencia'] as Map<String, dynamic>;
-    final actual = datos['actual'] as Map<String, dynamic>;
-    final cambiosManuales = datos['cambios_medidas_manuales'] as Map<String, dynamic>;
-    final cambiosMetricas = datos['cambios_metricas'] as Map<String, dynamic>;
-    final cambioIndice = datos['cambio_indice_evolucion'];
-    final advertencias = (datos['advertencias'] as List? ?? []).cast<String>();
+    final evaluacion = _evaluacion!;
+    final fotos = (evaluacion['Fotos'] as List? ?? []).map((f) => EvaluacionFoto.fromJson(f as Map<String, dynamic>)).toList();
+    final metricasJson = evaluacion['Metricas'] as Map<String, dynamic>?;
+    final metricas = metricasJson != null ? MetricasFisicas.fromJson(metricasJson) : null;
+    final fecha = evaluacion['fecha']?.toString() ?? '';
+    final fechaDt = DateTime.tryParse(fecha);
+    final esLineaBase = _comparacion == null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       children: [
-        if (advertencias.isNotEmpty) ...[
-          AppCard(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.warning_amber_outlined, size: 18, color: AppColors.danger),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    advertencias.join(' '),
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
+        MetricasIndividualesView(
+          fecha: fecha,
+          metricas: metricas,
+          fotos: fotos,
+          esLineaBase: esLineaBase,
+          proximaEvaluacionRecomendada: fechaDt != null
+              ? EvaluacionFisicaScheduleService.instance.calcularProximaFecha(fechaDt)
+              : null,
+        ),
+        const SizedBox(height: 16),
+        const Divider(height: 1),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Icon(Icons.trending_up, size: 18, color: AppColors.accent),
+            const SizedBox(width: 8),
+            Text('Evolución', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppColors.textPrimary)),
+          ],
+        ),
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -163,6 +190,59 @@ class _ComparadorScreenState extends State<ComparadorScreen> {
           ],
         ),
         const SizedBox(height: 16),
+        if (_comparacion == null) _buildEvolucionNoDisponible() else _buildComparacion(_comparacion!),
+      ],
+    );
+  }
+
+  /// Sección 12 del pedido: sin evaluación de referencia todavía, nunca se
+  /// bloquea la vista de las métricas individuales (ya mostradas arriba) --
+  /// solo se avisa que la evolución es la parte que falta.
+  Widget _buildEvolucionNoDisponible() {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Aún no disponible', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+          const SizedBox(height: 6),
+          Text(
+            'Realiza una segunda evaluación para comenzar a comparar tu progreso.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComparacion(Map<String, dynamic> datos) {
+    final referencia = datos['referencia'] as Map<String, dynamic>;
+    final actual = datos['actual'] as Map<String, dynamic>;
+    final cambiosManuales = datos['cambios_medidas_manuales'] as Map<String, dynamic>;
+    final cambiosMetricas = datos['cambios_metricas'] as Map<String, dynamic>;
+    final cambioIndice = datos['cambio_indice_evolucion'];
+    final advertencias = (datos['advertencias'] as List? ?? []).cast<String>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (advertencias.isNotEmpty) ...[
+          AppCard(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber_outlined, size: 18, color: AppColors.danger),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    advertencias.join(' '),
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         _buildFotosLadoALado(referencia, actual),
         const SizedBox(height: 16),
         if (cambioIndice != null) _buildIndiceCard(referencia, actual, cambioIndice),

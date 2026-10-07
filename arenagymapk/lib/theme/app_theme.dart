@@ -157,6 +157,23 @@ class AppTheme {
         style: TextButton.styleFrom(foregroundColor: AppColors.accent),
       ),
       dividerTheme: DividerThemeData(color: AppColors.border, thickness: 1),
+      // Sin esto, AlertDialog/showDialog usa los valores por defecto de
+      // Material 3 (colorScheme.onSurface/onSurfaceVariant), que NO se
+      // tocan arriba (solo se sobreescriben primary/secondary/surface/
+      // error) -- quedaba un diálogo sin el borde/estilo del resto de la
+      // app y, en modo oscuro, con colores de texto pensados para fondo
+      // claro, prácticamente invisible sobre el fondo oscuro.
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.card,
+        surfaceTintColor: Colors.transparent,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppColors.border),
+        ),
+        titleTextStyle: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w700),
+        contentTextStyle: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+      ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.textPrimary,
         contentTextStyle: const TextStyle(color: Colors.white),

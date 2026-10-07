@@ -10,6 +10,9 @@ class EvaluacionFoto {
   final int? anchoPx;
   final int? altoPx;
   final String fechaSubida;
+  final String? encuadre; // completo | medioCuerpo
+  final int? qualityScore; // 0-100
+  final String? calidadCaptura; // EXCELENTE | BUENA | ACEPTABLE | INSUFICIENTE
 
   EvaluacionFoto({
     required this.idFoto,
@@ -20,6 +23,9 @@ class EvaluacionFoto {
     required this.anchoPx,
     required this.altoPx,
     required this.fechaSubida,
+    this.encuadre,
+    this.qualityScore,
+    this.calidadCaptura,
   });
 
   factory EvaluacionFoto.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,9 @@ class EvaluacionFoto {
       anchoPx: json['ancho_px'] as int?,
       altoPx: json['alto_px'] as int?,
       fechaSubida: json['fecha_subida']?.toString() ?? '',
+      encuadre: json['encuadre'] as String?,
+      qualityScore: json['quality_score'] as int?,
+      calidadCaptura: json['calidad_captura'] as String?,
     );
   }
 }

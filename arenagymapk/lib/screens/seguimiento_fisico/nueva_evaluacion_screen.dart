@@ -8,6 +8,7 @@ import '../../services/evaluacion_fisica_notification_service.dart';
 import '../../services/pose_analysis_service.dart';
 import '../../theme/app_theme.dart';
 import 'captura_foto_card.dart';
+import 'comparador_screen.dart';
 
 /// Flujo "Nueva evaluación física": datos básicos -> fotografías guiadas ->
 /// guardado (crea el Progreso, sube las fotos ya analizadas localmente y
@@ -129,6 +130,18 @@ class _NuevaEvaluacionScreenState extends State<NuevaEvaluacionScreen> {
       if (!mounted) return;
       setState(() => _estadoGuardado = 'Evaluación guardada.');
       await Future.delayed(const Duration(milliseconds: 400));
+      if (!mounted) return;
+
+      // Llevar directo al resultado: una evaluación debe ser útil por sí
+      // misma apenas se guarda, sin esperar a que exista una segunda (ver
+      // ComparadorScreen, que ya no depende de tener una referencia para
+      // mostrar las métricas de ESTA evaluación). Se empuja encima de esta
+      // pantalla (en vez de reemplazarla) para que, al volver con "atrás",
+      // el pop restante cierre también este formulario y quede en el
+      // historial -- no en un formulario ya guardado.
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ComparadorScreen(idProgresoActual: progreso.idProgreso)),
+      );
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {

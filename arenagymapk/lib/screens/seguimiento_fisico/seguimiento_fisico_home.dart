@@ -197,7 +197,10 @@ class _ResumenCard extends StatelessWidget {
             children: [
               Icon(Icons.accessibility_new, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
-              Text('Última evaluación', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              Text(
+                totalEvaluaciones == 1 ? 'Tu evaluación inicial' : 'Tu evolución',
+                style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              ),
               const Spacer(),
               Text(ultima.fecha, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
             ],
@@ -236,12 +239,11 @@ class _ResumenCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text('$totalEvaluaciones evaluación(es) registrada(s)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
           const SizedBox(height: 14),
-          if (totalEvaluaciones >= 2)
-            OutlinedButton.icon(
-              onPressed: onComparar,
-              icon: const Icon(Icons.compare_arrows, size: 18),
-              label: const Text('Ver evolución'),
-            ),
+          OutlinedButton.icon(
+            onPressed: onComparar,
+            icon: const Icon(Icons.compare_arrows, size: 18),
+            label: Text(totalEvaluaciones >= 2 ? 'Ver evolución' : 'Ver mi evaluación'),
+          ),
         ],
       ),
     );
@@ -251,10 +253,17 @@ class _ResumenCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          Expanded(child: Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 13))),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              valor,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );
@@ -373,10 +382,17 @@ class _RecomendacionCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(etiqueta, style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-          Text(valor, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          Expanded(child: Text(etiqueta, style: TextStyle(color: AppColors.textSecondary, fontSize: 12))),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              valor,
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+              textAlign: TextAlign.right,
+            ),
+          ),
         ],
       ),
     );
