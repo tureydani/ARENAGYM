@@ -49,7 +49,7 @@
             android:value="2" />
         <!-- Requeridos por flutter_local_notifications para que las
              notificaciones programadas (y su reprogramación tras reiniciar
-             el teléfono) funcionen -- ver README del plugin. -->
+             el teléfono) funcionen; ver README del plugin. -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
             <intent-filter>
